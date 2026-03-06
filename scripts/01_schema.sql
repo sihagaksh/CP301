@@ -1165,11 +1165,11 @@ CREATE TRIGGER marketplace_favorites_delete AFTER DELETE ON marketplace_favorite
 -- Note: Enable RLS and create policies based on your auth setup
 -- This is a template - adjust according to your authentication system
 
--- Example: Enable RLS on sensitive tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE marketplace_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+-- Example: Enable RLS on sensitive tables (DISABLED FOR DEVELOPMENT)
+-- ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE marketplace_items ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
 -- Example policies (you'll need to adjust these based on your auth.uid())
 -- SELECT policy: Users can view published blog posts

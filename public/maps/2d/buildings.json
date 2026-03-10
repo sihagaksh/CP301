@@ -1,0 +1,252 @@
+[
+    {
+    "name": "Super Academic Block ",
+    "shortCode": "SAB",
+    "category": "Academic",
+    "description": "It has several academic departments, faculty offices, specialized research facilities & DUC (Desi Urban Chai) outlet. ",
+    "departments": [],
+    "polygon": [
+        [
+            30.967953250625,
+            76.47372250919311
+        ],
+        [
+            30.96795036425,
+            76.47534775997313
+        ],
+        [
+            30.96670345025,
+            76.47540832832519
+        ],
+        [
+            30.966663041,
+            76.47386047043945
+        ],
+        [
+            30.96685354175,
+            76.47370568465087
+        ]
+    ]
+}  ,
+    {
+    "name": "Lecture Hall Complex",
+    "shortCode": "LHC",
+    "category": "Academic",
+    "description": "Main lecture halls for UG, PG etc courses & Club sessions.",
+    "departments": [],
+    "polygon": [
+        [
+            30.967947477875,
+            76.47175403775145
+        ],
+        [
+            30.967814704625,
+            76.4715723326953
+        ],
+        [
+            30.967629976625002,
+            76.47166991504028
+        ],
+        [
+            30.967502976125,
+            76.47179105174438
+        ],
+        [
+            30.967433703125,
+            76.47189199899779
+        ],
+        [
+            30.967526067125,
+            76.47199967606811
+        ],
+        [
+            30.96743081675,
+            76.47210398822997
+        ],
+        [
+            30.967511635250002,
+            76.4722554091101
+        ],
+        [
+            30.967612658375,
+            76.47241019489867
+        ],
+        [
+            30.96783490925,
+            76.47218474603271
+        ],
+        [
+            30.967817591,
+            76.47210398822997
+        ],
+        [
+            30.967987887125002,
+            76.47193237789917
+        ],
+        [
+            30.96803118275,
+            76.47185498500488
+        ],
+        [
+            30.968048501000002,
+            76.4718280657373
+        ],
+        [
+            30.968048501000002,
+            76.47178095701904
+        ],
+        [
+            30.968019637250002,
+            76.47175067284302
+        ]
+    ]
+},
+   {
+    "name": "Nalanda Library",
+    "shortCode": "Library",
+    "category": "Academic",
+    "description": "Central library with reading halls, digital resources, journals, and group study rooms.",
+    "departments": [],
+    "polygon": [
+        [
+            30.96743081675,
+            76.47299905387695
+        ],
+        [
+            30.967422157625002,
+            76.47351724977783
+        ],
+        [
+            30.967052701625,
+            76.4734936954187
+        ],
+        [
+            30.9670671335,
+            76.47326488164428
+        ],
+        [
+            30.967046928875,
+            76.47303270296142
+        ]
+    ]
+},
+    {
+        "name": "Sports Complex",
+        "shortCode": "SPORTS",
+        "category": "Sports",
+        "description": "Indoor and outdoor sports facilities including basketball, badminton, and gymnasium.",
+        "departments": [],
+        "polygon": [
+            [
+                30.96698631,
+                76.48236696
+            ],
+            [
+                30.96698631,
+                76.48371292
+            ],
+            [
+                30.9661204,
+                76.48371292
+            ],
+            [
+                30.9661204,
+                76.48236696
+            ]
+        ]
+    },
+    {
+        "name": "Dining Hall",
+        "shortCode": "MESS",
+        "category": "Dining",
+        "description": "Central dining hall serving breakfast, lunch, dinner, and snacks for hostellers.",
+        "departments": [],
+        "polygon": [
+            [
+                30.96525449,
+                76.47900205
+            ],
+            [
+                30.96525449,
+                76.48001152
+            ],
+            [
+                30.96467722,
+                76.48001152
+            ],
+            [
+                30.96467722,
+                76.47900205
+            ]
+        ]
+    },
+    {
+        "name": "Computer Science Building",
+        "shortCode": "CSE",
+        "category": "Academic",
+        "description": "Department of Computer Science and Engineering \u00e2\u20ac\u201d labs, faculty offices, and research spaces.",
+        "departments": [
+            "CSE"
+        ],
+        "polygon": [
+            [
+                30.9661204,
+                76.47395469
+            ],
+            [
+                30.9661204,
+                76.47479591
+            ],
+            [
+                30.96554313,
+                76.47479591
+            ],
+            [
+                30.96554313,
+                76.47395469
+            ]
+        ]
+    }
+,
+{
+    "name": "Admin Block",
+    "shortCode": "Admin Block",
+    "category": "Administrative",
+    "description": "Has several administrative offices and Senate Hall -Houses the Dean's offices, registrar, finance, and administrative departments.",
+    "departments": [],
+    "polygon": [
+        [
+            30.968709480875,
+            76.47241355980712
+        ],
+        [
+            30.9685218665,
+            76.47242365453246
+        ],
+        [
+            30.96852763925,
+            76.47302260823608
+        ],
+        [
+            30.968556503000002,
+            76.47302260823608
+        ],
+        [
+            30.968556503000002,
+            76.47346677615111
+        ],
+        [
+            30.968530525625,
+            76.47347687087645
+        ],
+        [
+            30.968542071125,
+            76.47407582458007
+        ],
+        [
+            30.96872391275,
+            76.47407245967163
+        ]
+    ]
+}
+]

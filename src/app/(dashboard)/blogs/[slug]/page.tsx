@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Heart, MessageCircle, Share2, Eye, Calendar, Briefcase, Send } from 'lucide-react'
+import { ArrowLeft, Heart, MessageCircle, Share2, Eye, Calendar, Briefcase, Send, Check, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { BlogPost, BlogComment } from '@/lib/types'
 import { useAuth } from '@/contexts/AuthContext'
@@ -15,7 +15,21 @@ export default function BlogDetailPage() {
     const [blog, setBlog] = useState<BlogPost | null>(null)
     const [comments, setComments] = useState<BlogComment[]>([])
     const [newComment, setNewComment] = useState('')
+    const [submittingComment, setSubmittingComment] = useState(false)
     const [loading, setLoading] = useState(true)
+
+    // Like state
+    const [likedByMe, setLikedByMe] = useState(false)
+    const [likeCount, setLikeCount] = useState(0)
+    const [likeLoading, setLikeLoading] = useState(false)
+
+    // Share state
+    const [shareCopied, setShareCopied] = useState(false)
+    const shareCopiedRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    // View count (track if we already incremented to avoid double-count)
+    const viewIncrementedRef = useRef(false)
+
     const supabase = createClient()
 
     useEffect(() => {
@@ -26,13 +40,34 @@ export default function BlogDetailPage() {
     async function loadBlog() {
         const { data } = await supabase
             .from('blog_posts')
-            .select('*, author:users(id, full_name, role, profile_picture_url, department, bio)')
+            .select('*, author:users(id, full_name, role, profile_picture_url, department, bio), posting_identity:user_positions(id, title, organization:organizations(name, slug))')
             .eq('slug', params.slug)
             .single()
 
         if (data) {
             setBlog(data as BlogPost)
+            setLikeCount(data.like_count ?? 0)
             loadComments(data.id)
+
+            // Increment view count once per load
+            if (!viewIncrementedRef.current) {
+                viewIncrementedRef.current = true
+                await supabase
+                    .from('blog_posts')
+                    .update({ view_count: (data.view_count ?? 0) + 1 })
+                    .eq('id', data.id)
+            }
+
+            // Check if current user liked this post
+            if (user) {
+                const { data: likeRow } = await supabase
+                    .from('blog_likes')
+                    .select('id')
+                    .eq('blog_post_id', data.id)
+                    .eq('user_id', user.id)
+                    .maybeSingle()
+                setLikedByMe(!!likeRow)
+            }
         }
         setLoading(false)
     }
@@ -49,17 +84,70 @@ export default function BlogDetailPage() {
 
     async function submitComment() {
         if (!newComment.trim() || !user || !blog) return
+        setSubmittingComment(true)
         await supabase.from('blog_comments').insert({
             blog_post_id: blog.id,
             user_id: user.id,
             content: newComment.trim(),
         })
+        // Update comment_count
+        await supabase
+            .from('blog_posts')
+            .update({ comment_count: (blog.comment_count ?? 0) + 1 })
+            .eq('id', blog.id)
+
         setNewComment('')
         loadComments(blog.id)
+        setSubmittingComment(false)
+    }
+
+    async function handleLike() {
+        if (!user || !blog || likeLoading) return
+        setLikeLoading(true)
+
+        if (likedByMe) {
+            // Unlike
+            setLikedByMe(false)
+            setLikeCount(c => c - 1)
+            await supabase.from('blog_likes').delete()
+                .eq('blog_post_id', blog.id).eq('user_id', user.id)
+            await supabase.from('blog_posts')
+                .update({ like_count: Math.max(0, likeCount - 1) })
+                .eq('id', blog.id)
+        } else {
+            // Like
+            setLikedByMe(true)
+            setLikeCount(c => c + 1)
+            await supabase.from('blog_likes').insert({ blog_post_id: blog.id, user_id: user.id })
+            await supabase.from('blog_posts')
+                .update({ like_count: likeCount + 1 })
+                .eq('id', blog.id)
+        }
+        setLikeLoading(false)
+    }
+
+    async function handleShare() {
+        const url = `${window.location.origin}/blogs/${blog?.slug}`
+        try {
+            await navigator.clipboard.writeText(url)
+        } catch {
+            // clipboard not available — ignore
+        }
+        setShareCopied(true)
+        if (shareCopiedRef.current) clearTimeout(shareCopiedRef.current)
+        shareCopiedRef.current = setTimeout(() => setShareCopied(false), 2500)
+
+        // Also increment share_count
+        if (blog) {
+            await supabase.from('blog_posts')
+                .update({ share_count: (blog.share_count ?? 0) + 1 })
+                .eq('id', blog.id)
+        }
     }
 
     const getInitials = (name?: string) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'
     const author = blog?.author as unknown as { full_name: string; role: string; department?: string; bio?: string; profile_picture_url?: string } | undefined
+    const postingIdentity = (blog as unknown as { posting_identity?: { title: string; organization?: { name: string } } })?.posting_identity
 
     if (loading) {
         return (
@@ -120,23 +208,39 @@ export default function BlogDetailPage() {
 
             {/* Author Info */}
             <div className="flex items-center gap-3" style={{ marginBottom: 24 }}>
-                <div className="avatar">{getInitials(author?.full_name)}</div>
+                <Link href={`/users/${blog.author_id}`} className="no-underline">
+                    <div className="avatar" style={{ cursor: 'pointer' }}>
+                        {author?.profile_picture_url
+                            ? <img src={author.profile_picture_url} alt={author.full_name} />
+                            : getInitials(author?.full_name)}
+                    </div>
+                </Link>
                 <div>
-                    <p className="font-semibold" style={{ fontSize: '0.9rem' }}>{author?.full_name}</p>
+                    <div className="flex items-center gap-2">
+                        <Link href={`/users/${blog.author_id}`} className="no-underline">
+                            <p className="font-semibold" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', cursor: 'pointer' }}>{author?.full_name}</p>
+                        </Link>
+                        {postingIdentity?.title && (
+                            <span className="badge badge-gold" style={{ fontSize: '0.65rem' }}>
+                                {postingIdentity.title}{postingIdentity.organization?.name ? `, ${postingIdentity.organization.name}` : ''}
+                            </span>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2 text-xs text-muted">
                         <span>{author?.role} {author?.department ? `• ${author.department}` : ''}</span>
                         <span>•</span>
                         <Calendar size={12} />
                         <span>{blog.published_at ? format(new Date(blog.published_at), 'MMM d, yyyy') : format(new Date(blog.created_at), 'MMM d, yyyy')}</span>
                     </div>
+
                 </div>
             </div>
 
             {/* Stats */}
             <div className="flex items-center gap-4 mb-6" style={{ paddingBottom: 20, borderBottom: '1px solid var(--glass-border)' }}>
-                <span className="flex items-center gap-1 text-sm text-muted"><Eye size={16} /> {blog.view_count} views</span>
-                <span className="flex items-center gap-1 text-sm text-muted"><Heart size={16} /> {blog.like_count} likes</span>
-                <span className="flex items-center gap-1 text-sm text-muted"><MessageCircle size={16} /> {blog.comment_count} comments</span>
+                <span className="flex items-center gap-1 text-sm text-muted"><Eye size={16} /> {blog.view_count + 1} views</span>
+                <span className="flex items-center gap-1 text-sm text-muted"><Heart size={16} /> {likeCount} likes</span>
+                <span className="flex items-center gap-1 text-sm text-muted"><MessageCircle size={16} /> {comments.length} comments</span>
             </div>
 
             {/* Content */}
@@ -153,10 +257,37 @@ export default function BlogDetailPage() {
                 </div>
             )}
 
-            {/* Actions */}
-            <div className="flex gap-3 mb-6" style={{ paddingTop: 16, borderTop: '1px solid var(--glass-border)' }}>
-                <button className="btn btn-secondary"><Heart size={16} /> Like</button>
-                <button className="btn btn-secondary"><Share2 size={16} /> Share</button>
+            {/* Action Buttons */}
+            <div className="flex gap-3 mb-6" style={{ paddingTop: 16, borderTop: '1px solid var(--glass-border)', alignItems: 'center' }}>
+                {/* Like */}
+                <button
+                    className="btn btn-secondary"
+                    onClick={handleLike}
+                    disabled={!user || likeLoading}
+                    style={{
+                        color: likedByMe ? 'var(--accent-primary)' : undefined,
+                        borderColor: likedByMe ? 'var(--accent-primary)' : undefined,
+                        fontWeight: likedByMe ? 600 : undefined,
+                        transition: 'all 0.15s ease',
+                    }}
+                >
+                    {likeLoading
+                        ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        : <Heart size={16} fill={likedByMe ? 'currentColor' : 'none'} />}
+                    {likedByMe ? 'Liked' : 'Like'} · {likeCount}
+                </button>
+
+                {/* Share */}
+                <div style={{ position: 'relative' }}>
+                    <button className="btn btn-secondary" onClick={handleShare}>
+                        {shareCopied ? <Check size={16} /> : <Share2 size={16} />}
+                        {shareCopied ? 'Link Copied!' : 'Share'}
+                    </button>
+                </div>
+
+                {!user && (
+                    <span className="text-xs text-muted" style={{ marginLeft: 4 }}>Sign in to like</span>
+                )}
             </div>
 
             {/* Comments */}
@@ -168,7 +299,11 @@ export default function BlogDetailPage() {
                 {/* Comment Input */}
                 {user && (
                     <div className="flex gap-3" style={{ marginBottom: 24 }}>
-                        <div className="avatar avatar-sm">{getInitials(user.full_name)}</div>
+                        <div className="avatar avatar-sm">
+                            {user.profile_picture_url
+                                ? <img src={user.profile_picture_url} alt={user.full_name} />
+                                : getInitials(user.full_name)}
+                        </div>
                         <div style={{ flex: 1 }}>
                             <textarea
                                 className="textarea-field"
@@ -178,8 +313,16 @@ export default function BlogDetailPage() {
                                 rows={2}
                                 style={{ minHeight: 60 }}
                             />
-                            <button className="btn btn-primary btn-sm" style={{ marginTop: 8 }} onClick={submitComment}>
-                                <Send size={14} /> Post Comment
+                            <button
+                                className="btn btn-primary btn-sm"
+                                style={{ marginTop: 8 }}
+                                onClick={submitComment}
+                                disabled={!newComment.trim() || submittingComment}
+                            >
+                                {submittingComment
+                                    ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                                    : <Send size={14} />}
+                                {' '}Post Comment
                             </button>
                         </div>
                     </div>
@@ -194,7 +337,11 @@ export default function BlogDetailPage() {
                             const cu = comment.user as unknown as { full_name: string; profile_picture_url?: string } | undefined
                             return (
                                 <div key={comment.id} className="flex gap-3">
-                                    <div className="avatar avatar-sm">{getInitials(cu?.full_name)}</div>
+                                    <div className="avatar avatar-sm">
+                                        {cu?.profile_picture_url
+                                            ? <img src={cu.profile_picture_url} alt={cu.full_name} />
+                                            : getInitials(cu?.full_name)}
+                                    </div>
                                     <div style={{ flex: 1 }}>
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold" style={{ fontSize: '0.85rem' }}>{cu?.full_name}</span>
@@ -208,6 +355,10 @@ export default function BlogDetailPage() {
                     </div>
                 )}
             </div>
+
+            <style jsx>{`
+                @keyframes spin { to { transform: rotate(360deg); } }
+            `}</style>
         </div>
     )
 }

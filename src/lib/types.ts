@@ -1,5 +1,6 @@
 // =====================================================
 // TypeScript interfaces matching the database schema
+// IIT Ropar Community Platform (dep-anti)
 // =====================================================
 
 export type UserRole = 'student' | 'faculty' | 'staff' | 'alumni' | 'guest'
@@ -8,10 +9,13 @@ export type BlogCategory = 'placement' | 'internship' | 'faculty_insight' | 'alu
 export type ContentStatus = 'draft' | 'published' | 'archived' | 'flagged'
 export type ItemCondition = 'new' | 'like_new' | 'good' | 'fair' | 'poor'
 export type TransactionStatus = 'available' | 'reserved' | 'sold' | 'cancelled'
-export type LostFoundStatus = 'lost' | 'found' | 'claimed' | 'returned'
+export type LostFoundStatus = 'lost' | 'found' | 'returned'
 export type NoticePriority = 'low' | 'medium' | 'high' | 'urgent'
-export type EventType = 'ismp' | 'workshop' | 'seminar' | 'competition' | 'cultural' | 'sports' | 'club_activity' | 'general'
+export type EventType = 'ismp' | 'workshop' | 'seminar' | 'competition' | 'cultural' | 'sports' | 'esports' | 'literary' | 'club_activity' | 'fest' | 'general'
 export type LocationType = 'academic' | 'hostel' | 'administrative' | 'recreational' | 'mess' | 'medical' | 'sports' | 'other'
+export type OrgType = 'gymkhana' | 'board' | 'club' | 'society' | 'committee' | 'cell' | 'department' | 'fest_committee'
+export type PorType = 'president' | 'general_secretary' | 'secretary' | 'representative' | 'mentor' | 'coordinator' | 'convenor' | 'faculty_advisor' | 'custom'
+export type OrgMemberStatus = 'pending' | 'approved' | 'removed'
 
 export interface User {
     id: string
@@ -22,30 +26,104 @@ export interface User {
     profile_picture_url?: string
     phone_number?: string
     bio?: string
+    linkedin_url?: string
+    // Student fields
     enrollment_number?: string
-    employee_id?: string
-    graduation_year?: number
     department?: string
+    branch?: string
     batch?: string
+    // Faculty/Staff fields
+    employee_id?: string
     designation?: string
+    // Alumni fields
     current_organization?: string
     current_position?: string
-    industry?: string
-    location?: string
-    linkedin_url?: string
+    // Guest fields
     guest_purpose?: string
     guest_valid_until?: string
+    // Admin
+    is_admin: boolean
+    is_verified: boolean
+    // Settings
     notification_preferences?: Record<string, unknown>
     privacy_settings?: Record<string, unknown>
     created_at: string
     updated_at: string
     last_login?: string
-    is_verified: boolean
 }
+
+// =====================================================
+// Organizations (Gymkhana hierarchy)
+// =====================================================
+
+export interface Organization {
+    id: string
+    name: string
+    slug: string
+    type: OrgType
+    parent_id?: string
+    description?: string
+    logo_url?: string
+    email?: string
+    social_links?: Record<string, string>
+    is_active: boolean
+    founded_year?: number
+    category?: string
+    cover_image_url?: string
+    member_count: number
+    event_count: number
+    created_at: string
+    updated_at: string
+    // Joined
+    parent?: Organization
+}
+
+export interface OrgMember {
+    id: string
+    org_id: string
+    user_id: string
+    status: OrgMemberStatus
+    joined_at: string
+    // Joined
+    user?: User
+    organization?: Organization
+}
+
+export interface UserPosition {
+    id: string
+    user_id: string
+    org_id: string
+    title: string
+    por_type: PorType
+    valid_from: string
+    valid_until?: string
+    is_active: boolean
+    created_at: string
+    updated_at: string
+    // Joined
+    organization?: Organization
+    user?: User
+}
+
+// =====================================================
+// Posting Identity (for "Post as" dropdown)
+// =====================================================
+
+export interface PostingIdentity {
+    id: string | null // null = base role
+    label: string     // e.g. "Student" or "Secretary, Coding Club"
+    org_name?: string
+    org_slug?: string
+}
+
+// =====================================================
+// Content Models
+// =====================================================
 
 export interface BlogPost {
     id: string
     author_id: string
+    posting_identity_id?: string
     title: string
     slug: string
     content: string
@@ -68,6 +146,7 @@ export interface BlogPost {
     updated_at: string
     // Joined fields
     author?: User
+    posting_identity?: UserPosition
 }
 
 export interface BlogComment {
@@ -90,21 +169,17 @@ export interface MarketplaceItem {
     title: string
     description: string
     category: string
-    subcategory?: string
     price: number
     is_negotiable: boolean
     condition: ItemCondition
     status: TransactionStatus
-    quantity: number
     images?: string[]
     pickup_location?: string
-    delivery_available: boolean
     view_count: number
     favorite_count: number
     inquiry_count: number
     created_at: string
     updated_at: string
-    sold_at?: string
     expires_at?: string
     seller?: User
 }
@@ -121,7 +196,6 @@ export interface LostFoundItem {
     date_lost_found: string
     time_lost_found?: string
     contact_info?: string
-    verification_questions?: Record<string, unknown>
     images?: string[]
     created_at: string
     updated_at: string
@@ -166,6 +240,7 @@ export interface CommunityPost {
 export interface Notice {
     id: string
     posted_by: string
+    posting_identity_id?: string
     title: string
     content: string
     category: string
@@ -183,6 +258,7 @@ export interface Notice {
     created_at: string
     updated_at: string
     poster?: User
+    posting_identity?: UserPosition
 }
 
 export interface Location {
@@ -208,6 +284,7 @@ export interface Location {
 export interface Event {
     id: string
     organizer_id: string
+    posting_identity_id?: string
     title: string
     slug: string
     description: string
@@ -240,24 +317,7 @@ export interface Event {
     updated_at: string
     organizer?: User
     location?: Location
-}
-
-export interface Club {
-    id: string
-    name: string
-    slug: string
-    description?: string
-    category?: string
-    logo_url?: string
-    cover_image_url?: string
-    email?: string
-    social_links?: Record<string, string>
-    member_count: number
-    event_count: number
-    is_active: boolean
-    founded_year?: number
-    created_at: string
-    updated_at: string
+    posting_identity?: UserPosition
 }
 
 export interface QuickLink {
@@ -268,7 +328,6 @@ export interface QuickLink {
     url: string
     icon_url?: string
     category: string
-    subcategory?: string
     target_roles?: UserRole[]
     display_order: number
     is_featured: boolean
@@ -281,6 +340,7 @@ export interface QuickLink {
 export interface FeedPost {
     id: string
     author_id: string
+    posting_identity_id?: string
     content: string
     media_urls?: string[]
     source_type?: string
@@ -294,6 +354,7 @@ export interface FeedPost {
     created_at: string
     updated_at: string
     author?: User
+    posting_identity?: UserPosition
 }
 
 export interface Notification {

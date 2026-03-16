@@ -1,5 +1,3 @@
-'use client'
-
 import { AuthProvider } from '@/contexts/AuthContext'
 import Sidebar from '@/components/Sidebar'
 import Header from '@/components/Header'

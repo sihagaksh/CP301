@@ -1,20 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { Search, Bell, User } from 'lucide-react'
+import { Search, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function Header() {
-    const { user } = useAuth()
+    const { postingIdentities, activeIdentity, setActiveIdentity } = useAuth()
     const [searchFocused, setSearchFocused] = useState(false)
-
-    const initials = user?.full_name
-        ?.split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2) || '?'
+    const [showIdentityMenu, setShowIdentityMenu] = useState(false)
 
     return (
         <header className="app-header">
@@ -29,18 +22,34 @@ export default function Header() {
             </div>
 
             <div className="header-actions">
-                <Link href="/notifications" className="header-icon-btn" title="Notifications">
-                    <Bell size={20} />
-                    <span className="notification-dot" />
-                </Link>
+                {/* Posting Identity Selector */}
+                {postingIdentities.length > 1 && (
+                    <div style={{ position: 'relative' }}>
+                        <button className="identity-selector" onClick={() => setShowIdentityMenu(!showIdentityMenu)}>
+                            <span className="identity-label">{activeIdentity?.label}</span>
+                            <ChevronDown size={14} />
+                        </button>
+                        {showIdentityMenu && (
+                            <>
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 149 }} onClick={() => setShowIdentityMenu(false)} />
+                                <div className="identity-dropdown">
+                                    <div style={{ padding: '8px 12px', fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Post as</div>
+                                    {postingIdentities.map((identity, i) => (
+                                        <button
+                                            key={i}
+                                            className={`identity-option ${activeIdentity?.id === identity.id ? 'active' : ''}`}
+                                            onClick={() => { setActiveIdentity(identity); setShowIdentityMenu(false) }}
+                                        >
+                                            <span>{identity.label}</span>
+                                            {identity.org_name && <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{identity.org_name}</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
 
-                <Link href="/profile" className="header-avatar" title="Profile">
-                    {user?.profile_picture_url ? (
-                        <img src={user.profile_picture_url} alt={user.full_name} />
-                    ) : (
-                        <span>{initials}</span>
-                    )}
-                </Link>
             </div>
 
             <style jsx>{`
@@ -50,7 +59,7 @@ export default function Header() {
           left: var(--sidebar-current-width, var(--sidebar-width));
           right: 0;
           height: var(--header-height);
-          background: rgba(10, 10, 15, 0.8);
+          background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           border-bottom: 1px solid var(--glass-border);
@@ -107,61 +116,6 @@ export default function Header() {
           margin-left: 20px;
         }
 
-        .header-icon-btn {
-          position: relative;
-          width: 38px;
-          height: 38px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: var(--radius-md);
-          color: var(--text-secondary);
-          transition: all var(--transition-fast);
-          text-decoration: none;
-        }
-
-        .header-icon-btn:hover {
-          background: var(--glass-hover);
-          color: var(--text-primary);
-        }
-
-        .notification-dot {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          width: 8px;
-          height: 8px;
-          background: var(--accent-danger);
-          border-radius: 50%;
-          border: 2px solid var(--bg-primary);
-        }
-
-        .header-avatar {
-          width: 36px;
-          height: 36px;
-          border-radius: var(--radius-full);
-          background: var(--gradient-accent);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 600;
-          font-size: 0.8rem;
-          color: white;
-          overflow: hidden;
-          text-decoration: none;
-          transition: all var(--transition-fast);
-        }
-
-        .header-avatar:hover {
-          box-shadow: 0 0 0 2px var(--accent-primary);
-        }
-
-        .header-avatar img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
         @media (max-width: 768px) {
           .app-header {
             left: 0;
@@ -171,6 +125,76 @@ export default function Header() {
           .header-search {
             max-width: 100%;
           }
+
+          .identity-selector {
+            display: none;
+          }
+        }
+
+        .identity-selector {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: var(--bg-tertiary);
+          border: 1px solid var(--glass-border);
+          border-radius: var(--radius-md);
+          color: var(--text-secondary);
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+          font-family: inherit;
+          white-space: nowrap;
+        }
+
+        .identity-selector:hover {
+          border-color: var(--accent-primary);
+          color: var(--text-primary);
+        }
+
+        .identity-label {
+          max-width: 140px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .identity-dropdown {
+          position: absolute;
+          top: calc(100% + 6px);
+          right: 0;
+          background: var(--bg-secondary);
+          border: 1px solid var(--glass-border);
+          border-radius: var(--radius-md);
+          min-width: 220px;
+          z-index: 150;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+          overflow: hidden;
+        }
+
+        .identity-option {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          width: 100%;
+          padding: 10px 14px;
+          background: none;
+          border: none;
+          color: var(--text-secondary);
+          font-size: 0.85rem;
+          cursor: pointer;
+          font-family: inherit;
+          transition: all var(--transition-fast);
+          gap: 2px;
+        }
+
+        .identity-option:hover {
+          background: var(--glass-hover);
+          color: var(--text-primary);
+        }
+
+        .identity-option.active {
+          color: var(--accent-primary);
+          background: rgba(245,158,11,0.06);
         }
       `}</style>
         </header>

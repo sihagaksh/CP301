@@ -1,19 +1,25 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Megaphone, Search, AlertTriangle, Info, Clock, Pin, Filter } from 'lucide-react'
+import { Megaphone, Search, AlertTriangle, Info, Clock, Pin, Filter, Plus, Send } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { Notice } from '@/lib/types'
 import { format } from 'date-fns'
 
-const noticeCategories = ['All', 'Academic', 'Administrative', 'Placement', 'Hostel', 'Sports', 'General']
+const noticeCategories = ['All', 'Academic', 'Administrative', 'Placement', 'Hostel', 'Sports', 'Wellness', 'General']
 
 export default function NoticesPage() {
+    const { user, postingIdentities, activeIdentity } = useAuth()
     const [notices, setNotices] = useState<Notice[]>([])
     const [loading, setLoading] = useState(true)
     const [category, setCategory] = useState('All')
     const [searchQuery, setSearchQuery] = useState('')
+    const [showCreate, setShowCreate] = useState(false)
+    const [newNotice, setNewNotice] = useState<{ title: string; content: string; category: string; priority: 'low' | 'medium' | 'high' | 'urgent' }>({ title: '', content: '', category: 'general', priority: 'medium' })
+    const [creating, setCreating] = useState(false)
     const supabase = createClient()
+    const canPost = user && (user.role === 'faculty' || user.role === 'staff' || user.is_admin)
 
     useEffect(() => { loadNotices() }, [category]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -21,7 +27,7 @@ export default function NoticesPage() {
         setLoading(true)
         let query = supabase
             .from('notices')
-            .select('*, poster:users(id, full_name, role)')
+            .select('*, poster:users(id, full_name, role), posting_identity:user_positions(id, title, organization:organizations(name))')
             .eq('is_active', true)
             .order('is_pinned', { ascending: false })
             .order('created_at', { ascending: false })
@@ -31,6 +37,24 @@ export default function NoticesPage() {
         const { data } = await query
         setNotices((data as Notice[]) || [])
         setLoading(false)
+    }
+
+    async function createNotice() {
+        if (!user || !newNotice.title.trim()) return
+        setCreating(true)
+        await supabase.from('notices').insert({
+            posted_by: user.id,
+            title: newNotice.title,
+            content: newNotice.content,
+            category: newNotice.category,
+            priority: newNotice.priority,
+            posting_identity_id: activeIdentity?.id || null,
+            is_active: true,
+        })
+        setNewNotice({ title: '', content: '', category: 'general', priority: 'medium' })
+        setShowCreate(false)
+        setCreating(false)
+        loadNotices()
     }
 
     const filtered = searchQuery ? notices.filter(n => n.title.toLowerCase().includes(searchQuery.toLowerCase())) : notices
@@ -49,7 +73,47 @@ export default function NoticesPage() {
                     <h1 className="page-title">📢 Notices</h1>
                     <p className="page-subtitle">Official announcements and institute updates</p>
                 </div>
+                {canPost && (
+                    <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)}>
+                        <Plus size={18} /> Post Notice
+                    </button>
+                )}
             </div>
+
+            {showCreate && canPost && (
+                <div className="glass-card-static" style={{ marginBottom: 20 }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 14 }}>Create Notice</h3>
+                    <div className="form-group">
+                        <input className="input-field" placeholder="Notice title" value={newNotice.title} onChange={e => setNewNotice(p => ({ ...p, title: e.target.value }))} />
+                    </div>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <select className="select-field" value={newNotice.category} onChange={e => setNewNotice(p => ({ ...p, category: e.target.value }))}>
+                                {noticeCategories.filter(c => c !== 'All').map(c => <option key={c} value={c.toLowerCase()}>{c}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <select className="select-field" value={newNotice.priority} onChange={e => setNewNotice(p => ({ ...p, priority: e.target.value as 'low' | 'medium' | 'high' | 'urgent' }))}>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="form-group">
+                        <textarea className="textarea-field" rows={3} placeholder="Notice content..." value={newNotice.content} onChange={e => setNewNotice(p => ({ ...p, content: e.target.value }))} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        {postingIdentities.length > 1 && (
+                            <p className="text-sm text-muted">Posting as <strong style={{ color: 'var(--accent-primary)' }}>{activeIdentity?.label}</strong></p>
+                        )}
+                        <button className="btn btn-primary btn-sm" onClick={createNotice} disabled={creating} style={{ marginLeft: 'auto' }}>
+                            <Send size={14} /> {creating ? 'Posting...' : 'Post Notice'}
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="flex gap-4 mb-6" style={{ flexWrap: 'wrap' }}>
                 <div className="search-bar" style={{ flex: 1, minWidth: 250 }}>
@@ -89,7 +153,10 @@ export default function NoticesPage() {
                                     <div className="flex gap-2 mt-4">{notice.attachments.map((a, i) => <a key={i} href={a} target="_blank" rel="noopener" className="btn btn-secondary btn-sm">📎 Attachment {i + 1}</a>)}</div>
                                 )}
                                 <div style={{ borderTop: '1px solid var(--glass-border)', marginTop: 14, paddingTop: 10 }} className="flex items-center justify-between">
-                                    <span className="text-xs text-muted">Posted by {poster?.full_name} ({poster?.role})</span>
+                                    <span className="text-xs text-muted">
+                                        Posted by {poster?.full_name}
+                                        {(() => { const pi = (notice as unknown as { posting_identity?: { title: string; organization?: { name: string } } }).posting_identity; return pi?.title ? ` (${pi.title}${pi.organization?.name ? `, ${pi.organization.name}` : ''})` : ` (${poster?.role})` })()}
+                                    </span>
                                     {notice.valid_until && <span className="text-xs text-muted">Valid until {format(new Date(notice.valid_until), 'MMM d, yyyy')}</span>}
                                 </div>
                             </div>

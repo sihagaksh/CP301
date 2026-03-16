@@ -15,6 +15,9 @@ const eventTypes: { label: string; value: EventType | 'all' }[] = [
     { label: 'Competition', value: 'competition' },
     { label: 'Cultural', value: 'cultural' },
     { label: 'Sports', value: 'sports' },
+    { label: 'E-Sports', value: 'esports' },
+    { label: 'Literary', value: 'literary' },
+    { label: 'Fest', value: 'fest' },
     { label: 'Club', value: 'club_activity' },
 ]
 
@@ -31,7 +34,7 @@ export default function EventsPage() {
         setLoading(true)
         let query = supabase
             .from('events')
-            .select('*, organizer:users(id, full_name), location:locations(name, code)')
+            .select('*, organizer:users(id, full_name), location:locations(name, code), posting_identity:user_positions(id, title, organization:organizations(name))')
             .eq('is_published', true)
             .eq('is_cancelled', false)
             .order('start_time', { ascending: true })
@@ -46,7 +49,7 @@ export default function EventsPage() {
     const filtered = searchQuery ? events.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase())) : events
 
     const typeBadgeColor = (t: EventType) => {
-        const map: Record<string, string> = { ismp: 'badge-gold', workshop: 'badge-blue', seminar: 'badge-purple', competition: 'badge-red', cultural: 'badge-green', sports: 'badge-gold', club_activity: 'badge-blue' }
+        const map: Record<string, string> = { ismp: 'badge-gold', workshop: 'badge-blue', seminar: 'badge-purple', competition: 'badge-red', cultural: 'badge-green', sports: 'badge-gold', esports: 'badge-red', literary: 'badge-purple', fest: 'badge-gold', club_activity: 'badge-blue' }
         return map[t] || 'badge-neutral'
     }
 

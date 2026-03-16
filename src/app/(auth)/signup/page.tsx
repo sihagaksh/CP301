@@ -3,9 +3,29 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, User, Building, Hash, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, User, Building, Hash, ArrowRight, Eye, EyeOff, Calendar, Briefcase } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserRole } from '@/lib/types'
+
+const DEPARTMENTS = [
+    'Computer Science and Engineering',
+    'Electrical Engineering',
+    'Mechanical Engineering',
+    'Civil Engineering',
+    'Chemical Engineering',
+    'Mathematics',
+    'Physics',
+    'Chemistry',
+    'Humanities and Social Sciences',
+    'Biomedical Engineering',
+    'Metallurgical and Materials Engineering',
+]
+
+const BRANCHES = [
+    'B.Tech CSE', 'B.Tech EE', 'B.Tech ME', 'B.Tech CE', 'B.Tech ChE',
+    'B.Tech Maths & Computing', 'B.Tech AI & DS',
+    'M.Tech', 'M.Sc', 'MBA', 'PhD',
+]
 
 export default function SignupPage() {
     const router = useRouter()
@@ -16,10 +36,15 @@ export default function SignupPage() {
         full_name: '',
         role: 'student' as UserRole,
         department: '',
+        branch: '',
         batch: '',
         enrollment_number: '',
         employee_id: '',
         designation: '',
+        current_organization: '',
+        current_position: '',
+        guest_purpose: '',
+        guest_valid_until: '',
     })
     const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState('')
@@ -38,10 +63,15 @@ export default function SignupPage() {
             full_name: form.full_name,
             role: form.role,
             department: form.department || undefined,
+            branch: form.branch || undefined,
             batch: form.batch || undefined,
             enrollment_number: form.enrollment_number || undefined,
             employee_id: form.employee_id || undefined,
             designation: form.designation || undefined,
+            current_organization: form.current_organization || undefined,
+            current_position: form.current_position || undefined,
+            guest_purpose: form.guest_purpose || undefined,
+            guest_valid_until: form.guest_valid_until || undefined,
         })
 
         if (error) {
@@ -55,6 +85,8 @@ export default function SignupPage() {
 
     const isStudent = form.role === 'student'
     const isFacultyStaff = form.role === 'faculty' || form.role === 'staff'
+    const isAlumni = form.role === 'alumni'
+    const isGuest = form.role === 'guest'
 
     return (
         <div className="auth-page">
@@ -101,25 +133,36 @@ export default function SignupPage() {
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <div className="auth-input-group">
-                            <Building size={18} />
-                            <input type="text" placeholder="Department (e.g. CSE, ECE)" value={form.department} onChange={(e) => update('department', e.target.value)} />
+                    {!isGuest && (
+                        <div className="form-group">
+                            <label className="input-label">Department</label>
+                            <select className="select-field" value={form.department} onChange={(e) => update('department', e.target.value)}>
+                                <option value="">Select Department</option>
+                                {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
                         </div>
-                    </div>
+                    )}
+
+                    {(isStudent || isAlumni) && (
+                        <div className="form-group">
+                            <label className="input-label">Branch / Programme</label>
+                            <select className="select-field" value={form.branch} onChange={(e) => update('branch', e.target.value)}>
+                                <option value="">Select Branch</option>
+                                {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+                            </select>
+                        </div>
+                    )}
 
                     {isStudent && (
-                        <>
-                            <div className="form-row" style={{ marginBottom: 14 }}>
-                                <div className="auth-input-group" style={{ marginBottom: 0 }}>
-                                    <Hash size={18} />
-                                    <input type="text" placeholder="Enrollment No." value={form.enrollment_number} onChange={(e) => update('enrollment_number', e.target.value)} />
-                                </div>
-                                <div className="auth-input-group" style={{ marginBottom: 0 }}>
-                                    <input type="text" placeholder="Batch (e.g. 2022)" value={form.batch} onChange={(e) => update('batch', e.target.value)} />
-                                </div>
+                        <div className="form-row" style={{ marginBottom: 14 }}>
+                            <div className="auth-input-group" style={{ marginBottom: 0 }}>
+                                <Hash size={18} />
+                                <input type="text" placeholder="Enrollment No." value={form.enrollment_number} onChange={(e) => update('enrollment_number', e.target.value)} />
                             </div>
-                        </>
+                            <div className="auth-input-group" style={{ marginBottom: 0 }}>
+                                <input type="text" placeholder="Batch (e.g. 2022)" value={form.batch} onChange={(e) => update('batch', e.target.value)} />
+                            </div>
+                        </div>
                     )}
 
                     {isFacultyStaff && (
@@ -132,6 +175,39 @@ export default function SignupPage() {
                                 <input type="text" placeholder="Designation" value={form.designation} onChange={(e) => update('designation', e.target.value)} />
                             </div>
                         </div>
+                    )}
+
+                    {isAlumni && (
+                        <>
+                            <div className="auth-input-group">
+                                <input type="text" placeholder="Batch / Graduation Year (e.g. 2020)" value={form.batch} onChange={(e) => update('batch', e.target.value)} />
+                            </div>
+                            <div className="form-row" style={{ marginBottom: 14 }}>
+                                <div className="auth-input-group" style={{ marginBottom: 0 }}>
+                                    <Briefcase size={18} />
+                                    <input type="text" placeholder="Current Organization" value={form.current_organization} onChange={(e) => update('current_organization', e.target.value)} />
+                                </div>
+                                <div className="auth-input-group" style={{ marginBottom: 0 }}>
+                                    <input type="text" placeholder="Current Position" value={form.current_position} onChange={(e) => update('current_position', e.target.value)} />
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {isGuest && (
+                        <>
+                            <div className="auth-input-group">
+                                <Building size={18} />
+                                <input type="text" placeholder="Purpose of visit" value={form.guest_purpose} onChange={(e) => update('guest_purpose', e.target.value)} />
+                            </div>
+                            <div className="form-group">
+                                <label className="input-label">Access valid until</label>
+                                <div className="auth-input-group" style={{ marginBottom: 0 }}>
+                                    <Calendar size={18} />
+                                    <input type="date" value={form.guest_valid_until} onChange={(e) => update('guest_valid_until', e.target.value)} />
+                                </div>
+                            </div>
+                        </>
                     )}
 
                     <button type="submit" className="btn btn-primary btn-lg w-full" disabled={loading}>

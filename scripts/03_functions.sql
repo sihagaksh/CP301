@@ -1,208 +1,136 @@
 -- =====================================================
--- HELPER FUNCTIONS & STORED PROCEDURES
+-- STORED FUNCTIONS FOR IIT ROPAR COMMUNITY PLATFORM
 -- =====================================================
--- Useful database functions for the Institute Community App
--- Run this AFTER running 01_schema.sql
--- =====================================================
-
--- =====================================================
--- SEARCH FUNCTIONS
+-- Run after 01_schema.sql and 02_seed_data.sql
 -- =====================================================
 
--- Function to search blog posts by text
-CREATE OR REPLACE FUNCTION search_blogs(search_query TEXT)
-RETURNS TABLE (
-    id UUID,
-    title VARCHAR,
-    excerpt TEXT,
-    author_name VARCHAR,
-    category blog_category,
-    published_at TIMESTAMP,
-    rank REAL
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        bp.id,
-        bp.title,
-        bp.excerpt,
-        u.full_name as author_name,
-        bp.category,
-        bp.published_at,
-        ts_rank(bp.search_vector, query) as rank
-    FROM blog_posts bp
-    JOIN users u ON bp.author_id = u.id,
-    to_tsquery('english', search_query) query
-    WHERE bp.search_vector @@ query
-      AND bp.status = 'published'
-    ORDER BY rank DESC, bp.published_at DESC;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to search marketplace items
-CREATE OR REPLACE FUNCTION search_marketplace(search_query TEXT)
-RETURNS TABLE (
-    id UUID,
-    title VARCHAR,
-    description TEXT,
-    price DECIMAL,
-    category VARCHAR,
-    seller_name VARCHAR,
-    rank REAL
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        mi.id,
-        mi.title,
-        mi.description,
-        mi.price,
-        mi.category,
-        u.full_name as seller_name,
-        ts_rank(mi.search_vector, query) as rank
-    FROM marketplace_items mi
-    JOIN users u ON mi.seller_id = u.id,
-    to_tsquery('english', search_query) query
-    WHERE mi.search_vector @@ query
-      AND mi.status = 'available'
-    ORDER BY rank DESC, mi.created_at DESC;
-END;
-$$ LANGUAGE plpgsql;
+-- Drop all functions first
+DROP FUNCTION IF EXISTS search_blogs(TEXT, blog_category) CASCADE;
+DROP FUNCTION IF EXISTS search_marketplace(TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS get_user_stats(UUID) CASCADE;
+DROP FUNCTION IF EXISTS get_platform_stats() CASCADE;
+DROP FUNCTION IF EXISTS create_notification(UUID, VARCHAR, TEXT, VARCHAR, VARCHAR, UUID, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS mark_notifications_read(UUID) CASCADE;
+DROP FUNCTION IF EXISTS get_unread_notification_count(UUID) CASCADE;
+DROP FUNCTION IF EXISTS is_community_member(UUID, UUID) CASCADE;
+DROP FUNCTION IF EXISTS get_user_communities(UUID) CASCADE;
+DROP FUNCTION IF EXISTS is_event_full(UUID) CASCADE;
+DROP FUNCTION IF EXISTS register_for_event(UUID, UUID) CASCADE;
+DROP FUNCTION IF EXISTS get_personalized_feed(UUID, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS increment_view_count(TEXT, UUID) CASCADE;
+DROP FUNCTION IF EXISTS get_user_positions(UUID) CASCADE;
+DROP FUNCTION IF EXISTS get_user_posting_identities(UUID) CASCADE;
+DROP FUNCTION IF EXISTS get_organization_hierarchy(UUID) CASCADE;
+DROP FUNCTION IF EXISTS get_org_members_with_positions(UUID) CASCADE;
+DROP FUNCTION IF EXISTS is_org_member(UUID, UUID) CASCADE;
 
 -- =====================================================
--- RECOMMENDATION FUNCTIONS
+-- BLOG SEARCH (Full-text)
 -- =====================================================
 
--- Get recommended blog posts for a user based on their interests
-CREATE OR REPLACE FUNCTION get_recommended_blogs(
-    p_user_id UUID,
-    p_limit INTEGER DEFAULT 10
+CREATE OR REPLACE FUNCTION search_blogs(
+    search_query TEXT,
+    category_filter blog_category DEFAULT NULL
 )
-RETURNS TABLE (
-    id UUID,
-    title VARCHAR,
-    excerpt TEXT,
-    author_name VARCHAR,
-    category blog_category,
-    published_at TIMESTAMP
-) AS $$
+RETURNS SETOF blog_posts AS $$
 BEGIN
-    -- Simple recommendation based on user's department and role
-    -- Can be enhanced with ML/collaborative filtering
     RETURN QUERY
-    SELECT 
-        bp.id,
-        bp.title,
-        bp.excerpt,
-        u.full_name as author_name,
-        bp.category,
-        bp.published_at
+    SELECT bp.*
     FROM blog_posts bp
-    JOIN users u ON bp.author_id = u.id
     WHERE bp.status = 'published'
+      AND (category_filter IS NULL OR bp.category = category_filter)
       AND (
-          -- Same department blogs
-          u.department = (SELECT department FROM users WHERE id = p_user_id)
-          -- Or placement/internship blogs for students
-          OR (bp.category IN ('placement', 'internship') 
-              AND (SELECT role FROM users WHERE id = p_user_id) = 'student')
+          search_query IS NULL
+          OR search_query = ''
+          OR bp.search_vector @@ plainto_tsquery('english', search_query)
+          OR bp.title ILIKE '%' || search_query || '%'
+          OR bp.company_name ILIKE '%' || search_query || '%'
       )
-    ORDER BY bp.published_at DESC
-    LIMIT p_limit;
+    ORDER BY
+        CASE WHEN search_query IS NOT NULL AND search_query != ''
+            THEN ts_rank(bp.search_vector, plainto_tsquery('english', search_query))
+            ELSE 0
+        END DESC,
+        bp.published_at DESC NULLS LAST;
 END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- ANALYTICS FUNCTIONS
+-- MARKETPLACE SEARCH
 -- =====================================================
 
--- Get user engagement statistics
+CREATE OR REPLACE FUNCTION search_marketplace(
+    search_query TEXT DEFAULT NULL,
+    category_filter TEXT DEFAULT NULL
+)
+RETURNS SETOF marketplace_items AS $$
+BEGIN
+    RETURN QUERY
+    SELECT mi.*
+    FROM marketplace_items mi
+    WHERE mi.status = 'available'
+      AND (category_filter IS NULL OR mi.category = category_filter)
+      AND (
+          search_query IS NULL
+          OR search_query = ''
+          OR mi.search_vector @@ plainto_tsquery('english', search_query)
+          OR mi.title ILIKE '%' || search_query || '%'
+      )
+    ORDER BY mi.created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- USER STATS
+-- =====================================================
+
 CREATE OR REPLACE FUNCTION get_user_stats(p_user_id UUID)
-RETURNS TABLE (
-    blog_posts_count INTEGER,
-    marketplace_items_count INTEGER,
-    community_memberships_count INTEGER,
-    events_registered_count INTEGER,
-    total_blog_likes INTEGER,
-    total_blog_views INTEGER
-) AS $$
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
 BEGIN
-    RETURN QUERY
-    SELECT 
-        (SELECT COUNT(*)::INTEGER FROM blog_posts WHERE author_id = p_user_id),
-        (SELECT COUNT(*)::INTEGER FROM marketplace_items WHERE seller_id = p_user_id),
-        (SELECT COUNT(*)::INTEGER FROM community_members WHERE user_id = p_user_id),
-        (SELECT COUNT(*)::INTEGER FROM event_registrations WHERE user_id = p_user_id),
-        (SELECT COALESCE(SUM(like_count), 0)::INTEGER FROM blog_posts WHERE author_id = p_user_id),
-        (SELECT COALESCE(SUM(view_count), 0)::INTEGER FROM blog_posts WHERE author_id = p_user_id);
+    SELECT json_build_object(
+        'blog_count', (SELECT COUNT(*) FROM blog_posts WHERE author_id = p_user_id AND status = 'published'),
+        'marketplace_count', (SELECT COUNT(*) FROM marketplace_items WHERE seller_id = p_user_id),
+        'event_count', (SELECT COUNT(*) FROM events WHERE organizer_id = p_user_id),
+        'community_count', (SELECT COUNT(*) FROM community_members WHERE user_id = p_user_id),
+        'org_count', (SELECT COUNT(*) FROM org_members WHERE user_id = p_user_id AND status = 'approved'),
+        'position_count', (SELECT COUNT(*) FROM user_positions WHERE user_id = p_user_id AND is_active = TRUE),
+        'feed_posts', (SELECT COUNT(*) FROM feed_posts WHERE author_id = p_user_id),
+        'total_likes', (SELECT COALESCE(SUM(like_count), 0) FROM blog_posts WHERE author_id = p_user_id)
+    ) INTO result;
+    RETURN result;
 END;
 $$ LANGUAGE plpgsql;
 
--- Get platform statistics (admin dashboard)
+-- =====================================================
+-- PLATFORM STATS
+-- =====================================================
+
 CREATE OR REPLACE FUNCTION get_platform_stats()
-RETURNS TABLE (
-    total_users INTEGER,
-    total_students INTEGER,
-    total_faculty INTEGER,
-    total_alumni INTEGER,
-    total_blog_posts INTEGER,
-    total_marketplace_items INTEGER,
-    total_events INTEGER,
-    total_communities INTEGER,
-    active_users_last_7_days INTEGER
-) AS $$
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
 BEGIN
-    RETURN QUERY
-    SELECT 
-        (SELECT COUNT(*)::INTEGER FROM users),
-        (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'student'),
-        (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'faculty'),
-        (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'alumni'),
-        (SELECT COUNT(*)::INTEGER FROM blog_posts WHERE status = 'published'),
-        (SELECT COUNT(*)::INTEGER FROM marketplace_items WHERE status = 'available'),
-        (SELECT COUNT(*)::INTEGER FROM events WHERE is_published = TRUE AND is_cancelled = FALSE),
-        (SELECT COUNT(*)::INTEGER FROM communities),
-        (SELECT COUNT(DISTINCT user_id)::INTEGER FROM activity_logs WHERE created_at > NOW() - INTERVAL '7 days');
-END;
-$$ LANGUAGE plpgsql;
-
--- Get trending blog posts (most viewed/liked in last week)
-CREATE OR REPLACE FUNCTION get_trending_blogs(p_limit INTEGER DEFAULT 10)
-RETURNS TABLE (
-    id UUID,
-    title VARCHAR,
-    excerpt TEXT,
-    author_name VARCHAR,
-    category blog_category,
-    view_count INTEGER,
-    like_count INTEGER,
-    published_at TIMESTAMP
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        bp.id,
-        bp.title,
-        bp.excerpt,
-        u.full_name as author_name,
-        bp.category,
-        bp.view_count,
-        bp.like_count,
-        bp.published_at
-    FROM blog_posts bp
-    JOIN users u ON bp.author_id = u.id
-    WHERE bp.status = 'published'
-      AND bp.published_at > NOW() - INTERVAL '30 days'
-    ORDER BY (bp.view_count * 0.3 + bp.like_count * 0.7) DESC
-    LIMIT p_limit;
+    SELECT json_build_object(
+        'total_users', (SELECT COUNT(*) FROM users WHERE status = 'active'),
+        'total_students', (SELECT COUNT(*) FROM users WHERE role = 'student' AND status = 'active'),
+        'total_faculty', (SELECT COUNT(*) FROM users WHERE role = 'faculty' AND status = 'active'),
+        'total_blogs', (SELECT COUNT(*) FROM blog_posts WHERE status = 'published'),
+        'total_events', (SELECT COUNT(*) FROM events WHERE is_published = TRUE),
+        'total_marketplace', (SELECT COUNT(*) FROM marketplace_items WHERE status = 'available'),
+        'total_organizations', (SELECT COUNT(*) FROM organizations WHERE is_active = TRUE),
+        'total_communities', (SELECT COUNT(*) FROM communities),
+        'total_notices', (SELECT COUNT(*) FROM notices WHERE is_active = TRUE)
+    ) INTO result;
+    RETURN result;
 END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- NOTIFICATION FUNCTIONS
+-- NOTIFICATION HELPERS
 -- =====================================================
 
--- Create notification helper function
 CREATE OR REPLACE FUNCTION create_notification(
     p_user_id UUID,
     p_title VARCHAR,
@@ -214,349 +142,153 @@ CREATE OR REPLACE FUNCTION create_notification(
 )
 RETURNS UUID AS $$
 DECLARE
-    notification_id UUID;
+    new_id UUID;
 BEGIN
-    INSERT INTO notifications (
-        user_id,
-        title,
-        message,
-        type,
-        entity_type,
-        entity_id,
-        action_url
-    ) VALUES (
-        p_user_id,
-        p_title,
-        p_message,
-        p_type,
-        p_entity_type,
-        p_entity_id,
-        p_action_url
-    ) RETURNING id INTO notification_id;
-    
-    RETURN notification_id;
+    INSERT INTO notifications (user_id, title, message, type, entity_type, entity_id, action_url)
+    VALUES (p_user_id, p_title, p_message, p_type, p_entity_type, p_entity_id, p_action_url)
+    RETURNING id INTO new_id;
+    RETURN new_id;
 END;
 $$ LANGUAGE plpgsql;
 
--- Mark notifications as read
-CREATE OR REPLACE FUNCTION mark_notifications_read(p_user_id UUID, p_notification_ids UUID[])
-RETURNS INTEGER AS $$
-DECLARE
-    updated_count INTEGER;
+CREATE OR REPLACE FUNCTION mark_notifications_read(p_user_id UUID)
+RETURNS VOID AS $$
 BEGIN
-    UPDATE notifications 
-    SET is_read = TRUE, read_at = NOW()
-    WHERE user_id = p_user_id 
-      AND id = ANY(p_notification_ids)
-      AND is_read = FALSE;
-    
-    GET DIAGNOSTICS updated_count = ROW_COUNT;
-    RETURN updated_count;
+    UPDATE notifications SET is_read = TRUE, read_at = NOW()
+    WHERE user_id = p_user_id AND is_read = FALSE;
 END;
 $$ LANGUAGE plpgsql;
 
--- Get unread notification count
 CREATE OR REPLACE FUNCTION get_unread_notification_count(p_user_id UUID)
 RETURNS INTEGER AS $$
+DECLARE
+    count_val INTEGER;
 BEGIN
-    RETURN (SELECT COUNT(*)::INTEGER FROM notifications WHERE user_id = p_user_id AND is_read = FALSE);
+    SELECT COUNT(*) INTO count_val
+    FROM notifications
+    WHERE user_id = p_user_id AND is_read = FALSE;
+    RETURN count_val;
 END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- LOCATION & NAVIGATION FUNCTIONS
+-- COMMUNITY HELPERS
 -- =====================================================
 
--- Find nearest locations to a point
-CREATE OR REPLACE FUNCTION find_nearby_locations(
-    p_latitude DECIMAL,
-    p_longitude DECIMAL,
-    p_radius_meters INTEGER DEFAULT 1000,
-    p_limit INTEGER DEFAULT 10
-)
-RETURNS TABLE (
-    id UUID,
-    name VARCHAR,
-    code VARCHAR,
-    type location_type,
-    distance_meters DECIMAL
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        l.id,
-        l.name,
-        l.code,
-        l.type,
-        ST_Distance(
-            l.coordinates::geography,
-            ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography
-        )::DECIMAL as distance_meters
-    FROM locations l
-    WHERE ST_DWithin(
-        l.coordinates::geography,
-        ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography,
-        p_radius_meters
-    )
-    ORDER BY distance_meters
-    LIMIT p_limit;
-END;
-$$ LANGUAGE plpgsql;
-
--- Get route between two locations
-CREATE OR REPLACE FUNCTION get_route(
-    p_from_location_id UUID,
-    p_to_location_id UUID
-)
-RETURNS TABLE (
-    distance_meters DECIMAL,
-    estimated_time_minutes INTEGER,
-    description TEXT
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        nr.distance_meters,
-        nr.estimated_time_minutes,
-        nr.description
-    FROM navigation_routes nr
-    WHERE nr.from_location_id = p_from_location_id 
-      AND nr.to_location_id = p_to_location_id
-    LIMIT 1;
-END;
-$$ LANGUAGE plpgsql;
-
--- =====================================================
--- COMMUNITY & SOCIAL FUNCTIONS
--- =====================================================
-
--- Check if user is member of community
-CREATE OR REPLACE FUNCTION is_community_member(
-    p_user_id UUID,
-    p_community_id UUID
-)
+CREATE OR REPLACE FUNCTION is_community_member(p_community_id UUID, p_user_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
-        SELECT 1 FROM community_members 
-        WHERE user_id = p_user_id 
-          AND community_id = p_community_id
+        SELECT 1 FROM community_members
+        WHERE community_id = p_community_id AND user_id = p_user_id
     );
 END;
 $$ LANGUAGE plpgsql;
 
--- Get user's communities
 CREATE OR REPLACE FUNCTION get_user_communities(p_user_id UUID)
-RETURNS TABLE (
-    id UUID,
-    name VARCHAR,
-    slug VARCHAR,
-    description TEXT,
-    member_count INTEGER,
-    user_role VARCHAR
-) AS $$
+RETURNS SETOF communities AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
-        c.id,
-        c.name,
-        c.slug,
-        c.description,
-        c.member_count,
-        cm.role as user_role
+    SELECT c.*
     FROM communities c
-    JOIN community_members cm ON c.id = cm.community_id
+    INNER JOIN community_members cm ON c.id = cm.community_id
     WHERE cm.user_id = p_user_id
     ORDER BY c.name;
 END;
 $$ LANGUAGE plpgsql;
 
--- Get community feed (recent posts)
-CREATE OR REPLACE FUNCTION get_community_feed(
-    p_community_id UUID,
-    p_limit INTEGER DEFAULT 20,
-    p_offset INTEGER DEFAULT 0
-)
-RETURNS TABLE (
-    id UUID,
-    author_id UUID,
-    author_name VARCHAR,
-    author_avatar TEXT,
-    title VARCHAR,
-    content TEXT,
-    like_count INTEGER,
-    comment_count INTEGER,
-    is_pinned BOOLEAN,
-    created_at TIMESTAMP
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        cp.id,
-        cp.author_id,
-        u.full_name as author_name,
-        u.profile_picture_url as author_avatar,
-        cp.title,
-        cp.content,
-        cp.like_count,
-        cp.comment_count,
-        cp.is_pinned,
-        cp.created_at
-    FROM community_posts cp
-    JOIN users u ON cp.author_id = u.id
-    WHERE cp.community_id = p_community_id
-    ORDER BY cp.is_pinned DESC, cp.created_at DESC
-    LIMIT p_limit
-    OFFSET p_offset;
-END;
-$$ LANGUAGE plpgsql;
-
 -- =====================================================
--- EVENT MANAGEMENT FUNCTIONS
+-- EVENT HELPERS
 -- =====================================================
 
--- Check if event is full
 CREATE OR REPLACE FUNCTION is_event_full(p_event_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
-    max_participants INTEGER;
-    current_count INTEGER;
+    max_p INTEGER;
+    current_p INTEGER;
 BEGIN
-    SELECT max_participants, current_participants 
-    INTO max_participants, current_count
-    FROM events 
-    WHERE id = p_event_id;
-    
-    IF max_participants IS NULL THEN
-        RETURN FALSE; -- No limit
-    END IF;
-    
-    RETURN current_count >= max_participants;
+    SELECT max_participants, current_participants INTO max_p, current_p
+    FROM events WHERE id = p_event_id;
+    IF max_p IS NULL THEN RETURN FALSE; END IF;
+    RETURN current_p >= max_p;
 END;
 $$ LANGUAGE plpgsql;
 
--- Register for event
-CREATE OR REPLACE FUNCTION register_for_event(
-    p_event_id UUID,
-    p_user_id UUID,
-    p_registration_data JSONB DEFAULT NULL
-)
-RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION register_for_event(p_event_id UUID, p_user_id UUID)
+RETURNS JSON AS $$
 DECLARE
     is_full BOOLEAN;
-    already_registered BOOLEAN;
 BEGIN
-    -- Check if already registered
-    SELECT EXISTS (
-        SELECT 1 FROM event_registrations 
-        WHERE event_id = p_event_id AND user_id = p_user_id
-    ) INTO already_registered;
-    
-    IF already_registered THEN
-        RETURN FALSE;
-    END IF;
-    
-    -- Check if event is full
-    SELECT is_event_full(p_event_id) INTO is_full;
-    
+    is_full := is_event_full(p_event_id);
     IF is_full THEN
-        RETURN FALSE;
+        RETURN json_build_object('success', FALSE, 'message', 'Event is full');
     END IF;
-    
-    -- Register
-    INSERT INTO event_registrations (event_id, user_id, registration_data)
-    VALUES (p_event_id, p_user_id, p_registration_data);
-    
-    -- Update event participant count
-    UPDATE events 
-    SET current_participants = current_participants + 1
+
+    INSERT INTO event_registrations (event_id, user_id)
+    VALUES (p_event_id, p_user_id)
+    ON CONFLICT (event_id, user_id) DO NOTHING;
+
+    UPDATE events SET current_participants = current_participants + 1
     WHERE id = p_event_id;
-    
-    RETURN TRUE;
+
+    RETURN json_build_object('success', TRUE, 'message', 'Registration successful');
 END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- MARKETPLACE FUNCTIONS
+-- VIEW COUNT INCREMENT
 -- =====================================================
 
--- Get active items by category
-CREATE OR REPLACE FUNCTION get_marketplace_items_by_category(
-    p_category VARCHAR,
-    p_limit INTEGER DEFAULT 20,
-    p_offset INTEGER DEFAULT 0
-)
-RETURNS TABLE (
-    id UUID,
-    title VARCHAR,
-    description TEXT,
-    price DECIMAL,
-    condition item_condition,
-    seller_name VARCHAR,
-    seller_phone VARCHAR,
-    images TEXT[],
-    created_at TIMESTAMP
-) AS $$
+CREATE OR REPLACE FUNCTION increment_view_count(p_table TEXT, p_id UUID)
+RETURNS VOID AS $$
 BEGIN
-    RETURN QUERY
-    SELECT 
-        mi.id,
-        mi.title,
-        mi.description,
-        mi.price,
-        mi.condition,
-        u.full_name as seller_name,
-        u.phone_number as seller_phone,
-        mi.images,
-        mi.created_at
-    FROM marketplace_items mi
-    JOIN users u ON mi.seller_id = u.id
-    WHERE mi.category = p_category
-      AND mi.status = 'available'
-      AND (mi.expires_at IS NULL OR mi.expires_at > NOW())
-    ORDER BY mi.created_at DESC
-    LIMIT p_limit
-    OFFSET p_offset;
+    IF p_table = 'blog_posts' THEN
+        UPDATE blog_posts SET view_count = view_count + 1 WHERE id = p_id;
+    ELSIF p_table = 'events' THEN
+        UPDATE events SET view_count = view_count + 1 WHERE id = p_id;
+    ELSIF p_table = 'marketplace_items' THEN
+        UPDATE marketplace_items SET view_count = view_count + 1 WHERE id = p_id;
+    ELSIF p_table = 'notices' THEN
+        UPDATE notices SET view_count = view_count + 1 WHERE id = p_id;
+    ELSIF p_table = 'feed_posts' THEN
+        UPDATE feed_posts SET view_count = view_count + 1 WHERE id = p_id;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- FEED GENERATION FUNCTIONS
+-- PERSONALIZED FEED
 -- =====================================================
 
--- Generate personalized feed for user
-CREATE OR REPLACE FUNCTION get_personalized_feed(
-    p_user_id UUID,
-    p_limit INTEGER DEFAULT 20,
-    p_offset INTEGER DEFAULT 0
-)
+CREATE OR REPLACE FUNCTION get_personalized_feed(p_user_id UUID, p_limit INTEGER DEFAULT 20)
 RETURNS TABLE (
     id UUID,
     author_id UUID,
-    author_name VARCHAR,
+    author_name TEXT,
     author_role user_role,
     author_avatar TEXT,
+    posting_identity_title TEXT,
+    posting_identity_org TEXT,
     content TEXT,
+    media_urls TEXT[],
     source_type VARCHAR,
     source_id UUID,
     like_count INTEGER,
     comment_count INTEGER,
-    created_at TIMESTAMP
+    created_at TIMESTAMPTZ
 ) AS $$
-DECLARE
-    user_role_val user_role;
 BEGIN
-    -- Get user's role
-    SELECT role INTO user_role_val FROM users WHERE id = p_user_id;
-    
     RETURN QUERY
-    SELECT 
+    SELECT
         fp.id,
         fp.author_id,
-        u.full_name as author_name,
-        u.role as author_role,
-        u.profile_picture_url as author_avatar,
+        u.full_name::TEXT,
+        u.role,
+        u.profile_picture_url::TEXT,
+        up.title::TEXT,
+        o.name::TEXT,
         fp.content,
+        fp.media_urls,
         fp.source_type,
         fp.source_id,
         fp.like_count,
@@ -564,150 +296,161 @@ BEGIN
         fp.created_at
     FROM feed_posts fp
     JOIN users u ON fp.author_id = u.id
+    LEFT JOIN user_positions up ON fp.posting_identity_id = up.id
+    LEFT JOIN organizations o ON up.org_id = o.id
     WHERE fp.is_public = TRUE
-      AND (
-          fp.target_roles IS NULL 
-          OR user_role_val = ANY(fp.target_roles)
-      )
     ORDER BY fp.created_at DESC
-    LIMIT p_limit
-    OFFSET p_offset;
+    LIMIT p_limit;
 END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- UTILITY FUNCTIONS
+-- USER POSITIONS / POR HELPERS
 -- =====================================================
 
--- Increment view count for any entity
-CREATE OR REPLACE FUNCTION increment_view_count(
-    p_table_name VARCHAR,
-    p_entity_id UUID
-)
-RETURNS VOID AS $$
+CREATE OR REPLACE FUNCTION get_user_positions(p_user_id UUID)
+RETURNS TABLE (
+    position_id UUID,
+    title TEXT,
+    por_type por_type,
+    org_id UUID,
+    org_name TEXT,
+    org_slug TEXT,
+    org_type org_type,
+    valid_from DATE,
+    valid_until DATE,
+    is_active BOOLEAN
+) AS $$
 BEGIN
-    EXECUTE format('UPDATE %I SET view_count = view_count + 1 WHERE id = $1', p_table_name)
-    USING p_entity_id;
+    RETURN QUERY
+    SELECT
+        up.id,
+        up.title::TEXT,
+        up.por_type,
+        o.id,
+        o.name::TEXT,
+        o.slug::TEXT,
+        o.type,
+        up.valid_from,
+        up.valid_until,
+        up.is_active
+    FROM user_positions up
+    JOIN organizations o ON up.org_id = o.id
+    WHERE up.user_id = p_user_id
+    ORDER BY up.is_active DESC, up.valid_from DESC;
 END;
 $$ LANGUAGE plpgsql;
 
--- Get entity owner
-CREATE OR REPLACE FUNCTION get_entity_owner(
-    p_table_name VARCHAR,
-    p_entity_id UUID
-)
-RETURNS UUID AS $$
-DECLARE
-    owner_id UUID;
-    owner_column VARCHAR;
+CREATE OR REPLACE FUNCTION get_user_posting_identities(p_user_id UUID)
+RETURNS TABLE (
+    identity_id UUID,
+    label TEXT,
+    org_name TEXT,
+    org_slug TEXT
+) AS $$
 BEGIN
-    -- Determine the owner column name based on table
-    CASE p_table_name
-        WHEN 'blog_posts' THEN owner_column := 'author_id';
-        WHEN 'marketplace_items' THEN owner_column := 'seller_id';
-        WHEN 'events' THEN owner_column := 'organizer_id';
-        WHEN 'communities' THEN owner_column := 'creator_id';
-        ELSE owner_column := 'user_id';
-    END CASE;
-    
-    EXECUTE format('SELECT %I FROM %I WHERE id = $1', owner_column, p_table_name)
-    INTO owner_id
-    USING p_entity_id;
-    
-    RETURN owner_id;
+    RETURN QUERY
+    SELECT
+        up.id,
+        up.title::TEXT,
+        o.name::TEXT,
+        o.slug::TEXT
+    FROM user_positions up
+    JOIN organizations o ON up.org_id = o.id
+    WHERE up.user_id = p_user_id
+      AND up.is_active = TRUE
+      AND (up.valid_until IS NULL OR up.valid_until >= CURRENT_DATE)
+    ORDER BY o.name, up.title;
 END;
 $$ LANGUAGE plpgsql;
 
--- Clean up old activity logs (retention policy)
-CREATE OR REPLACE FUNCTION cleanup_old_activity_logs(p_days_to_keep INTEGER DEFAULT 90)
-RETURNS INTEGER AS $$
-DECLARE
-    deleted_count INTEGER;
+-- =====================================================
+-- ORGANIZATION HELPERS
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION get_organization_hierarchy(p_org_id UUID DEFAULT NULL)
+RETURNS TABLE (
+    id UUID,
+    name TEXT,
+    slug TEXT,
+    type org_type,
+    parent_id UUID,
+    parent_name TEXT,
+    description TEXT,
+    logo_url TEXT,
+    category TEXT,
+    member_count INTEGER,
+    is_active BOOLEAN,
+    depth INTEGER
+) AS $$
 BEGIN
-    DELETE FROM activity_logs 
-    WHERE created_at < NOW() - (p_days_to_keep || ' days')::INTERVAL;
-    
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    RETURN deleted_count;
+    RETURN QUERY
+    WITH RECURSIVE org_tree AS (
+        SELECT
+            o.id, o.name::TEXT, o.slug::TEXT, o.type, o.parent_id,
+            NULL::TEXT as parent_name, o.description::TEXT, o.logo_url::TEXT,
+            o.category::TEXT, o.member_count, o.is_active, 0 as depth
+        FROM organizations o
+        WHERE (p_org_id IS NULL AND o.parent_id IS NULL)
+           OR (p_org_id IS NOT NULL AND o.id = p_org_id)
+        UNION ALL
+        SELECT
+            child.id, child.name::TEXT, child.slug::TEXT, child.type, child.parent_id,
+            parent.name::TEXT, child.description::TEXT, child.logo_url::TEXT,
+            child.category::TEXT, child.member_count, child.is_active, parent.depth + 1
+        FROM organizations child
+        JOIN org_tree parent ON child.parent_id = parent.id
+    )
+    SELECT * FROM org_tree ORDER BY depth, name;
 END;
 $$ LANGUAGE plpgsql;
 
--- =====================================================
--- SCHEDULED CLEANUP FUNCTIONS
--- =====================================================
-
--- Archive expired marketplace items
-CREATE OR REPLACE FUNCTION archive_expired_marketplace_items()
-RETURNS INTEGER AS $$
-DECLARE
-    updated_count INTEGER;
+CREATE OR REPLACE FUNCTION get_org_members_with_positions(p_org_id UUID)
+RETURNS TABLE (
+    user_id UUID,
+    full_name TEXT,
+    email TEXT,
+    role user_role,
+    profile_picture_url TEXT,
+    member_status org_member_status,
+    joined_at TIMESTAMPTZ,
+    position_title TEXT,
+    position_por_type por_type,
+    position_is_active BOOLEAN
+) AS $$
 BEGIN
-    UPDATE marketplace_items 
-    SET status = 'cancelled',
-        archived_at = NOW()
-    WHERE expires_at < NOW() 
-      AND status = 'available';
-    
-    GET DIAGNOSTICS updated_count = ROW_COUNT;
-    RETURN updated_count;
+    RETURN QUERY
+    SELECT
+        u.id,
+        u.full_name::TEXT,
+        u.email::TEXT,
+        u.role,
+        u.profile_picture_url::TEXT,
+        om.status,
+        om.joined_at,
+        up.title::TEXT,
+        up.por_type,
+        up.is_active
+    FROM org_members om
+    JOIN users u ON om.user_id = u.id
+    LEFT JOIN user_positions up ON up.user_id = u.id AND up.org_id = om.org_id AND up.is_active = TRUE
+    WHERE om.org_id = p_org_id AND om.status = 'approved'
+    ORDER BY
+        CASE WHEN up.id IS NOT NULL THEN 0 ELSE 1 END,
+        u.full_name;
 END;
 $$ LANGUAGE plpgsql;
 
--- Remove expired guest accounts
-CREATE OR REPLACE FUNCTION remove_expired_guests()
-RETURNS INTEGER AS $$
-DECLARE
-    deleted_count INTEGER;
+CREATE OR REPLACE FUNCTION is_org_member(p_org_id UUID, p_user_id UUID)
+RETURNS BOOLEAN AS $$
 BEGIN
-    DELETE FROM users 
-    WHERE role = 'guest' 
-      AND guest_valid_until < NOW();
-    
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    RETURN deleted_count;
+    RETURN EXISTS (
+        SELECT 1 FROM org_members
+        WHERE org_id = p_org_id AND user_id = p_user_id AND status = 'approved'
+    );
 END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- BATCH OPERATIONS
--- =====================================================
-
--- Bulk mark messages as read in a conversation
-CREATE OR REPLACE FUNCTION mark_conversation_read(
-    p_conversation_id UUID,
-    p_user_id UUID
-)
-RETURNS INTEGER AS $$
-DECLARE
-    updated_count INTEGER;
-BEGIN
-    UPDATE conversation_participants
-    SET last_read_at = NOW()
-    WHERE conversation_id = p_conversation_id
-      AND user_id = p_user_id;
-    
-    GET DIAGNOSTICS updated_count = ROW_COUNT;
-    RETURN updated_count;
-END;
-$$ LANGUAGE plpgsql;
-
--- =====================================================
--- COMMENTS
--- =====================================================
-
-COMMENT ON FUNCTION search_blogs IS 'Full-text search for blog posts';
-COMMENT ON FUNCTION get_recommended_blogs IS 'Get personalized blog recommendations for a user';
-COMMENT ON FUNCTION get_user_stats IS 'Get engagement statistics for a user';
-COMMENT ON FUNCTION get_platform_stats IS 'Get overall platform statistics for admin dashboard';
-COMMENT ON FUNCTION create_notification IS 'Helper function to create notifications';
-COMMENT ON FUNCTION find_nearby_locations IS 'Find locations within a radius using PostGIS';
-COMMENT ON FUNCTION is_community_member IS 'Check if user is a member of a community';
-COMMENT ON FUNCTION register_for_event IS 'Register a user for an event with validation';
-COMMENT ON FUNCTION increment_view_count IS 'Increment view count for any entity';
-
--- =====================================================
--- HELPER FUNCTIONS COMPLETE
--- =====================================================
--- These functions provide common operations for the app
--- Can be called from your application or via Supabase RPC
+-- FUNCTIONS COMPLETE
 -- =====================================================

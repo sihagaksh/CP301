@@ -20,6 +20,7 @@ import {
     LogOut,
     User,
     ChevronLeft,
+    MessageCircle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -31,8 +32,9 @@ const navItems = [
     { label: 'Communities', href: '/communities', icon: Users },
     { label: 'Notices', href: '/notices', icon: Megaphone },
     { label: 'Events', href: '/events', icon: Calendar },
-    { label: 'Clubs', href: '/clubs', icon: Award },
-    { label: 'Campus Map', href: '/map', icon: MapPin },
+    { label: 'Organizations', href: '/clubs', icon: Award },
+    { label: 'Messages', href: '/messages', icon: MessageCircle },
+    { label: 'Campus Map', href: '/campus-map', icon: MapPin },
     { label: 'Quick Links', href: '/quick-links', icon: Link2 },
     { label: 'Notifications', href: '/notifications', icon: Bell },
 ]
@@ -149,7 +151,7 @@ export default function Sidebar() {
           display: none;
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.5);
+          background: rgba(0, 0, 0, 0.2);
           z-index: 998;
         }
 

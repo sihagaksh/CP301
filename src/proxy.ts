@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
         request,
     })
@@ -29,18 +29,26 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    // Refresh the auth token
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
     const { pathname } = request.nextUrl
 
     // Auth pages that signed-in users should be redirected away from
     const isAuthPage = pathname === '/login' || pathname === '/signup'
 
     // Public paths that don't require auth
-    const isPublicPath = isAuthPage || pathname.startsWith('/_next') || pathname.startsWith('/favicon')
+    const isPublicPath = isAuthPage || pathname.startsWith('/auth/callback') || pathname.startsWith('/_next') || pathname.startsWith('/favicon')
+
+    // Refresh the auth token — wrap in try/catch so network failures don't hang the request
+    let user = null
+    try {
+        const { data } = await supabase.auth.getUser()
+        user = data.user
+    } catch {
+        // Supabase unreachable — allow auth pages, redirect others to login
+        if (isPublicPath) return supabaseResponse
+        const url = request.nextUrl.clone()
+        url.pathname = '/login'
+        return NextResponse.redirect(url)
+    }
 
     if (!user && !isPublicPath) {
         // Not signed in and trying to access a protected route → redirect to login

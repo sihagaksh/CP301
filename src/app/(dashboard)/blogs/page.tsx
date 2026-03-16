@@ -32,7 +32,7 @@ export default function BlogsPage() {
         setLoading(true)
         let query = supabase
             .from('blog_posts')
-            .select('*, author:users(id, full_name, role, profile_picture_url, department)')
+            .select('*, author:users(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug))')
             .eq('status', 'published')
             .order('published_at', { ascending: false })
             .limit(20)
@@ -139,9 +139,19 @@ export default function BlogsPage() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <div className="avatar avatar-sm">{getInitials((blog.author as unknown as { full_name: string })?.full_name)}</div>
-                                            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                                                {(blog.author as unknown as { full_name: string })?.full_name}
-                                            </span>
+                                            <div>
+                                                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>
+                                                    {(blog.author as unknown as { full_name: string })?.full_name}
+                                                </span>
+                                                {(blog as unknown as { posting_identity?: { title: string; organization?: { name: string } } }).posting_identity?.title && (
+                                                    <span style={{ fontSize: '0.68rem', color: 'var(--accent-primary)' }}>
+                                                        {(blog as unknown as { posting_identity: { title: string; organization?: { name: string } } }).posting_identity.title}
+                                                        {(blog as unknown as { posting_identity: { organization?: { name: string } } }).posting_identity.organization?.name
+                                                            ? `, ${(blog as unknown as { posting_identity: { organization: { name: string } } }).posting_identity.organization.name}`
+                                                            : ''}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-3 text-xs text-muted">
                                             <span className="flex items-center gap-1"><Eye size={12} /> {blog.view_count}</span>

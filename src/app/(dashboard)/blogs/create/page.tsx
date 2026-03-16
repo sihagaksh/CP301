@@ -10,7 +10,7 @@ import { BlogCategory } from '@/lib/types'
 
 export default function CreateBlogPage() {
     const router = useRouter()
-    const { user } = useAuth()
+    const { user, postingIdentities, activeIdentity } = useAuth()
     const supabase = createClient()
 
     const [form, setForm] = useState({
@@ -58,6 +58,7 @@ export default function CreateBlogPage() {
                 interview_round: form.interview_round || null,
                 tags: form.tags ? form.tags.split(',').map(t => t.trim()) : [],
                 featured_image_url: form.featured_image_url || null,
+                posting_identity_id: activeIdentity?.id || null,
                 status: 'published',
                 published_at: new Date().toISOString(),
             })
@@ -105,7 +106,9 @@ export default function CreateBlogPage() {
                             <option value="general">General</option>
                             <option value="placement">Placement Experience</option>
                             <option value="internship">Internship Experience</option>
-                            <option value="faculty_insight">Faculty Insight</option>
+                            {user?.role === 'faculty' && (
+                                <option value="faculty_insight">Faculty Insight</option>
+                            )}
                             <option value="alumni_experience">Alumni Experience</option>
                             <option value="research">Research</option>
                         </select>
@@ -151,7 +154,12 @@ export default function CreateBlogPage() {
                 </div>
 
                 <div className="flex justify-between">
-                    <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+                    {postingIdentities.length > 1 && (
+                        <p className="text-sm text-muted" style={{ lineHeight: '40px' }}>
+                            Posting as <strong style={{ color: 'var(--accent-primary)' }}>{activeIdentity?.label}{activeIdentity?.org_name ? ` — ${activeIdentity.org_name}` : ''}</strong>
+                        </p>
+                    )}
+                    <button type="submit" className="btn btn-primary btn-lg" disabled={loading} style={{ marginLeft: 'auto' }}>
                         {loading ? 'Publishing...' : 'Publish Blog'}
                         {!loading && <Send size={18} />}
                     </button>

@@ -2,34 +2,44 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ShoppingBag, Search, Plus, Eye, Heart, IndianRupee, Filter, Grid3X3, List } from 'lucide-react'
+import { ShoppingBag, Search, Plus, Eye, IndianRupee, User, CheckCircle, XCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { MarketplaceItem } from '@/lib/types'
-import { format } from 'date-fns'
+import { useAuth } from '@/contexts/AuthContext'
+
+type Tab = 'browse' | 'mine'
 
 const itemCategories = ['All', 'Books', 'Electronics', 'Furniture', 'Clothing', 'Cycle', 'Stationery', 'Sports', 'Other']
 const conditionLabels: Record<string, string> = { new: 'New', like_new: 'Like New', good: 'Good', fair: 'Fair', poor: 'Poor' }
 
 export default function MarketplacePage() {
+    const { user } = useAuth()
     const [items, setItems] = useState<MarketplaceItem[]>([])
     const [loading, setLoading] = useState(true)
+    const [tab, setTab] = useState<Tab>('browse')
     const [category, setCategory] = useState('All')
     const [searchQuery, setSearchQuery] = useState('')
+    const [removingId, setRemovingId] = useState<string | null>(null)
     const supabase = createClient()
 
     useEffect(() => {
         loadItems()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [category])
+    }, [category, tab])
 
     async function loadItems() {
         setLoading(true)
         let query = supabase
             .from('marketplace_items')
             .select('*, seller:users(id, full_name, profile_picture_url, department)')
-            .eq('status', 'available')
             .order('created_at', { ascending: false })
             .limit(30)
+
+        if (tab === 'mine') {
+            if (user) query = query.eq('seller_id', user.id).eq('status', 'available')
+        } else {
+            query = query.eq('status', 'available')
+        }
 
         if (category !== 'All') {
             query = query.ilike('category', category.toLowerCase())
@@ -38,6 +48,13 @@ export default function MarketplacePage() {
         const { data } = await query
         setItems((data as MarketplaceItem[]) || [])
         setLoading(false)
+    }
+
+    async function removeItem(itemId: string, reason: 'sold' | 'cancelled') {
+        setRemovingId(itemId)
+        await supabase.from('marketplace_items').update({ status: reason }).eq('id', itemId)
+        setItems(prev => prev.filter(item => item.id !== itemId))
+        setRemovingId(null)
     }
 
     const filtered = searchQuery
@@ -60,6 +77,16 @@ export default function MarketplacePage() {
                 <Link href="/marketplace/create" className="btn btn-primary">
                     <Plus size={18} /> Sell Item
                 </Link>
+            </div>
+
+            {/* Tabs */}
+            <div className="tabs">
+                <button className={`tab ${tab === 'browse' ? 'active' : ''}`} onClick={() => setTab('browse')}>
+                    <ShoppingBag size={14} style={{ marginRight: 6 }} /> Browse
+                </button>
+                <button className={`tab ${tab === 'mine' ? 'active' : ''}`} onClick={() => setTab('mine')}>
+                    <User size={14} style={{ marginRight: 6 }} /> My Products
+                </button>
             </div>
 
             <div className="flex gap-4 mb-6" style={{ flexWrap: 'wrap' }}>
@@ -95,8 +122,8 @@ export default function MarketplacePage() {
             ) : filtered.length === 0 ? (
                 <div className="glass-card-static empty-state">
                     <ShoppingBag size={48} />
-                    <h3>No Items Found</h3>
-                    <p>Be the first to list something for sale!</p>
+                    <h3>{tab === 'mine' ? 'No Active Listings' : 'No Items Found'}</h3>
+                    <p>{tab === 'mine' ? 'Items you list for sale will appear here.' : 'Be the first to list something for sale!'}</p>
                     <Link href="/marketplace/create" className="btn btn-primary" style={{ marginTop: 16 }}>List an Item</Link>
                 </div>
             ) : (
@@ -104,8 +131,8 @@ export default function MarketplacePage() {
                     {filtered.map((item, i) => {
                         const seller = item.seller as unknown as { full_name: string; department?: string } | undefined
                         return (
-                            <Link key={item.id} href={`/marketplace/${item.id}`} className="no-underline">
-                                <div className={`glass-card animate-fade-in-up delay-${Math.min(i + 1, 6)}`} style={{ cursor: 'pointer', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            <div key={item.id} className={`glass-card animate-fade-in-up delay-${Math.min(i + 1, 6)}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <Link href={`/marketplace/${item.id}`} className="no-underline" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                                     {item.images && item.images.length > 0 ? (
                                         <div style={{ margin: '-20px -20px 14px -20px', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', overflow: 'hidden', height: 180 }}>
                                             <img src={item.images[0]} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -133,8 +160,30 @@ export default function MarketplacePage() {
                                             <Eye size={12} /> {item.view_count}
                                         </div>
                                     </div>
-                                </div>
-                            </Link>
+                                </Link>
+
+                                {/* Owner actions — Sold / Cancel */}
+                                {tab === 'mine' && (
+                                    <div style={{ borderTop: '1px solid var(--glass-border)', marginTop: 10, paddingTop: 10 }} className="flex gap-2">
+                                        <button
+                                            className="btn btn-sm btn-primary"
+                                            style={{ flex: 1, fontSize: '0.75rem', padding: '6px 10px' }}
+                                            disabled={removingId === item.id}
+                                            onClick={() => removeItem(item.id, 'sold')}
+                                        >
+                                            <CheckCircle size={13} /> {removingId === item.id ? 'Updating...' : 'Sold'}
+                                        </button>
+                                        <button
+                                            className="btn btn-sm btn-secondary"
+                                            style={{ flex: 1, fontSize: '0.75rem', padding: '6px 10px' }}
+                                            disabled={removingId === item.id}
+                                            onClick={() => removeItem(item.id, 'cancelled')}
+                                        >
+                                            <XCircle size={13} /> {removingId === item.id ? 'Updating...' : 'Cancel'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         )
                     })}
                 </div>

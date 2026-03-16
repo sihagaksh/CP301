@@ -1,10 +1,15 @@
 -- =====================================================
--- DISABLE ROW LEVEL SECURITY ON ALL TABLES
--- Run this in the Supabase SQL Editor (https://supabase.com/dashboard)
--- Navigate to: SQL Editor > New Query > Paste & Run
+-- DISABLE RLS ON ALL TABLES
+-- =====================================================
+-- This file is kept for backwards compatibility.
+-- RLS is already disabled inline in 01_schema.sql.
+-- Running this again is safe (idempotent).
 -- =====================================================
 
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE organizations DISABLE ROW LEVEL SECURITY;
+ALTER TABLE org_members DISABLE ROW LEVEL SECURITY;
+ALTER TABLE user_positions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE blog_posts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE blog_comments DISABLE ROW LEVEL SECURITY;
 ALTER TABLE blog_likes DISABLE ROW LEVEL SECURITY;
@@ -26,14 +31,11 @@ ALTER TABLE navigation_routes DISABLE ROW LEVEL SECURITY;
 ALTER TABLE events DISABLE ROW LEVEL SECURITY;
 ALTER TABLE event_registrations DISABLE ROW LEVEL SECURITY;
 ALTER TABLE event_interested DISABLE ROW LEVEL SECURITY;
-ALTER TABLE clubs DISABLE ROW LEVEL SECURITY;
-ALTER TABLE club_members DISABLE ROW LEVEL SECURITY;
 ALTER TABLE quick_links DISABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_posts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_likes DISABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations DISABLE ROW LEVEL SECURITY;
-ALTER TABLE conversation_participants DISABLE ROW LEVEL SECURITY;
 ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE reports DISABLE ROW LEVEL SECURITY;

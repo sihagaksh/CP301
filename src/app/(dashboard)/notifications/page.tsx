@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Check, CheckCheck, MessageCircle, Heart, Calendar, Megaphone, ShoppingBag, Trash2, LogIn } from 'lucide-react'
+import { Bell, Check, CheckCheck, MessageCircle, Heart, Calendar, Megaphone, ShoppingBag, Trash2, LogIn, Users, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { Notification } from '@/lib/types'
 import { useAuth } from '@/contexts/AuthContext'
@@ -67,6 +67,8 @@ export default function NotificationsPage() {
             case 'event': return <Calendar size={18} style={{ color: 'var(--accent-primary)' }} />
             case 'notice': return <Megaphone size={18} style={{ color: 'var(--accent-success)' }} />
             case 'marketplace': return <ShoppingBag size={18} style={{ color: 'var(--accent-purple)' }} />
+            case 'club': return <Users size={18} style={{ color: 'var(--accent-primary)' }} />
+            case 'governance': return <Shield size={18} style={{ color: 'var(--accent-primary)' }} />
             default: return <Bell size={18} style={{ color: 'var(--text-tertiary)' }} />
         }
     }

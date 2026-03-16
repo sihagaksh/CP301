@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Mail, Phone, Building, GraduationCap, Briefcase, MapPin, Linkedin, Save, Edit2 } from 'lucide-react'
+import { User, Mail, Phone, Building, GraduationCap, Briefcase, MapPin, Linkedin, Save, Edit2, Award, BookOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { User as UserType } from '@/lib/types'
+import { User as UserType, UserPosition } from '@/lib/types'
 
 export default function ProfilePage() {
-    const { user, session } = useAuth()
+    const { user, session, positions } = useAuth()
     const [editing, setEditing] = useState(false)
     const [form, setForm] = useState<Partial<UserType>>({})
     const [saving, setSaving] = useState(false)
@@ -25,12 +25,12 @@ export default function ProfilePage() {
             phone_number: form.phone_number,
             bio: form.bio,
             department: form.department,
+            branch: form.branch,
             batch: form.batch,
             designation: form.designation,
             current_organization: form.current_organization,
             current_position: form.current_position,
             linkedin_url: form.linkedin_url,
-            location: form.location,
         }).eq('id', user.id)
         setSaving(false)
         setEditing(false)
@@ -56,11 +56,21 @@ export default function ProfilePage() {
                 </div>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 700 }}>{user.full_name}</h2>
                 <p className="text-sm text-muted" style={{ marginTop: 4 }}>{user.email}</p>
-                <div className="flex items-center justify-center gap-2 mt-2">
+                <div className="flex items-center justify-center gap-2 mt-2" style={{ flexWrap: 'wrap' }}>
                     <span className="badge badge-gold">{user.role}</span>
                     {user.department && <span className="badge badge-blue">{user.department}</span>}
+                    {user.branch && <span className="badge badge-purple">{user.branch}</span>}
                     <span className={`badge ${user.status === 'active' ? 'badge-green' : 'badge-red'}`}>{user.status}</span>
                 </div>
+                {positions.length > 0 && (
+                    <div className="flex items-center justify-center gap-2 mt-3" style={{ flexWrap: 'wrap' }}>
+                        {positions.map(p => (
+                            <span key={p.id} className="badge badge-gold" style={{ fontSize: '0.7rem' }}>
+                                <Award size={10} /> {p.title} — {(p.organization as unknown as { name: string })?.name}
+                            </span>
+                        ))}
+                    </div>
+                )}
                 {user.bio && <p style={{ marginTop: 14, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{user.bio}</p>}
             </div>
 
@@ -85,9 +95,15 @@ export default function ProfilePage() {
                             </div>
                         </div>
                         {(user.role === 'student' || user.role === 'alumni') && (
-                            <div className="form-group">
-                                <label className="input-label">Batch</label>
-                                <input className="input-field" value={form.batch || ''} onChange={e => setForm(p => ({ ...p, batch: e.target.value }))} />
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label className="input-label">Branch</label>
+                                    <input className="input-field" value={form.branch || ''} onChange={e => setForm(p => ({ ...p, branch: e.target.value }))} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="input-label">Batch</label>
+                                    <input className="input-field" value={form.batch || ''} onChange={e => setForm(p => ({ ...p, batch: e.target.value }))} />
+                                </div>
                             </div>
                         )}
                         {(user.role === 'faculty' || user.role === 'staff') && (
@@ -125,12 +141,12 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-3"><Mail size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">Email</p><p className="text-sm">{user.email}</p></div></div>
                         {user.phone_number && <div className="flex items-center gap-3"><Phone size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">Phone</p><p className="text-sm">{user.phone_number}</p></div></div>}
                         {user.department && <div className="flex items-center gap-3"><Building size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">Department</p><p className="text-sm">{user.department}</p></div></div>}
+                        {user.branch && <div className="flex items-center gap-3"><BookOpen size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">Branch</p><p className="text-sm">{user.branch}</p></div></div>}
                         {user.enrollment_number && <div className="flex items-center gap-3"><GraduationCap size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">Enrollment</p><p className="text-sm">{user.enrollment_number}</p></div></div>}
                         {user.batch && <div className="flex items-center gap-3"><GraduationCap size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">Batch</p><p className="text-sm">{user.batch}</p></div></div>}
                         {user.designation && <div className="flex items-center gap-3"><Briefcase size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">Designation</p><p className="text-sm">{user.designation}</p></div></div>}
                         {user.current_organization && <div className="flex items-center gap-3"><Building size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">Organization</p><p className="text-sm">{user.current_organization}</p></div></div>}
                         {user.linkedin_url && <div className="flex items-center gap-3"><Linkedin size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">LinkedIn</p><a href={user.linkedin_url} target="_blank" rel="noopener" className="text-sm text-gold">{user.linkedin_url}</a></div></div>}
-                        {user.location && <div className="flex items-center gap-3"><MapPin size={16} style={{ color: 'var(--text-tertiary)' }} /><div><p className="text-xs text-muted">Location</p><p className="text-sm">{user.location}</p></div></div>}
                     </div>
                 )}
             </div>

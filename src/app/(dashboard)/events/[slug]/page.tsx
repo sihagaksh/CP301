@@ -19,7 +19,7 @@ export default function EventDetailPage() {
     useEffect(() => { loadEvent() }, [params.slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
     async function loadEvent() {
-        const { data } = await supabase.from('events').select('*, organizer:users(id, full_name, department), location:locations(name, code)').eq('slug', params.slug).single()
+        const { data } = await supabase.from('events').select('*, organizer:users(id, full_name, department), location:locations(name, code), posting_identity:user_positions(id, title, organization:organizations(name))').eq('slug', params.slug).single()
         setEvent(data as Event)
         setLoading(false)
     }

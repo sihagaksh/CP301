@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S. Ramanujan Block - IIT Ropar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #1a2030;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 25, 40, 0.85);
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 15px;
+            pointer-events: none;
+            white-space: nowrap;
+            border: 1px solid rgba(120, 180, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+
+        #info small {
+            font-weight: 400;
+            font-size: 12px;
+            color: #8bb4e0;
+            margin-left: 12px;
+            opacity: 0.9;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <div id="info">S. Ramanujan Block (Top View Layout) <small>Drag · Scroll · Right-click pan</small></div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        /* ── SCENE ─────────────────────────────────────────────────── */
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x7fb5d6); // Calming aerial sky blue
+
+        /* ── CAMERA ────────────────────────────────────────────────── */
+        // Positioned higher to clearly show the traced top-down footprint
+        const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.5, 3000);
+        camera.position.set(0, 400, 180);
+
+        /* ── RENDERER ──────────────────────────────────────────────── */
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.05;
+        document.body.appendChild(renderer.domElement);
+
+        /* ── CONTROLS ──────────────────────────────────────────────── */
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 50;
+        controls.maxDistance = 1500;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Keep above ground
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        /* ── LIGHTS ────────────────────────────────────────────────── */
+        scene.add(new THREE.AmbientLight(0xd0dce8, 0.65));
+        
+        const sun = new THREE.DirectionalLight(0xfffaee, 1.4);
+        sun.position.set(150, 300, 100);
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(4096, 4096);
+        sun.shadow.camera.left = -250;
+        sun.shadow.camera.right = 250;
+        sun.shadow.camera.top = 250;
+        sun.shadow.camera.bottom = -250;
+        sun.shadow.camera.far = 1000;
+        sun.shadow.bias = -0.0005;
+        scene.add(sun);
+        
+        const fill = new THREE.DirectionalLight(0x8ec8f0, 0.3);
+        fill.position.set(-150, 100, -150);
+        scene.add(fill);
+
+        /* ── MATERIALS ─────────────────────────────────────────────── */
+        const M = {
+            base: new THREE.MeshStandardMaterial({ color: 0xa1a6a9, roughness: 0.9 }),
+            roof: new THREE.MeshStandardMaterial({ color: 0x757b80, roughness: 0.95 }),
+            ground: new THREE.MeshStandardMaterial({ color: 0x5a7a58, roughness: 1.0 }), // Earthy green ground
+            sidewalk: new THREE.MeshStandardMaterial({ color: 0xc8c6c0, roughness: 0.9 }),
+            
+            // Facade Panel Palette
+            panelLight: new THREE.MeshStandardMaterial({ color: 0xe0e2e4, roughness: 0.4, metalness: 0.1 }),
+            panelMid: new THREE.MeshStandardMaterial({ color: 0x989da3, roughness: 0.4, metalness: 0.1 }),
+            panelDark: new THREE.MeshStandardMaterial({ color: 0x50555a, roughness: 0.4, metalness: 0.2 }),
+            glass: new THREE.MeshStandardMaterial({ color: 0x1f2b38, roughness: 0.1, metalness: 0.8 }),
+            frame: new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7, metalness: 0.3 }),
+            
+            // New Yellow Boundary for Windows
+            frameYellow: new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.5, metalness: 0.4 }) 
+        };
+
+        // Ground plane
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), M.ground);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        /* ── BUILDING GROUP ─────────────────────────────────────────── */
+        const B = new THREE.Group();
+        scene.add(B);
+
+        function box(w, h, d, mat, x, y, z) {
+            const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+            m.position.set(x, y, z);
+            m.castShadow = true;
+            m.receiveShadow = true;
+            B.add(m);
+            return m;
+        }
+
+        /* ── FACADE STAMPER ─────────────────────────────────────────── */
+        function stampRamanujanFacade(faceX, faceY, faceZ, facingRotY, w, h, cols, rows, hasEntrance = false) {
+            const g = new THREE.Group();
+            g.position.set(faceX, faceY, faceZ);
+            g.rotation.y = facingRotY;
+            B.add(g);
+
+            const cw = w / cols;
+            const ch = h / rows;
+            const panelDepth = 0.5;
+
+            // Deterministic random seed per face so patterns don't flicker
+            let seed = Math.abs(faceX * 7 + faceY * 13 + faceZ * 17 + facingRotY * 23) * 100;
+            function rand() {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
+            }
+
+            for (let r = 0; r < rows; r++) {
+                const py = -h / 2 + (r + 0.5) * ch;
+
+                for (let c = 0; c < cols; c++) {
+                    const px = -w / 2 + (c + 0.5) * cw;
+                    
+                    // Grand entrance cutout for specified faces
+                    if (hasEntrance && r < 2) {
+                        const midC = Math.floor(cols / 2);
+                        if (c >= midC - 2 && c <= midC + 2) {
+                            const gm = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, panelDepth), M.glass);
+                            gm.position.set(px, py, panelDepth / 2);
+                            g.add(gm);
+                            
+                            const fm = new THREE.Mesh(new THREE.BoxGeometry(cw*1.02, ch*1.02, panelDepth*1.1), M.frame);
+                            fm.position.set(px, py, panelDepth / 2 - 0.1);
+                            g.add(fm);
+                            continue; 
+                        }
+                    }
+
+                    // Assign randomized panels
+                    const val = rand();
+                    let mat = val < 0.40 ? M.panelLight : 
+                              val < 0.70 ? M.panelMid : 
+                              val < 0.85 ? M.panelDark : M.glass;
+
+                    const isGlass = mat === M.glass;
+
+                    if (isGlass) {
+                        // Yellow frame boundary around the glass
+                        const frameMesh = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.95, ch * 0.95, panelDepth), M.frameYellow);
+                        frameMesh.position.set(px, py, panelDepth / 2);
+                        g.add(frameMesh);
+                        
+                        // Smaller glass inside the yellow frame
+                        const glassMesh = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.80, ch * 0.80, panelDepth * 1.05), M.glass);
+                        glassMesh.position.set(px, py, panelDepth / 2);
+                        g.add(glassMesh);
+                    } else {
+                        // Standard solid panels
+                        const pMesh = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.95, ch * 0.95, panelDepth), mat);
+                        pMesh.position.set(px, py, panelDepth / 2);
+                        pMesh.castShadow = true;
+                        pMesh.receiveShadow = true;
+                        g.add(pMesh);
+                    }
+
+                    // Dark recess backing
+                    const bg = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, panelDepth * 0.5), M.base);
+                    bg.position.set(px, py, panelDepth * 0.25);
+                    g.add(bg);
+                }
+            }
+        }
+
+        /* ── ARCHITECTURAL LAYOUT (Traced from Aerial Outline) ─────── */
+        const FH = 14;     // Floor Height
+        const FL = 4;      // 4 Floors
+        const TH = FH * FL; // Total Height = 56
+
+        // Helper to add a fully dressed block with facades on all 4 sides
+        function addBlock(w, d, x, z, entranceFace = null) {
+            // Main mass and roof
+            box(w, TH, d, M.base, x, TH/2, z);
+            box(w + 0.5, 1.5, d + 0.5, M.roof, x, TH + 0.75, z);
+            
+            // Calculate column density for grid panels
+            const cW = Math.max(2, Math.floor(w / 6));
+            const cD = Math.max(2, Math.floor(d / 6));
+
+            // Stamp facades slightly inset to hide intersecting geometry internal z-fighting
+            const offset = 0.05;
+            stampRamanujanFacade(x, TH/2, z - d/2 - offset, Math.PI, w, TH, cW, FL, entranceFace === 'NORTH');
+            stampRamanujanFacade(x, TH/2, z + d/2 + offset, 0, w, TH, cW, FL, entranceFace === 'SOUTH');
+            stampRamanujanFacade(x + w/2 + offset, TH/2, z, Math.PI/2, d, TH, cD, FL, entranceFace === 'EAST');
+            stampRamanujanFacade(x - w/2 - offset, TH/2, z, -Math.PI/2, d, TH, cD, FL, entranceFace === 'WEST');
+        }
+
+        /* * Building Footprint Generation based strictly on the white outline:
+         * We dissect the complex polygon into 11 distinct non-overlapping rectangular blocks.
+         */
+
+        // 1. Far West Column
+        addBlock(50, 80, -95, -60);  // NW Top corner block
+        addBlock(50, 60, -95, 50);   // SW corner block
+
+        // 2. Mid West Column (Continuous vertical bar)
+        addBlock(30, 180, -55, -10); // Connects NW and SW, forms West boundary of courtyard
+
+        // 3. Courtyard Horizontal Wings
+        addBlock(90, 30, 5, -55);    // North Wing Main
+        addBlock(90, 30, 5, 65, 'SOUTH'); // South Wing Main (with Grand Entrance)
+
+        // 4. South-East Extension (Steps out to align with East wing bottom)
+        addBlock(20, 20, 40, 90);    
+
+        // 5. East Column (Main right-side bar)
+        addBlock(30, 170, 65, 15);   
+
+        // 6. East Edge Extrusions (The 3 distinct "teeth" on the right side)
+        addBlock(20, 20, 90, -20);   // Extrusion 1
+        addBlock(20, 20, 90, 20);    // Extrusion 2
+        addBlock(20, 20, 90, 60);    // Extrusion 3
+
+        // 7. Inner Courtyard Extrusion (Steps slightly into the courtyard space from the West)
+        addBlock(20, 30, -30, 15);   
+
+        // Center building globally
+        B.position.set(0, 0, 0);
+
+        /* ── RESIZE & ANIMATE ──────────────────────────────────────── */
+        window.addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        });
+
+        (function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        })();
+    </script>
+</body>
+
+</html>

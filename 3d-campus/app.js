@@ -1577,6 +1577,131 @@ function buildSatishDhawan(id, cx, cz) {
     addLabel(id, '🏫 Satish Dhawan Block', cx, 15, cz);
 }
 
+// ── Ramanujan Block (detailed traced footprint from ramanunjan.html) ─────────
+function buildRamanujan(id, cx, cz) {
+    const B = new THREE.Group();
+
+    const M = {
+        base: new THREE.MeshStandardMaterial({ color: 0xa1a6a9, roughness: 0.9 }),
+        roof: MAT.roofDark,
+        ground: MAT.grassDark,
+        sidewalk: MAT.sidewalk,
+        panelLight: new THREE.MeshStandardMaterial({ color: 0xe0e2e4, roughness: 0.4, metalness: 0.1 }),
+        panelMid: new THREE.MeshStandardMaterial({ color: 0x989da3, roughness: 0.4, metalness: 0.1 }),
+        panelDark: new THREE.MeshStandardMaterial({ color: 0x50555a, roughness: 0.4, metalness: 0.2 }),
+        glass: MAT.glass,
+        frame: new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7, metalness: 0.3 }),
+        frameYellow: new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.5, metalness: 0.4 }) 
+    };
+
+    const FH = 14;     
+    const FL = 4;      
+    const TH = FH * FL; 
+
+    function boxLocal(w, h, d, mat, x, y, z) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        m.position.set(x, y, z);
+        m.castShadow = true;
+        m.receiveShadow = true;
+        B.add(m);
+        return m;
+    }
+
+    function stampRamanujanFacade(faceX, faceY, faceZ, facingRotY, w, h, cols, rows, hasEntrance = false) {
+        const g = new THREE.Group();
+        g.position.set(faceX, faceY, faceZ);
+        g.rotation.y = facingRotY;
+        B.add(g);
+
+        const cw = w / cols;
+        const ch = h / rows;
+        const panelDepth = 0.5;
+
+        let seed = Math.abs(faceX * 7 + faceY * 13 + faceZ * 17 + facingRotY * 23) * 100;
+        function rand() {
+            seed = (seed * 9301 + 49297) % 233280;
+            return seed / 233280;
+        }
+
+        for (let r = 0; r < rows; r++) {
+            const py = -h / 2 + (r + 0.5) * ch;
+            for (let c = 0; c < cols; c++) {
+                const px = -w / 2 + (c + 0.5) * cw;
+                if (hasEntrance && r < 2) {
+                    const midC = Math.floor(cols / 2);
+                    if (c >= midC - 2 && c <= midC + 2) {
+                        const gm = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, panelDepth), M.glass);
+                        gm.position.set(px, py, panelDepth / 2);
+                        g.add(gm);
+                        const fm = new THREE.Mesh(new THREE.BoxGeometry(cw*1.02, ch*1.02, panelDepth*1.1), M.frame);
+                        fm.position.set(px, py, panelDepth / 2 - 0.1);
+                        g.add(fm);
+                        continue; 
+                    }
+                }
+                const val = rand();
+                let mat = val < 0.40 ? M.panelLight : val < 0.70 ? M.panelMid : val < 0.85 ? M.panelDark : M.glass;
+                if (mat === M.glass) {
+                    const frameMesh = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.95, ch * 0.95, panelDepth), M.frameYellow);
+                    frameMesh.position.set(px, py, panelDepth / 2);
+                    g.add(frameMesh);
+                    const glassMesh = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.80, ch * 0.80, panelDepth * 1.05), M.glass);
+                    glassMesh.position.set(px, py, panelDepth / 2);
+                    g.add(glassMesh);
+                } else {
+                    const pMesh = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.95, ch * 0.95, panelDepth), mat);
+                    pMesh.position.set(px, py, panelDepth / 2);
+                    pMesh.castShadow = true;
+                    pMesh.receiveShadow = true;
+                    g.add(pMesh);
+                }
+                const bg = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, panelDepth * 0.5), M.base);
+                bg.position.set(px, py, panelDepth * 0.25);
+                g.add(bg);
+            }
+        }
+    }
+
+    function addBlockLocal(w, d, x, z, entranceFace = null) {
+        boxLocal(w, TH, d, M.base, x, TH/2, z);
+        boxLocal(w + 0.5, 1.5, d + 0.5, M.roof, x, TH + 0.75, z);
+        const cW = Math.max(2, Math.floor(w / 6));
+        const cD = Math.max(2, Math.floor(d / 6));
+        const offset = 0.05;
+        stampRamanujanFacade(x, TH/2, z - d/2 - offset, Math.PI, w, TH, cW, FL, entranceFace === 'NORTH');
+        stampRamanujanFacade(x, TH/2, z + d/2 + offset, 0, w, TH, cW, FL, entranceFace === 'SOUTH');
+        stampRamanujanFacade(x + w/2 + offset, TH/2, z, Math.PI/2, d, TH, cD, FL, entranceFace === 'EAST');
+        stampRamanujanFacade(x - w/2 - offset, TH/2, z, -Math.PI/2, d, TH, cD, FL, entranceFace === 'WEST');
+    }
+
+    addBlockLocal(50, 80, -95, -60);  
+    addBlockLocal(50, 60, -95, 50);   
+    addBlockLocal(30, 180, -55, -10); 
+    addBlockLocal(90, 30, 5, -55);    
+    addBlockLocal(90, 30, 5, 65, 'SOUTH'); 
+    addBlockLocal(20, 20, 40, 90);    
+    addBlockLocal(30, 170, 65, 15);   
+    addBlockLocal(20, 20, 90, -20);   
+    addBlockLocal(20, 20, 90, 20);    
+    addBlockLocal(20, 20, 90, 60);    
+    addBlockLocal(20, 30, -30, 15);   
+
+    B.scale.set(0.065, 0.065, 0.065);
+    B.position.set(cx, 0, cz);
+    scene.add(B);
+
+    B.traverse(c => {
+        if (c.isMesh) {
+            c.userData.id = id;
+            allMeshes.push(c);
+            if (!meshById[id]) meshById[id] = [];
+            meshById[id].push(c);
+        }
+    });
+
+    addLabel(id, '🏫 Ramanujan', cx, 15, cz);
+}
+
 // =====================================================================
 // 6. BUILD THE GROUND / TERRAIN
 // =====================================================================
@@ -2027,9 +2152,8 @@ function buildAllBuildings() {
     reg('dept_4', 'Ramanujan Block', 'academic',
         'Ramanujan Block — academic department building on the eastern side.',
         ['Department', 'Academic']);
-    box('dept_4', 49, -63, 14, 8, 12, MAT.academicB);
-    addLabel('dept_4', '🏫 Ramanujan', 49, 15, -63);
-    origColor['dept_4'] = 0xd8cfc0;
+    buildRamanujan('dept_4', 49, -63);
+    origColor['dept_4'] = 0xa1a6a9;
 
     // =====================================================================
     // ROW 2 — H4-H6, MESS, UT, MC, WORKSHOP, CAFETERIA, LHC, A, LIB, VF

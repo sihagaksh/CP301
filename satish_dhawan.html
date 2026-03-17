@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satish Dhawan Block</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #1a2030;
+        }
+
+        #info {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: #ddeeff;
+            padding: 7px 20px;
+            border-radius: 24px;
+            font: 600 14px 'Segoe UI', sans-serif;
+            pointer-events: none;
+            white-space: nowrap;
+            border: 1px solid rgba(120, 180, 255, 0.2);
+        }
+
+        #info small {
+            font-weight: 300;
+            font-size: 11px;
+            color: #7faad0;
+            margin-left: 8px;
+        }
+    </style>
+    <script type="importmap">
+  {"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+  </script>
+</head>
+
+<body>
+    <div id="info">Satish Dhawan Block <small>Drag · Scroll · Right-click pan</small></div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        /* ── SCENE ─────────────────────────────────────────────────── */
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x4a6070);
+
+        /* ── CAMERA ────────────────────────────────────────────────── */
+        const camera = new THREE.PerspectiveCamera(44, innerWidth / innerHeight, 0.5, 3000);
+        camera.position.set(0, 100, 280);
+
+        /* ── RENDERER ──────────────────────────────────────────────── */
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        document.body.appendChild(renderer.domElement);
+
+        /* ── CONTROLS ──────────────────────────────────────────────── */
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.07;
+        controls.minDistance = 30;
+        controls.maxDistance = 800;
+        controls.maxPolarAngle = Math.PI / 2 - 0.01;
+        controls.target.set(0, 25, 30);
+        controls.update();
+
+        /* ── LIGHTS ────────────────────────────────────────────────── */
+        scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+        const sun = new THREE.DirectionalLight(0xfff4d8, 1.4);
+        sun.position.set(80, 200, 60);
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(4096, 4096);
+        sun.shadow.camera.left = -250;
+        sun.shadow.camera.right = 250;
+        sun.shadow.camera.top = 250;
+        sun.shadow.camera.bottom = -250;
+        sun.shadow.camera.far = 700;
+        scene.add(sun);
+        const fill = new THREE.DirectionalLight(0xb0c8ff, 0.35);
+        fill.position.set(-80, 60, -100);
+        scene.add(fill);
+
+        /* ── MATERIALS ─────────────────────────────────────────────── */
+        const M = {
+            panel: new THREE.MeshStandardMaterial({ color: 0xb0b8c0, roughness: 0.5, metalness: 0.35 }),
+            recess: new THREE.MeshStandardMaterial({ color: 0x18202c, roughness: 0.8 }),
+            glass: new THREE.MeshStandardMaterial({ color: 0x2a6080, roughness: 0.05, metalness: 0.85, transparent: true, opacity: 0.88 }),
+            green: new THREE.MeshStandardMaterial({ color: 0x22cc33, roughness: 0.4, metalness: 0.1 }),
+            lobby: new THREE.MeshStandardMaterial({ color: 0x3a7898, roughness: 0.05, metalness: 0.9, transparent: true, opacity: 0.7 }),
+            concrete: new THREE.MeshStandardMaterial({ color: 0xb0a08a, roughness: 0.85 }),
+            roof: new THREE.MeshStandardMaterial({ color: 0x5a6268, roughness: 0.92 }),
+        };
+
+        /* ── BUILDING GROUP ─────────────────────────────────────────── */
+        const B = new THREE.Group();
+        scene.add(B);
+
+        /* helper: add box mesh to a group */
+        function box(grp, w, h, d, mat, x, y, z) {
+            const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+            m.position.set(x, y, z);
+            m.castShadow = true;
+            m.receiveShadow = true;
+            grp.add(m);
+            return m;
+        }
+
+        /*
+         * stampFacade — adds modular panel grid panels on a face.
+         * grp        : parent group
+         * faceX/Y/Z  : world-space centre of the face
+         * facingRotY : rotation around Y so that local +Z points outward from the face
+         * w, h       : face width / height (in local space)
+         * cols, rows : grid divisions
+         * lobbyGround: if true, the lowest row gets lobby glass panels
+         */
+        function stampFacade(grp, faceX, faceY, faceZ, facingRotY, w, h, cols, rows, lobbyGround) {
+            const g = new THREE.Group();
+            g.position.set(faceX, faceY, faceZ);
+            g.rotation.y = facingRotY;
+            grp.add(g);
+
+            const cw = w / cols;
+            const ch = h / rows;
+
+            for (let r = 0; r < rows; r++) {
+                const py = -h / 2 + (r + 0.5) * ch;
+                const isLobby = lobbyGround && r === 0;
+
+                for (let c = 0; c < cols; c++) {
+                    const px = -w / 2 + (c + 0.5) * cw;
+                    if (isLobby) {
+                        box(g, cw * 0.70, ch * 0.82, 0.6, M.lobby, px, py, 0.4);
+                    } else {
+                        box(g, cw * 0.72, ch * 0.66, 1.8, M.recess, px, py, 0.7);
+                        box(g, cw * 0.50, ch * 0.46, 0.5, M.glass, px, py, 1.45);
+                    }
+                }
+                // green horizontal band at each floor boundary
+                if (r < rows - 1) {
+                    const bandY = -h / 2 + (r + 1) * ch;
+                    box(g, w + 0.4, 0.85, 0.9, M.green, 0, bandY, 0.3);
+                }
+            }
+            // top parapet strip
+            box(g, w + 0.4, 0.85, 0.9, M.green, 0, h / 2, 0.3);
+        }
+
+        /*
+         * FOOTPRINT — traced from the top-view photo
+         *
+         *  North = top of photo = front (AG Lab side, matches front photo)
+         *  +X = East   +Z = South   +Y = Up
+         *
+         *  z=0 ┌──────────────────────────────────────────────┐
+         *       │              NORTH WING  (NW)                │
+         *  z=20 └──────────┐                    ┌──────────────┘
+         *        WestWing  │   open courtyard   │  EastWing (thin, full depth)
+         *        x=-75     │                    │  x=+76
+         *                  │    ┌──────────┐    │  ← CB at z≈58–88
+         *                  │    │  CENTRAL │    │
+         *                  │    │  BLOCK   │    │
+         *                  │    └──────────┘    │
+         *        ChemWing  │                    │
+         *        (lower L) │                    │
+         *                  └────────────────────┘  z=138
+         *
+         *  Central Block connected via:
+         *    North Connector (NC): corridor NW south face → CB north face
+         *    East  Connector (EC): corridor CB east face  → EW west face
+         */
+
+        const FH = 13;       // floor height
+        const FL = 4;        // north wing floors
+        const TH = FH * FL;  // total height = 52
+
+        /* ── 1. NORTH WING ─────────────────────────────────── */
+        const NW_W = 180, NW_D = 20, NW_H = TH;
+        box(B, NW_W, NW_H, NW_D, M.panel, 0, NW_H / 2, NW_D / 2);
+        // front (north) face — detailed, lobby ground floor
+        stampFacade(B, 0, NW_H / 2, 0, 0, NW_W, NW_H, 18, FL, true);
+        // back (south) face
+        stampFacade(B, 0, NW_H / 2, NW_D, Math.PI, NW_W, NW_H, 14, FL, false);
+        // roof
+        box(B, NW_W + 2, 1.5, NW_D + 1, M.roof, 0, NW_H + 0.75, NW_D / 2);
+
+        /* ── 2. EAST WING ──────────────────────────────────── */
+        const EW_W = 28, EW_D = 138, EW_H = TH;
+        const EW_X = NW_W / 2 - EW_W / 2;   // = 76
+        const EW_ZC = EW_D / 2;          // = 69
+        box(B, EW_W, EW_H, EW_D, M.panel, EW_X, EW_H / 2, EW_ZC);
+        // west face (inner courtyard)
+        stampFacade(B, EW_X - EW_W / 2, EW_H / 2, EW_ZC, -Math.PI / 2, EW_D, EW_H, 12, FL, false);
+        // east face (outer)
+        stampFacade(B, EW_X + EW_W / 2, EW_H / 2, EW_ZC, Math.PI / 2, EW_D, EW_H, 12, FL, false);
+        // south cap
+        stampFacade(B, EW_X, EW_H / 2, EW_D, 0, EW_W, EW_H, 2, FL, false);
+        box(B, EW_W + 1, 1.5, EW_D + 1, M.roof, EW_X, EW_H + 0.75, EW_ZC);
+
+        /* ── 3. WEST WING (upper) ──────────────────────────── */
+        const WW_W = 30, WW_D1 = 60, WW_H = FH * 4;
+        const WW_X = -NW_W / 2 + WW_W / 2;   // = -75
+        const WW_ZC = NW_D + WW_D1 / 2;    // = 50
+        box(B, WW_W, WW_H, WW_D1, M.panel, WW_X, WW_H / 2, WW_ZC);
+        stampFacade(B, WW_X + WW_W / 2, WW_H / 2, WW_ZC, -Math.PI / 2, WW_D1, WW_H, 6, 4, false);
+        stampFacade(B, WW_X - WW_W / 2, WW_H / 2, WW_ZC, Math.PI / 2, WW_D1, WW_H, 6, 4, false);
+        stampFacade(B, WW_X, WW_H / 2, NW_D + WW_D1, 0, WW_W, WW_H, 2, 4, false);
+        box(B, WW_W + 1, 1.5, WW_D1 + 1, M.roof, WW_X, WW_H + 0.75, WW_ZC);
+
+        /* ── 4. CHEMISTRY WING (lower west L) ─────────────── */
+        const CW_W = WW_W, CW_D = 55, CW_H = TH;   // same width as WW
+        const CW_X = WW_X;                            // aligned with west wing outer wall
+        const CW_ZC = NW_D + WW_D1 + CW_D / 2;     // = 107.5
+        box(B, CW_W, CW_H, CW_D, M.concrete, CW_X, CW_H / 2, CW_ZC);
+        stampFacade(B, CW_X + CW_W / 2, CW_H / 2, CW_ZC, -Math.PI / 2, CW_D, CW_H, 5, FL, false);
+        stampFacade(B, CW_X - CW_W / 2, CW_H / 2, CW_ZC, Math.PI / 2, CW_D, CW_H, 5, FL, false);
+        stampFacade(B, CW_X, CW_H / 2, NW_D + WW_D1 + CW_D, 0, CW_W, CW_H, 2, FL, false);
+        box(B, CW_W + 1, 1.5, CW_D + 1, M.roof, CW_X, CW_H + 0.75, CW_ZC);
+
+        /* ── 5. CENTRAL BLOCK ("middle small box") ─────────── */
+        const CB_W = 42, CB_D = 30, CB_H = TH;
+        const CB_X = -8;
+        const CB_ZC = 73;
+        box(B, CB_W, CB_H, CB_D, M.panel, CB_X, CB_H / 2, CB_ZC);
+        stampFacade(B, CB_X, CB_H / 2, CB_ZC - CB_D / 2, 0, CB_W, CB_H, 3, FL, false);
+        stampFacade(B, CB_X, CB_H / 2, CB_ZC + CB_D / 2, Math.PI, CB_W, CB_H, 3, FL, false);
+        stampFacade(B, CB_X - CB_W / 2, CB_H / 2, CB_ZC, -Math.PI / 2, CB_D, CB_H, 2, FL, false);
+        stampFacade(B, CB_X + CB_W / 2, CB_H / 2, CB_ZC, Math.PI / 2, CB_D, CB_H, 2, FL, false);
+        box(B, CB_W + 1, 1.5, CB_D + 1, M.roof, CB_X, CB_H + 0.75, CB_ZC);
+
+        /* ── 6. NORTH CONNECTOR (NW south face → CB north face) */
+        const NC_ZS = NW_D;
+        const NC_ZE = CB_ZC - CB_D / 2;
+        const NC_D = NC_ZE - NC_ZS;
+        const NC_ZC = NC_ZS + NC_D / 2;
+        const NC_W = 12, NC_H = FH * 2;
+        box(B, NC_W, NC_H, NC_D, M.panel, CB_X, NC_H / 2, NC_ZC);
+        stampFacade(B, CB_X + NC_W / 2, NC_H / 2, NC_ZC, -Math.PI / 2, NC_D, NC_H, 4, 2, false);
+        stampFacade(B, CB_X - NC_W / 2, NC_H / 2, NC_ZC, Math.PI / 2, NC_D, NC_H, 4, 2, false);
+
+        /* ── 7. EAST CONNECTOR (CB east face → EW west face) ── */
+        const EC_XS = CB_X + CB_W / 2;       // = 13
+        const EC_XE = EW_X - EW_W / 2;       // = 62
+        const EC_W = EC_XE - EC_XS;       // = 49
+        const EC_XC = (EC_XS + EC_XE) / 2; // = 37.5
+        const EC_D2 = CB_D * 0.5;          // = 15
+        const EC_H2 = FH * 2;
+        box(B, EC_W, EC_H2, EC_D2, M.panel, EC_XC, EC_H2 / 2, CB_ZC);
+        stampFacade(B, EC_XC, EC_H2 / 2, CB_ZC - EC_D2 / 2, 0, EC_W, EC_H2, 4, 2, false);
+        stampFacade(B, EC_XC, EC_H2 / 2, CB_ZC + EC_D2 / 2, Math.PI, EC_W, EC_H2, 4, 2, false);
+
+        /* ── 8b. COURTYARD PERGOLAS ─────────────────────────────────
+         * Pink-and-white trellis canopy in the two open courtyard voids
+         * that flank the North Connector (where centre meets the sides).
+         *
+         *  LEFT  courtyard: WW east face → NC west face  (x: -60 → -14)
+         *  RIGHT courtyard: NC east face → EW west face  (x:  -2 →  62)
+         *  Z range: NW south face → CB north face        (z:  20 →  58)
+         *  Canopy sits at the top of the connector walls  (y = NC_H)
+         * ─────────────────────────────────────────────────────────── */
+        (function buildCourtPergolas() {
+          const CANOPY_Y = FH * 3;   // raised to 3rd floor level = 39
+
+          const mBeam  = new THREE.MeshStandardMaterial({ color: 0xede8e0, roughness: 0.6 });
+          const mPink  = new THREE.MeshStandardMaterial({ color: 0xd63384, roughness: 0.2, metalness: 0.35, transparent: true, opacity: 0.90 });
+          const mWhite = new THREE.MeshStandardMaterial({ color: 0xf5f2ee, roughness: 0.3,  transparent: true, opacity: 0.82 });
+          const beamT  = 0.9;
+          const panelT = 0.3;
+
+          function pergola(parent, x0, x1, z0, z1, cols, rows) {
+            const W  = x1 - x0;
+            const D  = z1 - z0;
+            const cw = W / cols;
+            const cd = D / rows;
+            const cx = (x0 + x1) / 2;
+            const cz = (z0 + z1) / 2;
+
+            // East-west beams (one per row boundary)
+            for (let r = 0; r <= rows; r++) {
+              const bz = z0 + r * cd;
+              const b = new THREE.Mesh(new THREE.BoxGeometry(W, beamT, beamT), mBeam);
+              b.position.set(cx, CANOPY_Y, bz);
+              b.castShadow = true;
+              parent.add(b);
+            }
+            // North-south beams (one per col boundary)
+            for (let c = 0; c <= cols; c++) {
+              const bx = x0 + c * cw;
+              const b = new THREE.Mesh(new THREE.BoxGeometry(beamT, beamT, D), mBeam);
+              b.position.set(bx, CANOPY_Y, cz);
+              b.castShadow = true;
+              parent.add(b);
+            }
+            // Alternating panels
+            for (let c = 0; c < cols; c++) {
+              for (let r = 0; r < rows; r++) {
+                const px = x0 + (c + 0.5) * cw;
+                const pz = z0 + (r + 0.5) * cd;
+                const mat = (c + r) % 2 === 0 ? mPink : mWhite;
+                const p = new THREE.Mesh(
+                  new THREE.BoxGeometry(cw - beamT - 0.2, panelT, cd - beamT - 0.2), mat
+                );
+                p.position.set(px, CANOPY_Y, pz);
+                parent.add(p);
+              }
+            }
+          }
+
+          // Courtyard Z range: NW south face → CB north face
+          const CY_Z0 = NW_D;           // = 20
+          const CY_Z1 = CB_ZC - CB_D/2; // = 58
+
+          // LEFT courtyard: west wing east face → NC left face
+          const LC_X0 = WW_X + WW_W/2;  // = -60
+          const LC_X1 = CB_X - NC_W/2;  // = -14
+          pergola(B, LC_X0, LC_X1, CY_Z0, CY_Z1, 6, 5);
+
+          // RIGHT courtyard: NC right face → east wing west face
+          const RC_X0 = CB_X + NC_W/2;  // = -2
+          const RC_X1 = EW_X - EW_W/2;  // = 62
+          pergola(B, RC_X0, RC_X1, CY_Z0, CY_Z1, 8, 5);
+        })();
+
+        /* ── RESIZE + ANIMATE ──────────────────────────────────────── */
+        window.addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        });
+
+        (function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        })();
+    </script>
+</body>
+
+</html>

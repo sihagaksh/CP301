@@ -1,0 +1,844 @@
+[00:00:02.221] Server  LOG     ✓ Ready in 1596ms
+[00:00:08.415] Server  LOG     [2026-03-17T20:36:47.103Z] [Proxy] Processing: /
+[00:00:08.422] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:00:08.423] Server  LOG     [2026-03-17T20:36:47.112Z] [Proxy] [DENIED] Protected route: /, isAuthenticated: false. Redirecting to /login
+[00:00:08.457] Server  LOG     [2026-03-17T20:36:47.146Z] [Proxy] Processing: /login
+[00:00:08.458] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:00:11.470] Server  LOG     ○ Compiling /login ...
+[00:00:15.620] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:15.730] Server  LOG     [2026-03-17T20:36:54.418Z] [Proxy] Processing: /icon.svg
+[00:00:15.792] Server  LOG     [2026-03-17T20:36:54.481Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:00:15.961] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:00:15.961] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/login","route":"/login"}
+[00:00:15.961] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/login?redirect=%2F color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login?redirect=%2F","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773779814548} /_vercel/insights/view
+[00:00:18.807] Server  LOG     [2026-03-17T20:36:57.497Z] [Proxy] Processing: /signup
+[00:00:18.808] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:00:19.778] Server  LOG     [2026-03-17T20:36:58.467Z] [Proxy] Processing: /icon.svg
+[00:00:19.817] Server  LOG     [2026-03-17T20:36:58.506Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:00:19.861] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/signup color: rgb(120, 120, 120) color: inherit {"dp":"/signup","o":"http://localhost:3002/signup","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773779818448} /_vercel/insights/view
+[00:00:57.974] Server  LOG     [2026-03-17T20:37:36.664Z] [Proxy] Processing: /api/auth/signup
+[00:01:03.991] Server  LOG     [2026-03-17T20:37:42.680Z] [Proxy] Processing: /
+[00:01:03.992] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:01:03.993] Server  LOG     [2026-03-17T20:37:42.682Z] [Proxy] [DENIED] Protected route: /, isAuthenticated: false. Redirecting to /login
+[00:01:04.031] Server  LOG     [2026-03-17T20:37:42.721Z] [Proxy] Processing: /login
+[00:01:04.032] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:01:04.501] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:01:04.586] Server  LOG     [2026-03-17T20:37:43.275Z] [Proxy] Processing: /icon.svg
+[00:01:04.621] Server  LOG     [2026-03-17T20:37:43.310Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:01:04.694] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:01:04.694] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/login","route":"/login"}
+[00:01:04.694] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/login?redirect=%2F color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login?redirect=%2F","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773779863282} /_vercel/insights/view
+[00:02:28.548] Server  LOG     [2026-03-17T20:39:07.237Z] [Proxy] Processing: /api/auth/set-cookie
+[00:02:29.786] Server  LOG     [2026-03-17T20:39:08.475Z] [Proxy] Processing: /
+[00:02:29.787] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:02:29.788] Server  LOG     [2026-03-17T20:39:08.477Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:02:32.430] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:32.502] Server  LOG     [2026-03-17T20:39:11.192Z] [Proxy] Processing: /icon.svg
+[00:02:32.546] Server  LOG     [2026-03-17T20:39:11.235Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:02:32.644] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:02:32.644] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:02:32.644] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773779951232} /_vercel/insights/view
+[00:07:07.841] Server  LOG     [2026-03-17T20:43:46.530Z] [Proxy] Processing: /notices
+[00:07:07.841] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:07.842] Server  LOG     [2026-03-17T20:43:46.531Z] [Proxy] [ALLOWED] Path: /notices, isAuthenticated: true
+[00:07:10.475] Server  LOG     [2026-03-17T20:43:49.164Z] [Proxy] Processing: /icon.svg
+[00:07:10.505] Server  LOG     [2026-03-17T20:43:49.194Z] [Proxy] Processing: /blogs
+[00:07:10.506] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:10.507] Server  LOG     [2026-03-17T20:43:49.196Z] [Proxy] [ALLOWED] Path: /blogs, isAuthenticated: true
+[00:07:10.612] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notices color: rgb(120, 120, 120) color: inherit {"dp":"/notices","o":"http://localhost:3002/notices","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780229145} /_vercel/insights/view
+[00:07:10.633] Server  LOG     [2026-03-17T20:43:49.323Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:11.917] Server  LOG     [2026-03-17T20:43:50.606Z] [Proxy] Processing: /icon.svg
+[00:07:11.946] Server  LOG     [2026-03-17T20:43:50.635Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:11.991] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/blogs color: rgb(120, 120, 120) color: inherit {"dp":"/blogs","o":"http://localhost:3002/blogs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780230565} /_vercel/insights/view
+[00:07:12.258] Server  LOG     [2026-03-17T20:43:50.947Z] [Proxy] Processing: /blogs
+[00:07:12.258] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:12.259] Server  LOG     [2026-03-17T20:43:50.948Z] [Proxy] [ALLOWED] Path: /blogs, isAuthenticated: true
+[00:07:12.351] Server  LOG     [2026-03-17T20:43:51.040Z] [Proxy] Processing: /icon.svg
+[00:07:12.369] Server  LOG     [2026-03-17T20:43:51.058Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:13.348] Server  LOG     [2026-03-17T20:43:52.037Z] [Proxy] Processing: /events
+[00:07:13.348] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:13.349] Server  LOG     [2026-03-17T20:43:52.039Z] [Proxy] [ALLOWED] Path: /events, isAuthenticated: true
+[00:07:14.561] Server  LOG     [2026-03-17T20:43:53.251Z] [Proxy] Processing: /icon.svg
+[00:07:14.615] Server  LOG     [2026-03-17T20:43:53.305Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:14.646] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/events color: rgb(120, 120, 120) color: inherit {"dp":"/events","o":"http://localhost:3002/events","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780233231} /_vercel/insights/view
+[00:07:15.719] Server  LOG     [2026-03-17T20:43:54.408Z] [Proxy] Processing: /marketplace
+[00:07:15.719] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:15.720] Server  LOG     [2026-03-17T20:43:54.409Z] [Proxy] [ALLOWED] Path: /marketplace, isAuthenticated: true
+[00:07:16.783] Server  LOG     [2026-03-17T20:43:55.472Z] [Proxy] Processing: /icon.svg
+[00:07:16.832] Server  LOG     [2026-03-17T20:43:55.521Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:16.862] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/marketplace color: rgb(120, 120, 120) color: inherit {"dp":"/marketplace","o":"http://localhost:3002/marketplace","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780235447} /_vercel/insights/view
+[00:07:18.868] Server  LOG     [2026-03-17T20:43:57.558Z] [Proxy] Processing: /blogs
+[00:07:18.869] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:18.869] Server  LOG     [2026-03-17T20:43:57.559Z] [Proxy] [ALLOWED] Path: /blogs, isAuthenticated: true
+[00:07:18.955] Server  LOG     [2026-03-17T20:43:57.645Z] [Proxy] Processing: /icon.svg
+[00:07:18.991] Server  LOG     [2026-03-17T20:43:57.680Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:19.048] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/blogs color: rgb(120, 120, 120) color: inherit {"dp":"/blogs","o":"http://localhost:3002/blogs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780237630} /_vercel/insights/view
+[00:07:20.717] Server  LOG     [2026-03-17T20:43:59.406Z] [Proxy] Processing: /blogs/create
+[00:07:20.718] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:20.719] Server  LOG     [2026-03-17T20:43:59.408Z] [Proxy] [ALLOWED] Path: /blogs/create, isAuthenticated: true
+[00:07:22.012] Server  LOG     [2026-03-17T20:44:00.702Z] [Proxy] Processing: /icon.svg
+[00:07:22.042] Server  LOG     [2026-03-17T20:44:00.731Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:22.084] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/blogs/create color: rgb(120, 120, 120) color: inherit {"dp":"/blogs/create","o":"http://localhost:3002/blogs/create","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780240630} /_vercel/insights/view
+[00:07:27.475] Server  LOG     [2026-03-17T20:44:06.164Z] [Proxy] Processing: /blogs
+[00:07:27.475] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:27.476] Server  LOG     [2026-03-17T20:44:06.165Z] [Proxy] [ALLOWED] Path: /blogs, isAuthenticated: true
+[00:07:27.571] Server  LOG     [2026-03-17T20:44:06.260Z] [Proxy] Processing: /icon.svg
+[00:07:27.607] Server  LOG     [2026-03-17T20:44:06.296Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:27.652] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/blogs color: rgb(120, 120, 120) color: inherit {"dp":"/blogs","o":"http://localhost:3002/blogs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780246233} /_vercel/insights/view
+[00:07:28.995] Server  LOG     [2026-03-17T20:44:07.684Z] [Proxy] Processing: /clubs
+[00:07:28.995] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:28.996] Server  LOG     [2026-03-17T20:44:07.685Z] [Proxy] [ALLOWED] Path: /clubs, isAuthenticated: true
+[00:07:29.793] Server  LOG     [2026-03-17T20:44:08.482Z] [Proxy] Processing: /icon.svg
+[00:07:29.822] Server  LOG     [2026-03-17T20:44:08.511Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:29.881] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/clubs color: rgb(120, 120, 120) color: inherit {"dp":"/clubs","o":"http://localhost:3002/clubs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780248461} /_vercel/insights/view
+[00:07:31.021] Server  LOG     [2026-03-17T20:44:09.710Z] [Proxy] Processing: /communities
+[00:07:31.022] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:31.023] Server  LOG     [2026-03-17T20:44:09.712Z] [Proxy] [ALLOWED] Path: /communities, isAuthenticated: true
+[00:07:32.069] Server  LOG     [2026-03-17T20:44:10.757Z] [Proxy] Processing: /icon.svg
+[00:07:32.103] Server  LOG     [2026-03-17T20:44:10.792Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:32.161] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/communities color: rgb(120, 120, 120) color: inherit {"dp":"/communities","o":"http://localhost:3002/communities","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780250747} /_vercel/insights/view
+[00:07:32.738] Server  LOG     [2026-03-17T20:44:11.428Z] [Proxy] Processing: /map
+[00:07:32.739] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:32.739] Server  LOG     [2026-03-17T20:44:11.428Z] [Proxy] [ALLOWED] Path: /map, isAuthenticated: true
+[00:07:33.529] Server  LOG     [2026-03-17T20:44:12.218Z] [Proxy] Processing: /maps/2d/index.html
+[00:07:33.545] Server  LOG     [2026-03-17T20:44:12.235Z] [Proxy] Processing: /icon.svg
+[00:07:33.596] Server  LOG     [2026-03-17T20:44:12.285Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:33.600] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/map color: rgb(120, 120, 120) color: inherit {"dp":"/map","o":"http://localhost:3002/map","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780252182} /_vercel/insights/view
+[00:07:33.845] Server  LOG     [2026-03-17T20:44:12.535Z] [Proxy] Processing: /maps/2d/buildings.json
+[00:07:33.852] Server  LOG     [2026-03-17T20:44:12.541Z] [Proxy] Processing: /maps/2d/tiles/2/1/0.png
+[00:07:33.858] Server  LOG     [2026-03-17T20:44:12.547Z] [Proxy] Processing: /maps/2d/tiles/2/2/0.png
+[00:07:33.866] Server  LOG     [2026-03-17T20:44:12.556Z] [Proxy] Processing: /maps/2d/tiles/2/1/1.png
+[00:07:33.877] Server  LOG     [2026-03-17T20:44:12.566Z] [Proxy] Processing: /maps/2d/tiles/2/2/1.png
+[00:07:33.887] Server  LOG     [2026-03-17T20:44:12.576Z] [Proxy] Processing: /maps/2d/tiles/2/0/0.png
+[00:07:33.948] Server  LOG     [2026-03-17T20:44:12.637Z] [Proxy] Processing: /maps/2d/tiles/2/3/0.png
+[00:07:33.952] Server  LOG     [2026-03-17T20:44:12.642Z] [Proxy] Processing: /maps/2d/tiles/2/0/2.png
+[00:07:33.961] Server  LOG     [2026-03-17T20:44:12.651Z] [Proxy] Processing: /maps/2d/tiles/2/0/1.png
+[00:07:33.965] Server  LOG     [2026-03-17T20:44:12.654Z] [Proxy] Processing: /maps/2d/tiles/2/1/2.png
+[00:07:33.968] Server  LOG     [2026-03-17T20:44:12.658Z] [Proxy] Processing: /maps/2d/tiles/2/3/2.png
+[00:07:33.971] Server  LOG     [2026-03-17T20:44:12.661Z] [Proxy] Processing: /maps/2d/tiles/2/2/2.png
+[00:07:33.994] Server  LOG     [2026-03-17T20:44:12.683Z] [Proxy] Processing: /maps/2d/tiles/2/3/1.png
+[00:07:39.780] Server  LOG     [2026-03-17T20:44:18.469Z] [Proxy] Processing: /maps/3d/index.html
+[00:07:39.819] Server  LOG     [2026-03-17T20:44:18.508Z] [Proxy] Processing: /maps/3d/styles.css
+[00:07:39.823] Server  LOG     [2026-03-17T20:44:18.512Z] [Proxy] Processing: /maps/3d/app.js
+[00:07:44.359] Server  LOG     [2026-03-17T20:44:23.048Z] [Proxy] Processing: /
+[00:07:44.359] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:44.360] Server  LOG     [2026-03-17T20:44:23.049Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:07:45.696] Server  LOG     [2026-03-17T20:44:24.385Z] [Proxy] Processing: /icon.svg
+[00:07:45.725] Server  LOG     [2026-03-17T20:44:24.414Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:45.789] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780264371} /_vercel/insights/view
+[00:07:48.020] Server  LOG     [2026-03-17T20:44:26.710Z] [Proxy] Processing: /map
+[00:07:48.021] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:48.021] Server  LOG     [2026-03-17T20:44:26.711Z] [Proxy] [ALLOWED] Path: /map, isAuthenticated: true
+[00:07:48.094] Server  LOG     [2026-03-17T20:44:26.783Z] [Proxy] Processing: /maps/2d/index.html
+[00:07:48.099] Server  LOG     [2026-03-17T20:44:26.788Z] [Proxy] Processing: /icon.svg
+[00:07:48.188] Server  LOG     [2026-03-17T20:44:26.877Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:07:48.197] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/map color: rgb(120, 120, 120) color: inherit {"dp":"/map","o":"http://localhost:3002/map","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780266766} /_vercel/insights/view
+[00:07:48.223] Server  LOG     [2026-03-17T20:44:26.912Z] [Proxy] Processing: /maps/2d/buildings.json
+[00:07:48.240] Server  LOG     [2026-03-17T20:44:26.929Z] [Proxy] Processing: /maps/2d/tiles/2/1/0.png
+[00:07:48.244] Server  LOG     [2026-03-17T20:44:26.934Z] [Proxy] Processing: /maps/2d/tiles/2/3/2.png
+[00:07:48.250] Server  LOG     [2026-03-17T20:44:26.939Z] [Proxy] Processing: /maps/2d/tiles/2/2/0.png
+[00:07:48.254] Server  LOG     [2026-03-17T20:44:26.944Z] [Proxy] Processing: /maps/2d/tiles/2/1/1.png
+[00:07:48.260] Server  LOG     [2026-03-17T20:44:26.949Z] [Proxy] Processing: /maps/2d/tiles/2/2/1.png
+[00:07:48.290] Server  LOG     [2026-03-17T20:44:26.979Z] [Proxy] Processing: /maps/2d/tiles/2/1/2.png
+[00:07:48.302] Server  LOG     [2026-03-17T20:44:26.991Z] [Proxy] Processing: /maps/2d/tiles/2/3/1.png
+[00:07:48.311] Server  LOG     [2026-03-17T20:44:27.000Z] [Proxy] Processing: /maps/2d/tiles/2/0/2.png
+[00:07:48.317] Server  LOG     [2026-03-17T20:44:27.007Z] [Proxy] Processing: /maps/2d/tiles/2/3/0.png
+[00:07:48.324] Server  LOG     [2026-03-17T20:44:27.013Z] [Proxy] Processing: /maps/2d/tiles/2/0/1.png
+[00:07:48.331] Server  LOG     [2026-03-17T20:44:27.020Z] [Proxy] Processing: /maps/2d/tiles/2/2/2.png
+[00:07:48.351] Server  LOG     [2026-03-17T20:44:27.040Z] [Proxy] Processing: /maps/2d/tiles/2/0/0.png
+[00:07:50.477] Server  LOG     [2026-03-17T20:44:29.166Z] [Proxy] Processing: /maps/3d/index.html
+[00:07:50.561] Server  LOG     [2026-03-17T20:44:29.250Z] [Proxy] Processing: /maps/3d/styles.css
+[00:07:50.565] Server  LOG     [2026-03-17T20:44:29.254Z] [Proxy] Processing: /maps/3d/app.js
+[00:07:52.412] Server  LOG     [2026-03-17T20:44:31.102Z] [Proxy] Processing: /maps/2d/index.html
+[00:07:52.540] Server  LOG     [2026-03-17T20:44:31.230Z] [Proxy] Processing: /maps/2d/buildings.json
+[00:07:52.544] Server  LOG     [2026-03-17T20:44:31.233Z] [Proxy] Processing: /maps/2d/tiles/2/1/0.png
+[00:07:52.550] Server  LOG     [2026-03-17T20:44:31.240Z] [Proxy] Processing: /maps/2d/tiles/2/2/0.png
+[00:07:52.555] Server  LOG     [2026-03-17T20:44:31.244Z] [Proxy] Processing: /maps/2d/tiles/2/1/1.png
+[00:07:52.558] Server  LOG     [2026-03-17T20:44:31.248Z] [Proxy] Processing: /maps/2d/tiles/2/2/1.png
+[00:07:52.563] Server  LOG     [2026-03-17T20:44:31.252Z] [Proxy] Processing: /maps/2d/tiles/2/0/0.png
+[00:07:52.579] Server  LOG     [2026-03-17T20:44:31.268Z] [Proxy] Processing: /maps/2d/tiles/2/2/2.png
+[00:07:52.625] Server  LOG     [2026-03-17T20:44:31.315Z] [Proxy] Processing: /maps/2d/tiles/2/3/1.png
+[00:07:52.630] Server  LOG     [2026-03-17T20:44:31.320Z] [Proxy] Processing: /maps/2d/tiles/2/1/2.png
+[00:07:52.635] Server  LOG     [2026-03-17T20:44:31.324Z] [Proxy] Processing: /maps/2d/tiles/2/0/2.png
+[00:07:52.640] Server  LOG     [2026-03-17T20:44:31.330Z] [Proxy] Processing: /maps/2d/tiles/2/3/2.png
+[00:07:52.646] Server  LOG     [2026-03-17T20:44:31.335Z] [Proxy] Processing: /maps/2d/tiles/2/3/0.png
+[00:07:52.657] Server  LOG     [2026-03-17T20:44:31.346Z] [Proxy] Processing: /maps/2d/tiles/2/0/1.png
+[00:07:57.529] Server  LOG     [2026-03-17T20:44:36.218Z] [Proxy] Processing: /maps/2d/tiles/1/0/0.png
+[00:07:57.534] Server  LOG     [2026-03-17T20:44:36.223Z] [Proxy] Processing: /maps/2d/tiles/1/1/0.png
+[00:07:57.539] Server  LOG     [2026-03-17T20:44:36.228Z] [Proxy] Processing: /maps/2d/tiles/1/0/1.png
+[00:07:57.544] Server  LOG     [2026-03-17T20:44:36.234Z] [Proxy] Processing: /maps/2d/tiles/1/1/1.png
+[00:07:57.562] Server  LOG     [2026-03-17T20:44:36.251Z] [Proxy] Processing: /maps/2d/tiles/0/0/0.png
+[00:07:58.497] Server  LOG     [2026-03-17T20:44:37.186Z] [Proxy] Processing: /maps/2d/tiles/5/1/15.png
+[00:07:58.499] Server  LOG     [2026-03-17T20:44:37.189Z] [Proxy] Processing: /maps/2d/tiles/5/2/15.png
+[00:07:58.501] Server  LOG     [2026-03-17T20:44:37.191Z] [Proxy] Processing: /maps/2d/tiles/5/1/16.png
+[00:07:58.509] Server  LOG     [2026-03-17T20:44:37.198Z] [Proxy] Processing: /maps/2d/tiles/5/2/16.png
+[00:07:58.516] Server  LOG     [2026-03-17T20:44:37.206Z] [Proxy] Processing: /maps/2d/tiles/5/0/15.png
+[00:07:58.521] Server  LOG     [2026-03-17T20:44:37.210Z] [Proxy] Processing: /maps/2d/tiles/5/3/15.png
+[00:07:58.561] Server  LOG     [2026-03-17T20:44:37.251Z] [Proxy] Processing: /maps/2d/tiles/5/0/16.png
+[00:07:58.565] Server  LOG     [2026-03-17T20:44:37.254Z] [Proxy] Processing: /maps/2d/tiles/5/3/16.png
+[00:07:58.971] Server  LOG     [2026-03-17T20:44:37.660Z] [Proxy] Processing: /maps/2d/tiles/4/0/7.png
+[00:07:58.975] Server  LOG     [2026-03-17T20:44:37.664Z] [Proxy] Processing: /maps/2d/tiles/4/0/8.png
+[00:07:58.981] Server  LOG     [2026-03-17T20:44:37.670Z] [Proxy] Processing: /maps/2d/tiles/4/1/7.png
+[00:07:58.992] Server  LOG     [2026-03-17T20:44:37.682Z] [Proxy] Processing: /maps/2d/tiles/4/1/8.png
+[00:07:58.997] Server  LOG     [2026-03-17T20:44:37.686Z] [Proxy] Processing: /maps/2d/tiles/4/2/7.png
+[00:07:59.002] Server  LOG     [2026-03-17T20:44:37.691Z] [Proxy] Processing: /maps/2d/tiles/4/2/8.png
+[00:07:59.031] Server  LOG     [2026-03-17T20:44:37.720Z] [Proxy] Processing: /maps/2d/tiles/3/0/4.png
+[00:07:59.045] Server  LOG     [2026-03-17T20:44:37.734Z] [Proxy] Processing: /maps/2d/tiles/3/0/3.png
+[00:07:59.055] Server  LOG     [2026-03-17T20:44:37.744Z] [Proxy] Processing: /maps/2d/tiles/3/1/3.png
+[00:07:59.067] Server  LOG     [2026-03-17T20:44:37.756Z] [Proxy] Processing: /maps/2d/tiles/3/1/4.png
+[00:07:59.078] Server  LOG     [2026-03-17T20:44:37.767Z] [Proxy] Processing: /maps/2d/tiles/3/2/3.png
+[00:07:59.089] Server  LOG     [2026-03-17T20:44:37.779Z] [Proxy] Processing: /maps/2d/tiles/3/2/4.png
+[00:07:59.102] Server  LOG     [2026-03-17T20:44:37.792Z] [Proxy] Processing: /maps/2d/tiles/1/0/0.png
+[00:07:59.115] Server  LOG     [2026-03-17T20:44:37.804Z] [Proxy] Processing: /maps/2d/tiles/1/0/1.png
+[00:07:59.126] Server  LOG     [2026-03-17T20:44:37.815Z] [Proxy] Processing: /maps/2d/tiles/1/1/0.png
+[00:07:59.133] Server  LOG     [2026-03-17T20:44:37.822Z] [Proxy] Processing: /maps/2d/tiles/1/1/1.png
+[00:07:59.139] Server  LOG     [2026-03-17T20:44:37.828Z] [Proxy] Processing: /maps/2d/tiles/0/0/0.png
+[00:07:59.624] Server  LOG     [2026-03-17T20:44:38.313Z] [Proxy] Processing: /lost-found
+[00:07:59.626] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:07:59.626] Server  LOG     [2026-03-17T20:44:38.316Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:08:00.976] Server  LOG     [2026-03-17T20:44:39.665Z] [Proxy] Processing: /icon.svg
+[00:08:01.023] Server  LOG     [2026-03-17T20:44:39.712Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:08:01.041] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780279626} /_vercel/insights/view
+[00:08:05.816] Server  LOG     [2026-03-17T20:44:44.506Z] [Proxy] Processing: /messages
+[00:08:05.817] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:08:05.817] Server  LOG     [2026-03-17T20:44:44.507Z] [Proxy] [ALLOWED] Path: /messages, isAuthenticated: true
+[00:08:06.807] Server  LOG     [2026-03-17T20:44:45.496Z] [Proxy] Processing: /icon.svg
+[00:08:06.841] Server  LOG     [2026-03-17T20:44:45.530Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:08:06.905] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/messages color: rgb(120, 120, 120) color: inherit {"dp":"/messages","o":"http://localhost:3002/messages","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780285491} /_vercel/insights/view
+[00:08:25.691] Server  LOG     [2026-03-17T20:45:04.379Z] [Proxy] Processing: /
+[00:08:25.692] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:08:25.693] Server  LOG     [2026-03-17T20:45:04.382Z] [Proxy] [DENIED] Protected route: /, isAuthenticated: false. Redirecting to /login
+[00:08:25.734] Server  LOG     [2026-03-17T20:45:04.423Z] [Proxy] Processing: /login
+[00:08:25.735] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:08:26.556] Server  LOG     [2026-03-17T20:45:05.245Z] [Proxy] Processing: /apple-icon.png
+[00:08:26.560] Server  LOG     [2026-03-17T20:45:05.250Z] [Proxy] Processing: /icon.svg
+[00:08:26.562] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:08:26.889] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:08:26.890] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/login","route":"/login"}
+[00:08:26.890] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/login?redirect=%2F color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login?redirect=%2F","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780305477} /_vercel/insights/view
+[00:08:28.484] Server  LOG     [2026-03-17T20:45:07.174Z] [Proxy] Processing: /signup
+[00:08:28.485] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:08:28.712] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/signup color: rgb(120, 120, 120) color: inherit {"dp":"/signup","o":"http://localhost:3002/signup","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780307298} /_vercel/insights/view
+[00:09:01.687] Server  LOG     [2026-03-17T20:45:40.376Z] [Proxy] Processing: /api/auth/signup
+[00:09:05.878] Server  LOG     [2026-03-17T20:45:44.568Z] [Proxy] Processing: /
+[00:09:05.879] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:09:05.880] Server  LOG     [2026-03-17T20:45:44.570Z] [Proxy] [DENIED] Protected route: /, isAuthenticated: false. Redirecting to /login
+[00:09:05.924] Server  LOG     [2026-03-17T20:45:44.613Z] [Proxy] Processing: /login
+[00:09:05.925] Server  LOG     [Proxy] Auth check: sb-auth-token=false, isAuthenticated=false
+[00:09:06.549] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:09:06.817] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:09:06.818] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/login","route":"/login"}
+[00:09:06.818] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/login?redirect=%2F color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3002/login?redirect=%2F","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780345405} /_vercel/insights/view
+[00:10:14.666] Server  LOG     [2026-03-17T20:46:53.355Z] [Proxy] Processing: /api/auth/set-cookie
+[00:10:16.120] Server  LOG     [2026-03-17T20:46:54.809Z] [Proxy] Processing: /
+[00:10:16.122] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:10:16.123] Server  LOG     [2026-03-17T20:46:54.812Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:10:16.992] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:10:17.235] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:10:17.235] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:10:17.235] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780415822} /_vercel/insights/view
+[00:10:22.070] Server  LOG     [2026-03-17T20:47:00.759Z] [Proxy] Processing: /notices
+[00:10:22.071] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:10:22.071] Server  LOG     [2026-03-17T20:47:00.761Z] [Proxy] [ALLOWED] Path: /notices, isAuthenticated: true
+[00:10:22.381] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notices color: rgb(120, 120, 120) color: inherit {"dp":"/notices","o":"http://localhost:3002/notices","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780420969} /_vercel/insights/view
+[00:10:24.031] Server  LOG     [2026-03-17T20:47:02.720Z] [Proxy] Processing: /blogs
+[00:10:24.031] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:10:24.031] Server  LOG     [2026-03-17T20:47:02.721Z] [Proxy] [ALLOWED] Path: /blogs, isAuthenticated: true
+[00:10:24.282] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/blogs color: rgb(120, 120, 120) color: inherit {"dp":"/blogs","o":"http://localhost:3002/blogs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780422860} /_vercel/insights/view
+[00:10:25.266] Server  LOG     [2026-03-17T20:47:03.955Z] [Proxy] Processing: /events
+[00:10:25.267] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:10:25.267] Server  LOG     [2026-03-17T20:47:03.956Z] [Proxy] [ALLOWED] Path: /events, isAuthenticated: true
+[00:10:25.492] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/events color: rgb(120, 120, 120) color: inherit {"dp":"/events","o":"http://localhost:3002/events","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780424079} /_vercel/insights/view
+[00:10:26.138] Server  LOG     [2026-03-17T20:47:04.827Z] [Proxy] Processing: /clubs
+[00:10:26.138] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:10:26.139] Server  LOG     [2026-03-17T20:47:04.828Z] [Proxy] [ALLOWED] Path: /clubs, isAuthenticated: true
+[00:10:26.341] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/clubs color: rgb(120, 120, 120) color: inherit {"dp":"/clubs","o":"http://localhost:3002/clubs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780424929} /_vercel/insights/view
+[00:10:29.116] Server  LOG     [2026-03-17T20:47:07.806Z] [Proxy] Processing: /lost-found
+[00:10:29.117] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:10:29.117] Server  LOG     [2026-03-17T20:47:07.807Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:10:29.349] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780427935} /_vercel/insights/view
+[00:10:30.016] Server  LOG     [2026-03-17T20:47:08.706Z] [Proxy] Processing: /messages
+[00:10:30.017] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:10:30.017] Server  LOG     [2026-03-17T20:47:08.707Z] [Proxy] [ALLOWED] Path: /messages, isAuthenticated: true
+[00:10:30.264] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/messages color: rgb(120, 120, 120) color: inherit {"dp":"/messages","o":"http://localhost:3002/messages","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780428850} /_vercel/insights/view
+[00:10:41.068] Server  LOG     [2026-03-17T20:47:19.757Z] [Proxy] Processing: /api/auth/set-cookie
+[00:12:39.666] Server  LOG     ✓ Compiled in 455ms
+[00:13:55.992] Server  LOG     [2026-03-17T20:50:34.682Z] [Proxy] Processing: /lost-found
+[00:13:55.993] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:13:55.993] Server  LOG     [2026-03-17T20:50:34.683Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:13:56.100] Server  LOG     [2026-03-17T20:50:34.789Z] [Proxy] Processing: /icon.svg
+[00:13:56.143] Server  LOG     [2026-03-17T20:50:34.832Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:13:56.183] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780634769} /_vercel/insights/view
+[00:13:58.320] Server  LOG     [2026-03-17T20:50:37.009Z] [Proxy] Processing: /lost-found/report
+[00:13:58.320] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:13:58.321] Server  LOG     [2026-03-17T20:50:37.010Z] [Proxy] [ALLOWED] Path: /lost-found/report, isAuthenticated: true
+[00:13:59.372] Server  LOG     [2026-03-17T20:50:38.061Z] [Proxy] Processing: /icon.svg
+[00:13:59.409] Server  LOG     [2026-03-17T20:50:38.098Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:13:59.455] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found/report color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found/report","o":"http://localhost:3002/lost-found/report","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780638041} /_vercel/insights/view
+[00:14:08.434] Server  LOG     [2026-03-17T20:50:47.123Z] [Proxy] Processing: /
+[00:14:08.434] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:14:08.435] Server  LOG     [2026-03-17T20:50:47.124Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:14:08.549] Server  LOG     [2026-03-17T20:50:47.239Z] [Proxy] Processing: /icon.svg
+[00:14:08.575] Server  LOG     [2026-03-17T20:50:47.264Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:14:08.636] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780647221} /_vercel/insights/view
+[00:15:25.857] Server  LOG     [2026-03-17T20:52:04.547Z] [Proxy] Processing: /users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e
+[00:15:25.858] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:15:25.858] Server  LOG     [2026-03-17T20:52:04.548Z] [Proxy] [ALLOWED] Path: /users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e, isAuthenticated: true
+[00:15:28.257] Server  LOG     [2026-03-17T20:52:06.947Z] [Proxy] Processing: /icon.svg
+[00:15:28.300] Server  LOG     [2026-03-17T20:52:06.989Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:15:28.321] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e color: rgb(120, 120, 120) color: inherit {"dp":"/users/[id]","o":"http://localhost:3002/users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780726908} /_vercel/insights/view
+[00:15:38.537] Server  LOG     [2026-03-17T20:52:17.226Z] [Proxy] Processing: /profile
+[00:15:38.538] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:15:38.538] Server  LOG     [2026-03-17T20:52:17.227Z] [Proxy] [ALLOWED] Path: /profile, isAuthenticated: true
+[00:15:39.986] Server  LOG     [2026-03-17T20:52:18.675Z] [Proxy] Processing: /icon.svg
+[00:15:40.024] Server  LOG     [2026-03-17T20:52:18.713Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:15:40.047] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/profile color: rgb(120, 120, 120) color: inherit {"dp":"/profile","o":"http://localhost:3002/profile","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780738632} /_vercel/insights/view
+[00:15:45.228] Server  LOG     [2026-03-17T20:52:23.917Z] [Proxy] Processing: /icon.svg
+[00:15:45.252] Server  LOG     [2026-03-17T20:52:23.941Z] [Proxy] Processing: /icon.svg
+[00:15:45.284] Server  LOG     [2026-03-17T20:52:23.973Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:15:45.310] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e color: rgb(120, 120, 120) color: inherit {"dp":"/users/[id]","o":"http://localhost:3002/users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773780743897} /_vercel/insights/view
+[00:17:42.641] Server  LOG     ✓ Compiled in 216ms
+[00:18:07.642] Server  LOG     ✓ Compiled in 300ms
+[00:18:07.840] Browser ERROR   ./app/(dashboard)/page.tsx:12:20
+Parsing ecmascript source code failed
+  10 | } from 'lucide-react';
+  11 | import { db } from '@/lib/db';
+> 12 | import { useAuth } '@/contexts/AuthContext';
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^
+  13 | import { format } from 'date-fns';
+  14 |
+  15 | interface FeedComment {
+
+Expected 'from', got 'string literal'
+
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/page.tsx [Client Component Browser]
+    ./app/(dashboard)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(dashboard)/page.tsx [Client Component SSR]
+    ./app/(dashboard)/page.tsx [Server Component]
+[00:18:07.884] Browser ERROR   ./app/(dashboard)/page.tsx:12:20
+Parsing ecmascript source code failed
+  10 | } from 'lucide-react';
+  11 | import { db } from '@/lib/db';
+> 12 | import { useAuth } '@/contexts/AuthContext';
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^
+  13 | import { format } from 'date-fns';
+  14 |
+  15 | interface FeedComment {
+
+Expected 'from', got 'string literal'
+
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/page.tsx [Client Component Browser]
+    ./app/(dashboard)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(dashboard)/page.tsx [Client Component SSR]
+    ./app/(dashboard)/page.tsx [Server Component]
+[00:18:23.711] Server  LOG     ✓ Compiled in 164ms
+[00:18:23.718] Server  LOG     [2026-03-17T20:55:02.407Z] [Proxy] Processing: /users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e
+[00:18:23.719] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:18:23.720] Server  LOG     [2026-03-17T20:55:02.409Z] [Proxy] [ALLOWED] Path: /users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e, isAuthenticated: true
+[00:18:23.728] Server  LOG     [2026-03-17T20:55:02.417Z] [Proxy] Processing: /messages
+[00:18:23.729] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:18:23.729] Server  LOG     [2026-03-17T20:55:02.419Z] [Proxy] [ALLOWED] Path: /messages, isAuthenticated: true
+[00:18:24.499] Server  LOG     [2026-03-17T20:55:03.188Z] [Proxy] Processing: /icon.svg
+[00:18:24.539] Server  LOG     [2026-03-17T20:55:03.227Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:19:34.022] Server  LOG     [2026-03-17T20:56:12.711Z] [Proxy] Processing: /users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e
+[00:19:34.023] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:19:34.024] Server  LOG     [2026-03-17T20:56:12.714Z] [Proxy] [ALLOWED] Path: /users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e, isAuthenticated: true
+[00:19:34.057] Server  LOG     [2026-03-17T20:56:12.746Z] [Proxy] Processing: /messages
+[00:19:34.058] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:19:34.059] Server  LOG     [2026-03-17T20:56:12.748Z] [Proxy] [ALLOWED] Path: /messages, isAuthenticated: true
+[00:19:34.065] Server  LOG     ✓ Compiled in 605ms
+[00:19:34.853] Server  LOG     [2026-03-17T20:56:13.542Z] [Proxy] Processing: /icon.svg
+[00:19:34.886] Server  LOG     [2026-03-17T20:56:13.575Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:19:58.082] Server  LOG     ✓ Compiled in 552ms
+[00:22:17.423] Server  LOG     [2026-03-17T20:58:56.113Z] [Proxy] Processing: /posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d
+[00:22:17.424] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:22:17.424] Server  LOG     [2026-03-17T20:58:56.114Z] [Proxy] [ALLOWED] Path: /posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d, isAuthenticated: true
+[00:22:20.344] Server  LOG     [2026-03-17T20:58:59.033Z] [Proxy] Processing: /icon.svg
+[00:22:20.379] Server  LOG     [2026-03-17T20:58:59.069Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:22:20.421] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d color: rgb(120, 120, 120) color: inherit {"dp":"/posts/[id]","o":"http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781139009} /_vercel/insights/view
+[00:22:33.738] Server  LOG     [2026-03-17T20:59:12.427Z] [Proxy] Processing: /posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d
+[00:22:33.739] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:22:33.739] Server  LOG     [2026-03-17T20:59:12.429Z] [Proxy] [ALLOWED] Path: /posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d, isAuthenticated: true
+[00:22:34.839] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:22:34.943] Server  LOG     [2026-03-17T20:59:13.632Z] [Proxy] Processing: /api/auth/set-cookie
+[00:22:35.019] Server  LOG     [2026-03-17T20:59:13.708Z] [Proxy] Processing: /icon.svg
+[00:22:35.069] Server  LOG     [2026-03-17T20:59:13.758Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:22:35.327] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:22:35.327] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d","route":"/posts/[id]"}
+[00:22:35.327] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d color: rgb(120, 120, 120) color: inherit {"dp":"/posts/[id]","o":"http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781153914} /_vercel/insights/view
+[00:22:37.875] Server  LOG     [2026-03-17T20:59:16.564Z] [Proxy] Processing: /api/auth/set-cookie
+[00:22:39.706] Server  LOG     [2026-03-17T20:59:18.395Z] [Proxy] Processing: /
+[00:22:39.706] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:22:39.707] Server  LOG     [2026-03-17T20:59:18.396Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:22:39.912] Server  LOG     [2026-03-17T20:59:18.601Z] [Proxy] Processing: /icon.svg
+[00:22:39.943] Server  LOG     [2026-03-17T20:59:18.633Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:22:40.000] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781158587} /_vercel/insights/view
+[00:22:42.140] Server  LOG     [2026-03-17T20:59:20.829Z] [Proxy] Processing: /users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e
+[00:22:42.140] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:22:42.141] Server  LOG     [2026-03-17T20:59:20.831Z] [Proxy] [ALLOWED] Path: /users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e, isAuthenticated: true
+[00:22:42.420] Server  LOG     [2026-03-17T20:59:21.109Z] [Proxy] Processing: /icon.svg
+[00:22:42.446] Server  LOG     [2026-03-17T20:59:21.135Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:22:42.505] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e color: rgb(120, 120, 120) color: inherit {"dp":"/users/[id]","o":"http://localhost:3002/users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781161092} /_vercel/insights/view
+[00:22:49.877] Server  LOG     [2026-03-17T20:59:28.566Z] [Proxy] Processing: /profile
+[00:22:49.878] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:22:49.878] Server  LOG     [2026-03-17T20:59:28.568Z] [Proxy] [ALLOWED] Path: /profile, isAuthenticated: true
+[00:22:50.077] Server  LOG     [2026-03-17T20:59:28.766Z] [Proxy] Processing: /icon.svg
+[00:22:50.117] Server  LOG     [2026-03-17T20:59:28.806Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:22:50.158] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/profile color: rgb(120, 120, 120) color: inherit {"dp":"/profile","o":"http://localhost:3002/profile","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781168739} /_vercel/insights/view
+[00:22:59.587] Server  LOG     [2026-03-17T20:59:38.276Z] [Proxy] Processing: /icon.svg
+[00:22:59.604] Server  LOG     [2026-03-17T20:59:38.293Z] [Proxy] Processing: /icon.svg
+[00:22:59.635] Server  LOG     [2026-03-17T20:59:38.324Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:22:59.681] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e color: rgb(120, 120, 120) color: inherit {"dp":"/users/[id]","o":"http://localhost:3002/users/8e16329c-c3b7-44f0-aee4-365fb7dc6a7e","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781178256} /_vercel/insights/view
+[00:23:16.459] Server  LOG     [2026-03-17T20:59:55.149Z] [Proxy] Processing: /
+[00:23:16.460] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:23:16.460] Server  LOG     [2026-03-17T20:59:55.150Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:23:16.550] Server  LOG     [2026-03-17T20:59:55.240Z] [Proxy] Processing: /icon.svg
+[00:23:16.578] Server  LOG     [2026-03-17T20:59:55.268Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:23:16.640] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781195224} /_vercel/insights/view
+[00:23:20.552] Server  LOG     [2026-03-17T20:59:59.242Z] [Proxy] Processing: /
+[00:23:20.553] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:23:20.554] Server  LOG     [2026-03-17T20:59:59.243Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:23:21.479] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:23:21.590] Server  LOG     [2026-03-17T21:00:00.279Z] [Proxy] Processing: /icon.svg
+[00:23:21.636] Server  LOG     [2026-03-17T21:00:00.325Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:23:21.779] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:23:21.780] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:23:21.780] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781200368} /_vercel/insights/view
+[00:25:18.069] Server  LOG     ✓ Compiled in 168ms
+[00:25:27.797] Server  LOG     [2026-03-17T21:02:06.486Z] [Proxy] Processing: /
+[00:25:27.798] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:25:27.799] Server  LOG     [2026-03-17T21:02:06.488Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:25:29.012] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:25:29.113] Server  LOG     [2026-03-17T21:02:07.803Z] [Proxy] Processing: /icon.svg
+[00:25:29.164] Server  LOG     [2026-03-17T21:02:07.853Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:25:29.296] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:25:29.296] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:25:29.296] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781327883} /_vercel/insights/view
+[00:26:15.182] Server  LOG     ✓ Compiled in 551ms
+[00:26:51.492] Server  LOG     [2026-03-17T21:03:30.181Z] [Proxy] Processing: /notices
+[00:26:51.493] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:26:51.493] Server  LOG     [2026-03-17T21:03:30.183Z] [Proxy] [ALLOWED] Path: /notices, isAuthenticated: true
+[00:26:51.791] Server  LOG     [2026-03-17T21:03:30.480Z] [Proxy] Processing: /icon.svg
+[00:26:51.883] Server  LOG     [2026-03-17T21:03:30.572Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:26:51.947] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notices color: rgb(120, 120, 120) color: inherit {"dp":"/notices","o":"http://localhost:3002/notices","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781410465} /_vercel/insights/view
+[00:26:54.094] Server  LOG     [2026-03-17T21:03:32.784Z] [Proxy] Processing: /clubs
+[00:26:54.095] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:26:54.096] Server  LOG     [2026-03-17T21:03:32.785Z] [Proxy] [ALLOWED] Path: /clubs, isAuthenticated: true
+[00:26:54.339] Server  LOG     [2026-03-17T21:03:33.028Z] [Proxy] Processing: /icon.svg
+[00:26:54.377] Server  LOG     [2026-03-17T21:03:33.066Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:26:54.400] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/clubs color: rgb(120, 120, 120) color: inherit {"dp":"/clubs","o":"http://localhost:3002/clubs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781412986} /_vercel/insights/view
+[00:27:13.219] Server  LOG     [2026-03-17T21:03:51.908Z] [Proxy] Processing: /lost-found
+[00:27:13.220] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:27:13.220] Server  LOG     [2026-03-17T21:03:51.910Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:27:13.528] Server  LOG     [2026-03-17T21:03:52.217Z] [Proxy] Processing: /icon.svg
+[00:27:13.571] Server  LOG     [2026-03-17T21:03:52.260Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:27:13.611] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781432198} /_vercel/insights/view
+[00:27:18.036] Server  LOG     [2026-03-17T21:03:56.725Z] [Proxy] Processing: /lost-found
+[00:27:18.036] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:27:18.037] Server  LOG     [2026-03-17T21:03:56.726Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:27:18.271] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781436853} /_vercel/insights/view
+[00:27:20.398] Server  LOG     [2026-03-17T21:03:59.088Z] [Proxy] Processing: /notices
+[00:27:20.399] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:27:20.399] Server  LOG     [2026-03-17T21:03:59.089Z] [Proxy] [ALLOWED] Path: /notices, isAuthenticated: true
+[00:27:20.594] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notices color: rgb(120, 120, 120) color: inherit {"dp":"/notices","o":"http://localhost:3002/notices","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781439175} /_vercel/insights/view
+[00:27:21.295] Server  LOG     [2026-03-17T21:03:59.985Z] [Proxy] Processing: /
+[00:27:21.296] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:27:21.296] Server  LOG     [2026-03-17T21:03:59.986Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:27:21.604] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781440180} /_vercel/insights/view
+[00:27:24.746] Server  LOG     [2026-03-17T21:04:03.435Z] [Proxy] Processing: /
+[00:27:24.746] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:27:24.747] Server  LOG     [2026-03-17T21:04:03.436Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:27:25.794] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:27:26.128] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:27:26.128] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:27:26.128] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781444681} /_vercel/insights/view
+[00:30:18.709] Server  LOG     ✓ Compiled in 273ms
+[00:30:45.998] Server  LOG     ✓ Compiled in 154ms
+[00:32:00.374] Server  LOG     [2026-03-17T21:08:39.064Z] [Proxy] Processing: /notifications
+[00:32:00.375] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:32:00.376] Server  LOG     [2026-03-17T21:08:39.065Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:32:01.426] Server  LOG     [2026-03-17T21:08:40.115Z] [Proxy] Processing: /icon.svg
+[00:32:01.471] Server  LOG     [2026-03-17T21:08:40.160Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:32:01.505] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781720092} /_vercel/insights/view
+[00:32:04.766] Server  LOG     [2026-03-17T21:08:43.455Z] [Proxy] Processing: /notifications
+[00:32:04.767] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:32:04.768] Server  LOG     [2026-03-17T21:08:43.457Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:32:05.288] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:32:05.385] Server  LOG     [2026-03-17T21:08:44.074Z] [Proxy] Processing: /icon.svg
+[00:32:05.426] Server  LOG     [2026-03-17T21:08:44.115Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:32:05.558] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:32:05.558] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/notifications","route":"/notifications"}
+[00:32:05.558] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781724145} /_vercel/insights/view
+[00:32:07.152] Server  LOG     [2026-03-17T21:08:45.841Z] [Proxy] Processing: /api/auth/set-cookie
+[00:32:24.360] Server  LOG     [2026-03-17T21:09:03.049Z] [Proxy] Processing: /notifications
+[00:32:24.362] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:32:24.362] Server  LOG     [2026-03-17T21:09:03.052Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:32:24.911] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:32:24.975] Server  LOG     [2026-03-17T21:09:03.664Z] [Proxy] Processing: /icon.svg
+[00:32:25.022] Server  LOG     [2026-03-17T21:09:03.711Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:32:25.145] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:32:25.145] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/notifications","route":"/notifications"}
+[00:32:25.145] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781743732} /_vercel/insights/view
+[00:32:32.055] Server  LOG     [2026-03-17T21:09:10.744Z] [Proxy] Processing: /notifications
+[00:32:32.055] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:32:32.056] Server  LOG     [2026-03-17T21:09:10.745Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:32:32.570] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:32:32.647] Server  LOG     [2026-03-17T21:09:11.337Z] [Proxy] Processing: /icon.svg
+[00:32:32.691] Server  LOG     [2026-03-17T21:09:11.380Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:32:32.825] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:32:32.825] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/notifications","route":"/notifications"}
+[00:32:32.825] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781751383} /_vercel/insights/view
+[00:32:40.771] Server  LOG     [2026-03-17T21:09:19.460Z] [Proxy] Processing: /
+[00:32:40.772] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:32:40.772] Server  LOG     [2026-03-17T21:09:19.462Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:32:42.158] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:32:42.529] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:32:42.529] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:32:42.529] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781761070} /_vercel/insights/view
+[00:32:50.494] Server  LOG     [2026-03-17T21:09:29.183Z] [Proxy] Processing: /
+[00:32:50.495] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:32:50.496] Server  LOG     [2026-03-17T21:09:29.185Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:32:51.239] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:32:51.573] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:32:51.573] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:32:51.574] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781770137} /_vercel/insights/view
+[00:32:57.390] Server  LOG     [2026-03-17T21:09:36.080Z] [Proxy] Processing: /notifications
+[00:32:57.391] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:32:57.392] Server  LOG     [2026-03-17T21:09:36.081Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:32:57.877] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:32:57.969] Server  LOG     [2026-03-17T21:09:36.658Z] [Proxy] Processing: /icon.svg
+[00:32:58.018] Server  LOG     [2026-03-17T21:09:36.707Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:32:58.128] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:32:58.128] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/notifications","route":"/notifications"}
+[00:32:58.128] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781776705} /_vercel/insights/view
+[00:33:01.148] Server  LOG     [2026-03-17T21:09:39.837Z] [Proxy] Processing: /api/auth/set-cookie
+[00:34:54.075] Server  LOG     [2026-03-17T21:11:32.764Z] [Proxy] Processing: /
+[00:34:54.075] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:34:54.076] Server  LOG     [2026-03-17T21:11:32.765Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:34:54.791] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:34:55.118] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:34:55.118] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:34:55.118] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781893695} /_vercel/insights/view
+[00:35:01.483] Server  LOG     [2026-03-17T21:11:40.172Z] [Proxy] Processing: /notifications
+[00:35:01.484] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:35:01.486] Server  LOG     [2026-03-17T21:11:40.175Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:35:01.946] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:35:02.019] Server  LOG     [2026-03-17T21:11:40.708Z] [Proxy] Processing: /icon.svg
+[00:35:02.061] Server  LOG     [2026-03-17T21:11:40.751Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:35:02.183] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:35:02.183] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/notifications","route":"/notifications"}
+[00:35:02.183] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781900767} /_vercel/insights/view
+[00:35:05.360] Server  LOG     [2026-03-17T21:11:44.050Z] [Proxy] Processing: /posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d
+[00:35:05.361] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:35:05.362] Server  LOG     [2026-03-17T21:11:44.051Z] [Proxy] [ALLOWED] Path: /posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d, isAuthenticated: true
+[00:35:06.591] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:35:06.717] Server  LOG     [2026-03-17T21:11:45.406Z] [Proxy] Processing: /icon.svg
+[00:35:06.778] Server  LOG     [2026-03-17T21:11:45.467Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:35:06.874] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:35:06.875] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d","route":"/posts/[id]"}
+[00:35:06.875] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d color: rgb(120, 120, 120) color: inherit {"dp":"/posts/[id]","o":"http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781905461} /_vercel/insights/view
+[00:35:19.031] Server  LOG     [2026-03-17T21:11:57.720Z] [Proxy] Processing: /messages
+[00:35:19.032] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:35:19.033] Server  LOG     [2026-03-17T21:11:57.722Z] [Proxy] [ALLOWED] Path: /messages, isAuthenticated: true
+[00:35:19.296] Server  LOG     [2026-03-17T21:11:57.985Z] [Proxy] Processing: /icon.svg
+[00:35:19.324] Server  LOG     [2026-03-17T21:11:58.013Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:35:19.380] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/messages color: rgb(120, 120, 120) color: inherit {"dp":"/messages","o":"http://localhost:3002/messages","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781917968} /_vercel/insights/view
+[00:35:20.367] Server  LOG     [2026-03-17T21:11:59.056Z] [Proxy] Processing: /notifications
+[00:35:20.367] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:35:20.367] Server  LOG     [2026-03-17T21:11:59.057Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:35:20.461] Server  LOG     [2026-03-17T21:11:59.151Z] [Proxy] Processing: /icon.svg
+[00:35:20.495] Server  LOG     [2026-03-17T21:11:59.184Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:35:20.547] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781919134} /_vercel/insights/view
+[00:35:52.036] Server  LOG     [2026-03-17T21:12:30.726Z] [Proxy] Processing: /notifications
+[00:35:52.037] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:35:52.037] Server  LOG     [2026-03-17T21:12:30.727Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:35:52.122] Server  LOG     [2026-03-17T21:12:30.812Z] [Proxy] Processing: /icon.svg
+[00:35:52.143] Server  LOG     [2026-03-17T21:12:30.833Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:35:57.167] Server  LOG     [2026-03-17T21:12:35.856Z] [Proxy] Processing: /notifications
+[00:35:57.168] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:35:57.169] Server  LOG     [2026-03-17T21:12:35.858Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:35:57.655] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:35:57.749] Server  LOG     [2026-03-17T21:12:36.439Z] [Proxy] Processing: /icon.svg
+[00:35:57.798] Server  LOG     [2026-03-17T21:12:36.488Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:35:57.885] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:35:57.885] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/notifications","route":"/notifications"}
+[00:35:57.885] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773781956472} /_vercel/insights/view
+[00:36:01.813] Server  LOG     [2026-03-17T21:12:40.501Z] [Proxy] Processing: /api/auth/set-cookie
+[00:36:45.706] Server  LOG     ✓ Compiled in 251ms
+[00:36:45.855] Browser ERROR   uncaughtError: ReferenceError: useState is not defined
+[00:36:46.003] Browser ERROR   uncaughtError: ReferenceError: useState is not defined
+[00:36:46.651] Browser ERROR   uncaughtError: ReferenceError: useState is not defined
+[00:36:54.124] Server  LOG     [2026-03-17T21:13:32.813Z] [Proxy] Processing: /notifications
+[00:36:54.125] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:36:54.126] Server  LOG     [2026-03-17T21:13:32.815Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:36:54.792] Server  ERROR   ⨯ ReferenceError: useState is not defined
+[00:36:55.164] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:36:55.335] Server  LOG     [2026-03-17T21:13:34.024Z] [Proxy] Processing: /icon.svg
+[00:36:55.346] Server  LOG     [2026-03-17T21:13:34.035Z] [Proxy] Processing: /favicon.ico
+[00:36:55.413] Browser ERROR   uncaughtError: ReferenceError: useState is not defined
+[00:37:05.054] Server  WARN    ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[00:37:05.055] Server  WARN    ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[00:37:05.061] Server  LOG     ✓ Compiled in 376ms
+[00:37:05.084] Server  LOG     [2026-03-17T21:13:43.773Z] [Proxy] Processing: /
+[00:37:05.085] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:05.086] Server  LOG     [2026-03-17T21:13:43.775Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:37:05.114] Server  LOG     [2026-03-17T21:13:43.803Z] [Proxy] Processing: /posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d
+[00:37:05.115] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:05.117] Server  LOG     [2026-03-17T21:13:43.806Z] [Proxy] [ALLOWED] Path: /posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d, isAuthenticated: true
+[00:37:06.069] Server  LOG     [2026-03-17T21:13:44.758Z] [Proxy] Processing: /notifications
+[00:37:06.070] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:06.071] Server  LOG     [2026-03-17T21:13:44.760Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:37:06.087] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d color: rgb(120, 120, 120) color: inherit {"dp":"/posts/[id]","o":"http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782023829} /_vercel/insights/view
+[00:37:07.004] Server  LOG     [2026-03-17T21:13:45.694Z] [Proxy] Processing: /icon.svg
+[00:37:07.861] Server  LOG     [2026-03-17T21:13:46.551Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:08.256] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:37:08.388] Server  LOG     [2026-03-17T21:13:47.077Z] [Proxy] Processing: /icon.svg
+[00:37:08.396] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:37:08.454] Server  LOG     [2026-03-17T21:13:47.143Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:08.506] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:37:08.549] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:37:08.549] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/notifications","route":"/notifications"}
+[00:37:08.549] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782027128} /_vercel/insights/view
+[00:37:08.704] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:37:08.704] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:37:08.704] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782027275} /_vercel/insights/view
+[00:37:08.721] Server  LOG     [2026-03-17T21:13:47.410Z] [Proxy] Processing: /api/auth/set-cookie
+[00:37:08.793] Server  LOG     [2026-03-17T21:13:47.482Z] [Proxy] Processing: /icon.svg
+[00:37:08.859] Server  LOG     [2026-03-17T21:13:47.547Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:09.651] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:37:09.651] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d","route":"/posts/[id]"}
+[00:37:09.651] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d color: rgb(120, 120, 120) color: inherit {"dp":"/posts/[id]","o":"http://localhost:3002/posts/c8673411-505b-4b4b-b2d0-eddce81ddc4d","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782027679} /_vercel/insights/view
+[00:37:11.267] Server  LOG     [2026-03-17T21:13:49.957Z] [Proxy] Processing: /notifications
+[00:37:11.268] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:11.268] Server  LOG     [2026-03-17T21:13:49.958Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:37:11.341] Server  LOG     [2026-03-17T21:13:50.030Z] [Proxy] Processing: /icon.svg
+[00:37:11.363] Server  LOG     [2026-03-17T21:13:50.052Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:12.758] Server  LOG     [2026-03-17T21:13:51.447Z] [Proxy] Processing: /
+[00:37:12.758] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:12.758] Server  LOG     [2026-03-17T21:13:51.448Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:37:12.867] Server  LOG     [2026-03-17T21:13:51.557Z] [Proxy] Processing: /icon.svg
+[00:37:12.895] Server  LOG     [2026-03-17T21:13:51.584Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:12.958] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782031545} /_vercel/insights/view
+[00:37:14.150] Server  LOG     [2026-03-17T21:13:52.840Z] [Proxy] Processing: /notifications
+[00:37:14.151] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:14.151] Server  LOG     [2026-03-17T21:13:52.841Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:37:14.219] Server  LOG     [2026-03-17T21:13:52.908Z] [Proxy] Processing: /icon.svg
+[00:37:14.249] Server  LOG     [2026-03-17T21:13:52.938Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:14.312] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782032900} /_vercel/insights/view
+[00:37:15.586] Server  LOG     [2026-03-17T21:13:54.275Z] [Proxy] Processing: /notices
+[00:37:15.586] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:15.586] Server  LOG     [2026-03-17T21:13:54.276Z] [Proxy] [ALLOWED] Path: /notices, isAuthenticated: true
+[00:37:15.881] Server  LOG     [2026-03-17T21:13:54.570Z] [Proxy] Processing: /icon.svg
+[00:37:15.959] Server  LOG     [2026-03-17T21:13:54.648Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:16.034] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notices color: rgb(120, 120, 120) color: inherit {"dp":"/notices","o":"http://localhost:3002/notices","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782034555} /_vercel/insights/view
+[00:37:17.158] Server  LOG     [2026-03-17T21:13:55.848Z] [Proxy] Processing: /
+[00:37:17.159] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:17.159] Server  LOG     [2026-03-17T21:13:55.849Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:37:17.229] Server  LOG     [2026-03-17T21:13:55.918Z] [Proxy] Processing: /icon.svg
+[00:37:17.259] Server  LOG     [2026-03-17T21:13:55.948Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:17.315] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782035901} /_vercel/insights/view
+[00:37:18.536] Server  LOG     [2026-03-17T21:13:57.226Z] [Proxy] Processing: /quick-links
+[00:37:18.537] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:18.537] Server  LOG     [2026-03-17T21:13:57.227Z] [Proxy] [ALLOWED] Path: /quick-links, isAuthenticated: true
+[00:37:19.206] Server  LOG     [2026-03-17T21:13:57.895Z] [Proxy] Processing: /quick-links
+[00:37:19.207] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:19.208] Server  LOG     [2026-03-17T21:13:57.897Z] [Proxy] [ALLOWED] Path: /quick-links, isAuthenticated: true
+[00:37:19.853] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:37:19.934] Server  LOG     [2026-03-17T21:13:58.623Z] [Proxy] Processing: /api/auth/set-cookie
+[00:37:19.945] Server  LOG     [2026-03-17T21:13:58.634Z] [Proxy] Processing: /icon.svg
+[00:37:19.998] Server  LOG     [2026-03-17T21:13:58.687Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:20.034] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:37:20.034] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/quick-links","route":"/quick-links"}
+[00:37:20.034] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/quick-links color: rgb(120, 120, 120) color: inherit {"dp":"/quick-links","o":"http://localhost:3002/quick-links","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782038622} /_vercel/insights/view
+[00:37:22.220] Server  LOG     [2026-03-17T21:14:00.909Z] [Proxy] Processing: /
+[00:37:22.221] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:37:22.222] Server  LOG     [2026-03-17T21:14:00.911Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:37:22.764] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:37:22.850] Server  LOG     [2026-03-17T21:14:01.539Z] [Proxy] Processing: /icon.svg
+[00:37:22.908] Server  LOG     [2026-03-17T21:14:01.597Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:37:23.048] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:37:23.048] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:37:23.048] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782041629} /_vercel/insights/view
+[00:37:25.337] Server  LOG     [2026-03-17T21:14:04.026Z] [Proxy] Processing: /api/auth/set-cookie
+[00:39:13.867] Server  LOG     [2026-03-17T21:15:52.556Z] [Proxy] Processing: /
+[00:39:13.868] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:39:13.869] Server  LOG     [2026-03-17T21:15:52.558Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:39:14.406] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:39:14.520] Server  LOG     [2026-03-17T21:15:53.209Z] [Proxy] Processing: /icon.svg
+[00:39:14.565] Server  LOG     [2026-03-17T21:15:53.253Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:39:14.686] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:39:14.686] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:39:14.686] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782153274} /_vercel/insights/view
+[00:39:34.484] Server  LOG     ✓ Compiled in 240ms
+[00:39:48.818] Server  LOG     [2026-03-17T21:16:27.507Z] [Proxy] Processing: /blogs
+[00:39:48.818] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:39:48.818] Server  LOG     [2026-03-17T21:16:27.508Z] [Proxy] [ALLOWED] Path: /blogs, isAuthenticated: true
+[00:39:49.099] Server  LOG     [2026-03-17T21:16:27.788Z] [Proxy] Processing: /icon.svg
+[00:39:49.125] Server  LOG     [2026-03-17T21:16:27.814Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:39:49.192] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/blogs color: rgb(120, 120, 120) color: inherit {"dp":"/blogs","o":"http://localhost:3002/blogs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782187776} /_vercel/insights/view
+[00:39:52.296] Server  LOG     [2026-03-17T21:16:30.985Z] [Proxy] Processing: /blogs
+[00:39:52.297] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:39:52.297] Server  LOG     [2026-03-17T21:16:30.987Z] [Proxy] [ALLOWED] Path: /blogs, isAuthenticated: true
+[00:39:52.378] Server  LOG     [2026-03-17T21:16:31.067Z] [Proxy] Processing: /icon.svg
+[00:39:52.396] Server  LOG     [2026-03-17T21:16:31.085Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:39:54.751] Server  LOG     [2026-03-17T21:16:33.440Z] [Proxy] Processing: /events
+[00:39:54.751] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:39:54.752] Server  LOG     [2026-03-17T21:16:33.441Z] [Proxy] [ALLOWED] Path: /events, isAuthenticated: true
+[00:39:55.066] Server  LOG     [2026-03-17T21:16:33.755Z] [Proxy] Processing: /icon.svg
+[00:39:55.100] Server  LOG     [2026-03-17T21:16:33.789Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:39:55.160] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/events color: rgb(120, 120, 120) color: inherit {"dp":"/events","o":"http://localhost:3002/events","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782193741} /_vercel/insights/view
+[00:39:56.391] Server  LOG     [2026-03-17T21:16:35.081Z] [Proxy] Processing: /lost-found
+[00:39:56.392] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:39:56.393] Server  LOG     [2026-03-17T21:16:35.082Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:39:56.685] Server  LOG     [2026-03-17T21:16:35.374Z] [Proxy] Processing: /icon.svg
+[00:39:56.755] Server  LOG     [2026-03-17T21:16:35.444Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:39:56.770] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782195354} /_vercel/insights/view
+[00:39:57.734] Server  LOG     [2026-03-17T21:16:36.424Z] [Proxy] Processing: /messages
+[00:39:57.735] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:39:57.735] Server  LOG     [2026-03-17T21:16:36.425Z] [Proxy] [ALLOWED] Path: /messages, isAuthenticated: true
+[00:39:57.947] Server  LOG     [2026-03-17T21:16:36.637Z] [Proxy] Processing: /icon.svg
+[00:39:57.974] Server  LOG     [2026-03-17T21:16:36.663Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:39:58.039] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/messages color: rgb(120, 120, 120) color: inherit {"dp":"/messages","o":"http://localhost:3002/messages","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782196625} /_vercel/insights/view
+[00:39:59.871] Server  LOG     [2026-03-17T21:16:38.561Z] [Proxy] Processing: /notifications
+[00:39:59.872] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:39:59.872] Server  LOG     [2026-03-17T21:16:38.561Z] [Proxy] [ALLOWED] Path: /notifications, isAuthenticated: true
+[00:39:59.969] Server  LOG     [2026-03-17T21:16:38.658Z] [Proxy] Processing: /icon.svg
+[00:40:00.015] Server  LOG     [2026-03-17T21:16:38.705Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:00.051] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notifications color: rgb(120, 120, 120) color: inherit {"dp":"/notifications","o":"http://localhost:3002/notifications","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782198637} /_vercel/insights/view
+[00:40:02.544] Server  LOG     [2026-03-17T21:16:41.233Z] [Proxy] Processing: /communities
+[00:40:02.544] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:02.545] Server  LOG     [2026-03-17T21:16:41.234Z] [Proxy] [ALLOWED] Path: /communities, isAuthenticated: true
+[00:40:02.833] Server  LOG     [2026-03-17T21:16:41.522Z] [Proxy] Processing: /icon.svg
+[00:40:02.870] Server  LOG     [2026-03-17T21:16:41.559Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:02.924] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/communities color: rgb(120, 120, 120) color: inherit {"dp":"/communities","o":"http://localhost:3002/communities","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782201508} /_vercel/insights/view
+[00:40:03.913] Server  LOG     [2026-03-17T21:16:42.602Z] [Proxy] Processing: /lost-found
+[00:40:03.914] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:03.915] Server  LOG     [2026-03-17T21:16:42.604Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:40:04.001] Server  LOG     [2026-03-17T21:16:42.690Z] [Proxy] Processing: /icon.svg
+[00:40:04.041] Server  LOG     [2026-03-17T21:16:42.730Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:04.088] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782202675} /_vercel/insights/view
+[00:40:04.714] Server  LOG     ✓ Compiled in 117ms
+[00:40:05.718] Server  LOG     [2026-03-17T21:16:44.407Z] [Proxy] Processing: /lost-found/report
+[00:40:05.719] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:05.719] Server  LOG     [2026-03-17T21:16:44.409Z] [Proxy] [ALLOWED] Path: /lost-found/report, isAuthenticated: true
+[00:40:05.994] Server  LOG     [2026-03-17T21:16:44.683Z] [Proxy] Processing: /icon.svg
+[00:40:06.017] Server  LOG     [2026-03-17T21:16:44.706Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:06.077] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found/report color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found/report","o":"http://localhost:3002/lost-found/report","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782204665} /_vercel/insights/view
+[00:40:33.759] Server  LOG     [2026-03-17T21:17:12.449Z] [Proxy] Processing: /lost-found
+[00:40:33.760] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:33.761] Server  LOG     [2026-03-17T21:17:12.450Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:40:33.846] Server  LOG     [2026-03-17T21:17:12.534Z] [Proxy] Processing: /icon.svg
+[00:40:33.872] Server  LOG     [2026-03-17T21:17:12.561Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:33.931] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782232518} /_vercel/insights/view
+[00:40:34.884] Server  LOG     [2026-03-17T21:17:13.573Z] [Proxy] Processing: /map
+[00:40:34.885] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:34.885] Server  LOG     [2026-03-17T21:17:13.575Z] [Proxy] [ALLOWED] Path: /map, isAuthenticated: true
+[00:40:35.159] Server  LOG     [2026-03-17T21:17:13.849Z] [Proxy] Processing: /maps/2d/index.html
+[00:40:35.173] Server  LOG     [2026-03-17T21:17:13.862Z] [Proxy] Processing: /icon.svg
+[00:40:35.239] Server  LOG     [2026-03-17T21:17:13.929Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:35.242] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/map color: rgb(120, 120, 120) color: inherit {"dp":"/map","o":"http://localhost:3002/map","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782233810} /_vercel/insights/view
+[00:40:35.329] Server  LOG     [2026-03-17T21:17:14.018Z] [Proxy] Processing: /maps/2d/buildings.json
+[00:40:35.333] Server  LOG     [2026-03-17T21:17:14.022Z] [Proxy] Processing: /maps/2d/tiles/2/1/0.png
+[00:40:35.350] Server  LOG     [2026-03-17T21:17:14.039Z] [Proxy] Processing: /maps/2d/tiles/2/2/0.png
+[00:40:35.352] Server  LOG     [2026-03-17T21:17:14.042Z] [Proxy] Processing: /maps/2d/tiles/2/1/1.png
+[00:40:35.357] Server  LOG     [2026-03-17T21:17:14.047Z] [Proxy] Processing: /maps/2d/tiles/2/2/1.png
+[00:40:35.362] Server  LOG     [2026-03-17T21:17:14.051Z] [Proxy] Processing: /maps/2d/tiles/2/0/0.png
+[00:40:35.406] Server  LOG     [2026-03-17T21:17:14.095Z] [Proxy] Processing: /maps/2d/tiles/2/3/0.png
+[00:40:35.419] Server  LOG     [2026-03-17T21:17:14.108Z] [Proxy] Processing: /maps/2d/tiles/2/0/1.png
+[00:40:35.426] Server  LOG     [2026-03-17T21:17:14.115Z] [Proxy] Processing: /maps/2d/tiles/2/3/1.png
+[00:40:35.439] Server  LOG     [2026-03-17T21:17:14.128Z] [Proxy] Processing: /maps/2d/tiles/2/1/2.png
+[00:40:35.449] Server  LOG     [2026-03-17T21:17:14.138Z] [Proxy] Processing: /maps/2d/tiles/2/2/2.png
+[00:40:35.457] Server  LOG     [2026-03-17T21:17:14.146Z] [Proxy] Processing: /maps/2d/tiles/2/0/2.png
+[00:40:35.483] Server  LOG     [2026-03-17T21:17:14.172Z] [Proxy] Processing: /maps/2d/tiles/2/3/2.png
+[00:40:35.924] Server  LOG     [2026-03-17T21:17:14.613Z] [Proxy] Processing: /lost-found
+[00:40:35.924] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:35.925] Server  LOG     [2026-03-17T21:17:14.614Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:40:36.006] Server  LOG     [2026-03-17T21:17:14.695Z] [Proxy] Processing: /icon.svg
+[00:40:36.037] Server  LOG     [2026-03-17T21:17:14.726Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:36.094] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782234682} /_vercel/insights/view
+[00:40:36.790] Server  LOG     [2026-03-17T21:17:15.479Z] [Proxy] Processing: /messages
+[00:40:36.790] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:36.791] Server  LOG     [2026-03-17T21:17:15.480Z] [Proxy] [ALLOWED] Path: /messages, isAuthenticated: true
+[00:40:36.864] Server  LOG     [2026-03-17T21:17:15.554Z] [Proxy] Processing: /icon.svg
+[00:40:36.896] Server  LOG     [2026-03-17T21:17:15.585Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:36.952] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/messages color: rgb(120, 120, 120) color: inherit {"dp":"/messages","o":"http://localhost:3002/messages","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782235536} /_vercel/insights/view
+[00:40:38.291] Server  LOG     [2026-03-17T21:17:16.981Z] [Proxy] Processing: /communities
+[00:40:38.292] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:38.293] Server  LOG     [2026-03-17T21:17:16.982Z] [Proxy] [ALLOWED] Path: /communities, isAuthenticated: true
+[00:40:38.386] Server  LOG     [2026-03-17T21:17:17.076Z] [Proxy] Processing: /icon.svg
+[00:40:38.431] Server  LOG     [2026-03-17T21:17:17.120Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:38.469] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/communities color: rgb(120, 120, 120) color: inherit {"dp":"/communities","o":"http://localhost:3002/communities","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782237049} /_vercel/insights/view
+[00:40:39.272] Server  LOG     [2026-03-17T21:17:17.961Z] [Proxy] Processing: /clubs
+[00:40:39.273] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:39.273] Server  LOG     [2026-03-17T21:17:17.963Z] [Proxy] [ALLOWED] Path: /clubs, isAuthenticated: true
+[00:40:39.533] Server  LOG     [2026-03-17T21:17:18.222Z] [Proxy] Processing: /icon.svg
+[00:40:39.571] Server  LOG     [2026-03-17T21:17:18.260Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:39.695] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/clubs color: rgb(120, 120, 120) color: inherit {"dp":"/clubs","o":"http://localhost:3002/clubs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782238193} /_vercel/insights/view
+[00:40:40.128] Server  LOG     [2026-03-17T21:17:18.817Z] [Proxy] Processing: /marketplace
+[00:40:40.129] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:40.129] Server  LOG     [2026-03-17T21:17:18.819Z] [Proxy] [ALLOWED] Path: /marketplace, isAuthenticated: true
+[00:40:40.423] Server  LOG     [2026-03-17T21:17:19.112Z] [Proxy] Processing: /icon.svg
+[00:40:40.457] Server  LOG     [2026-03-17T21:17:19.146Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:40.518] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/marketplace color: rgb(120, 120, 120) color: inherit {"dp":"/marketplace","o":"http://localhost:3002/marketplace","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782239095} /_vercel/insights/view
+[00:40:40.958] Server  LOG     [2026-03-17T21:17:19.647Z] [Proxy] Processing: /events
+[00:40:40.959] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:40.959] Server  LOG     [2026-03-17T21:17:19.649Z] [Proxy] [ALLOWED] Path: /events, isAuthenticated: true
+[00:40:41.038] Server  LOG     [2026-03-17T21:17:19.727Z] [Proxy] Processing: /icon.svg
+[00:40:41.074] Server  LOG     [2026-03-17T21:17:19.763Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:41.128] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/events color: rgb(120, 120, 120) color: inherit {"dp":"/events","o":"http://localhost:3002/events","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782239715} /_vercel/insights/view
+[00:40:41.713] Server  LOG     [2026-03-17T21:17:20.403Z] [Proxy] Processing: /blogs
+[00:40:41.714] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:41.715] Server  LOG     [2026-03-17T21:17:20.404Z] [Proxy] [ALLOWED] Path: /blogs, isAuthenticated: true
+[00:40:41.799] Server  LOG     [2026-03-17T21:17:20.489Z] [Proxy] Processing: /icon.svg
+[00:40:41.827] Server  LOG     [2026-03-17T21:17:20.516Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:41.900] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/blogs color: rgb(120, 120, 120) color: inherit {"dp":"/blogs","o":"http://localhost:3002/blogs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782240476} /_vercel/insights/view
+[00:40:42.931] Server  LOG     [2026-03-17T21:17:21.620Z] [Proxy] Processing: /messages
+[00:40:42.931] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:42.931] Server  LOG     [2026-03-17T21:17:21.621Z] [Proxy] [ALLOWED] Path: /messages, isAuthenticated: true
+[00:40:43.003] Server  LOG     [2026-03-17T21:17:21.693Z] [Proxy] Processing: /icon.svg
+[00:40:43.039] Server  LOG     [2026-03-17T21:17:21.728Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:43.089] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/messages color: rgb(120, 120, 120) color: inherit {"dp":"/messages","o":"http://localhost:3002/messages","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782241675} /_vercel/insights/view
+[00:40:44.438] Server  LOG     [2026-03-17T21:17:23.127Z] [Proxy] Processing: /lost-found
+[00:40:44.439] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:44.439] Server  LOG     [2026-03-17T21:17:23.129Z] [Proxy] [ALLOWED] Path: /lost-found, isAuthenticated: true
+[00:40:44.576] Server  LOG     [2026-03-17T21:17:23.265Z] [Proxy] Processing: /icon.svg
+[00:40:44.611] Server  LOG     [2026-03-17T21:17:23.300Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:44.654] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found","o":"http://localhost:3002/lost-found","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782243241} /_vercel/insights/view
+[00:40:47.670] Server  LOG     [2026-03-17T21:17:26.360Z] [Proxy] Processing: /lost-found/report
+[00:40:47.671] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:47.672] Server  LOG     [2026-03-17T21:17:26.361Z] [Proxy] [ALLOWED] Path: /lost-found/report, isAuthenticated: true
+[00:40:47.762] Server  LOG     [2026-03-17T21:17:26.451Z] [Proxy] Processing: /icon.svg
+[00:40:47.786] Server  LOG     [2026-03-17T21:17:26.476Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:47.854] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/lost-found/report color: rgb(120, 120, 120) color: inherit {"dp":"/lost-found/report","o":"http://localhost:3002/lost-found/report","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782246442} /_vercel/insights/view
+[00:40:49.750] Server  LOG     [2026-03-17T21:17:28.440Z] [Proxy] Processing: /events
+[00:40:49.751] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:49.752] Server  LOG     [2026-03-17T21:17:28.441Z] [Proxy] [ALLOWED] Path: /events, isAuthenticated: true
+[00:40:49.835] Server  LOG     [2026-03-17T21:17:28.524Z] [Proxy] Processing: /icon.svg
+[00:40:49.874] Server  LOG     [2026-03-17T21:17:28.563Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:49.924] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/events color: rgb(120, 120, 120) color: inherit {"dp":"/events","o":"http://localhost:3002/events","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782248511} /_vercel/insights/view
+[00:40:51.189] Server  LOG     [2026-03-17T21:17:29.878Z] [Proxy] Processing: /blogs
+[00:40:51.189] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:51.190] Server  LOG     [2026-03-17T21:17:29.879Z] [Proxy] [ALLOWED] Path: /blogs, isAuthenticated: true
+[00:40:51.268] Server  LOG     [2026-03-17T21:17:29.957Z] [Proxy] Processing: /icon.svg
+[00:40:51.299] Server  LOG     [2026-03-17T21:17:29.988Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:51.365] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/blogs color: rgb(120, 120, 120) color: inherit {"dp":"/blogs","o":"http://localhost:3002/blogs","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782249940} /_vercel/insights/view
+[00:40:52.259] Server  LOG     [2026-03-17T21:17:30.948Z] [Proxy] Processing: /notices
+[00:40:52.259] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:40:52.260] Server  LOG     [2026-03-17T21:17:30.950Z] [Proxy] [ALLOWED] Path: /notices, isAuthenticated: true
+[00:40:52.440] Server  LOG     [2026-03-17T21:17:31.129Z] [Proxy] Processing: /icon.svg
+[00:40:52.508] Server  LOG     [2026-03-17T21:17:31.197Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:40:52.575] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/notices color: rgb(120, 120, 120) color: inherit {"dp":"/notices","o":"http://localhost:3002/notices","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782251107} /_vercel/insights/view
+[00:41:00.248] Server  LOG     [2026-03-17T21:17:38.937Z] [Proxy] Processing: /
+[00:41:00.249] Server  LOG     [Proxy] Auth check: sb-auth-token=true, isAuthenticated=true
+[00:41:00.250] Server  LOG     [2026-03-17T21:17:38.939Z] [Proxy] [ALLOWED] Path: /, isAuthenticated: true
+[00:41:00.449] Server  LOG     [2026-03-17T21:17:39.139Z] [Proxy] Processing: /icon.svg
+[00:41:00.479] Server  LOG     [2026-03-17T21:17:39.168Z] [Proxy] Processing: /icon-dark-32x32.png
+[00:41:00.535] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3002/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3002/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773782259121} /_vercel/insights/view

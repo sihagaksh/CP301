@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageCircle, Search, Send, User, X, Plus, Check, CheckCheck, Loader2 } from 'lucide-react';
+import { MessageCircle, Search, Send, User, X, Plus, Check, CheckCheck, Loader2, PackageSearch, SearchX } from 'lucide-react';
 import { db } from '@/lib/db';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -23,6 +23,7 @@ interface Conversation {
   last_message_sender_id?: string;
   unread_count: number;
   last_message_is_read: boolean;
+  context_type?: 'lost_found' | 'buy_sell' | null;
 }
 
 interface Message {
@@ -32,6 +33,16 @@ interface Message {
   content: string;
   created_at: string;
   is_read: boolean;
+}
+
+type TabType = 'all' | 'lost_found' | 'buy_sell';
+
+interface InquiryContext {
+  type: 'lost_found' | 'buy_sell';
+  itemId: string;
+  itemName: string;
+  itemPath: string;
+  otherUserId: string;
 }
 
 function formatTime(dateStr: string) {
@@ -45,8 +56,16 @@ function getInitials(name?: string) {
   return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 }
 
+const TABS: { key: TabType; label: string; icon?: string }[] = [
+  { key: 'all', label: 'General' },
+  { key: 'lost_found', label: 'Lost & Found' },
+  { key: 'buy_sell', label: 'Buy & Sell' },
+];
+
 export default function MessagesPage() {
   const { user } = useAuth();
+
+  const [activeTab, setActiveTab] = useState<TabType>('all');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConv, setActiveConv] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -74,7 +93,7 @@ export default function MessagesPage() {
 
     const { data } = await db
       .from('conversations')
-      .select('*, participant1:users!conversations_participant1_id_fkey(id, full_name, email, profile_picture_url, role, department), participant2:users!conversations_participant2_id_fkey(id, full_name, email, profile_picture_url, role, department)')
+      .select('*, context_type, participant1:users!conversations_participant1_id_fkey(id, full_name, email, profile_picture_url, role, department), participant2:users!conversations_participant2_id_fkey(id, full_name, email, profile_picture_url, role, department)')
       .or(`participant1_id.eq.${u.id},participant2_id.eq.${u.id}`)
       .order('last_message_at', { ascending: false, nullsFirst: false });
 
@@ -103,19 +122,20 @@ export default function MessagesPage() {
         last_message_sender_id: c.last_message_sender_id as string | undefined,
         unread_count: myUnreadMap[convId] || 0,
         last_message_is_read: (sentUnreadMap[convId] || 0) === 0,
+        context_type: (c.context_type as 'lost_found' | 'buy_sell' | null) ?? null,
       };
     });
     setConversations(convs);
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return convs;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchMessages = useCallback(async (convId: string, scroll = true) => {
     const { data } = await db.from('messages').select('*').eq('conversation_id', convId).order('created_at', { ascending: true }).limit(100);
     setMessages((data as Message[]) || []);
-    // Always scroll when called with scroll=true, or when new messages arrive in the active conv
     if (scroll) setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const markAsRead = useCallback(async (convId: string) => {
@@ -123,8 +143,63 @@ export default function MessagesPage() {
     if (!u) return;
     await db.from('messages').update({ is_read: true }).eq('conversation_id', convId).eq('receiver_id', u.id).eq('is_read', false);
     setConversations(prev => prev.map(c => c.id === convId ? { ...c, unread_count: 0 } : c));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const openConversationWith = useCallback(async (other: UserResult, context?: InquiryContext) => {
+    if (!userRef.current) return;
+    const u = userRef.current;
+    const { data: existing } = await db.from('conversations').select('id, context_type').or(`and(participant1_id.eq.${u.id},participant2_id.eq.${other.id}),and(participant1_id.eq.${other.id},participant2_id.eq.${u.id})`).maybeSingle();
+    let convId: string;
+    let convContextType: 'lost_found' | 'buy_sell' | null = existing?.context_type ?? null;
+
+    if (existing) {
+      convId = existing.id;
+      // If we have a context and this conv has no context_type yet, set it
+      if (context && !existing.context_type) {
+        await db.from('conversations').update({ context_type: context.type }).eq('id', convId);
+        convContextType = context.type;
+      }
+    } else {
+      const insertData: Record<string, unknown> = { participant1_id: u.id, participant2_id: other.id };
+      if (context) insertData.context_type = context.type;
+      const { data: created } = await db.from('conversations').insert(insertData).select('id').single();
+      convId = created!.id;
+      convContextType = context?.type ?? null;
+    }
+
+    // If arriving via inquiry, send a pre-filled first message
+    if (context) {
+      const firstMsg = `Hi! I'm interested in your item: "${context.itemName}" 🔗 ${window.location.origin}${context.itemPath}`;
+      const { data: existingMsgs } = await db.from('messages').select('id').eq('conversation_id', convId).limit(1);
+      if (!existingMsgs || existingMsgs.length === 0) {
+        await db.from('messages').insert({ conversation_id: convId, sender_id: u.id, receiver_id: other.id, content: firstMsg });
+        await db.from('conversations').update({ last_message: firstMsg, last_message_at: new Date().toISOString(), last_message_sender_id: u.id }).eq('id', convId);
+      }
+    }
+
+    const conv: Conversation = {
+      id: convId,
+      participant: other,
+      last_message: undefined,
+      last_message_at: undefined,
+      last_message_sender_id: undefined,
+      unread_count: 0,
+      last_message_is_read: true,
+      context_type: convContextType,
+    };
+    setActiveConv(conv);
+    setShowNewChat(false);
+    setUserSearch('');
+    setUserResults([]);
+    fetchMessages(convId);
+    fetchConversations();
+
+    // Switch to the right tab
+    if (context?.type === 'lost_found') setActiveTab('lost_found');
+    else if (context?.type === 'buy_sell') setActiveTab('buy_sell');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchMessages, fetchConversations]);
 
   useEffect(() => { if (user) fetchConversations(); }, [user, fetchConversations]);
 
@@ -136,10 +211,7 @@ export default function MessagesPage() {
         const conv = activeConvRef.current;
         const u = userRef.current;
         if (conv) {
-          // Re-fetch messages and scroll to bottom for the active conversation
           await fetchMessages(conv.id, true);
-          // If the incoming message is for THIS conversation and we are the receiver,
-          // immediately mark it as read (no need to click the conv again)
           const newRow = (payload.new as { conversation_id?: string; receiver_id?: string } | undefined);
           if (
             u &&
@@ -160,7 +232,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (activeConv && user) markAsRead(activeConv.id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConv?.id]);
 
   useEffect(() => {
@@ -168,7 +240,7 @@ export default function MessagesPage() {
     if (!userSearch.trim()) { setUserResults([]); return; }
     setSearching(true);
     userSearchRef.current = setTimeout(() => doUserSearch(userSearch.trim()), 350);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userSearch]);
 
   async function doUserSearch(query: string) {
@@ -176,25 +248,6 @@ export default function MessagesPage() {
     const { data } = await db.from('users').select('id, full_name, email, role, department, profile_picture_url').or(`full_name.ilike.%${query}%,email.ilike.%${query}%`).neq('id', user.id).limit(8);
     setUserResults((data as UserResult[]) || []);
     setSearching(false);
-  }
-
-  async function openConversationWith(other: UserResult) {
-    if (!user) return;
-    const { data: existing } = await db.from('conversations').select('id').or(`and(participant1_id.eq.${user.id},participant2_id.eq.${other.id}),and(participant1_id.eq.${other.id},participant2_id.eq.${user.id})`).maybeSingle();
-    let convId: string;
-    if (existing) {
-      convId = existing.id;
-    } else {
-      const { data: created } = await db.from('conversations').insert({ participant1_id: user.id, participant2_id: other.id }).select('id').single();
-      convId = created!.id;
-    }
-    const conv: Conversation = { id: convId, participant: other, last_message: undefined, last_message_at: undefined, last_message_sender_id: undefined, unread_count: 0, last_message_is_read: true };
-    setActiveConv(conv);
-    setShowNewChat(false);
-    setUserSearch('');
-    setUserResults([]);
-    fetchMessages(convId);
-    fetchConversations();
   }
 
   async function sendMessage(e: React.FormEvent) {
@@ -210,9 +263,30 @@ export default function MessagesPage() {
     setSending(false);
   }
 
-  const filteredConvs = convSearch.trim()
-    ? conversations.filter(c => c.participant.full_name.toLowerCase().includes(convSearch.toLowerCase()) || c.participant.email.toLowerCase().includes(convSearch.toLowerCase()))
-    : conversations;
+  const filteredConvs = conversations.filter(c => {
+    // Tab filter: Strict isolation between tabs
+    if (activeTab === 'all' && c.context_type !== null) return false;
+    if (activeTab === 'lost_found' && c.context_type !== 'lost_found') return false;
+    if (activeTab === 'buy_sell' && c.context_type !== 'buy_sell') return false;
+
+    // Search filter
+    if (convSearch.trim()) {
+      const q = convSearch.toLowerCase();
+      return c.participant.full_name.toLowerCase().includes(q) || c.participant.email.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const tabUnreadCount = (tab: TabType) => {
+    return conversations
+      .filter(c => {
+        if (tab === 'all') return c.context_type === null;
+        if (tab === 'lost_found') return c.context_type === 'lost_found';
+        if (tab === 'buy_sell') return c.context_type === 'buy_sell';
+        return true;
+      })
+      .reduce((sum, c) => sum + c.unread_count, 0);
+  };
 
   if (!user) {
     return (
@@ -234,16 +308,46 @@ export default function MessagesPage() {
         </button>
       </div>
 
-      <div className="grid flex-1 min-h-0" style={{ gridTemplateColumns: '280px 1fr' }}>
+      <div className="grid flex-1 min-h-0" style={{ gridTemplateColumns: '300px 1fr' }}>
         {/* Left: Conversation List */}
         <div className="border border-border rounded-l-xl flex flex-col overflow-hidden bg-card">
-          <div className="p-2.5 border-b border-border">
+          {/* Tab Bar */}
+          <div className="flex border-b border-border flex-shrink-0">
+            {TABS.map(tab => {
+              const unread = tabUnreadCount(tab.key);
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors relative ${activeTab === tab.key
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                >
+                  {tab.label}
+                  {unread > 0 && (
+                    <span className="bg-green-500 text-white text-[9px] font-bold rounded-full min-w-[15px] h-[15px] flex items-center justify-center px-1 leading-none">
+                      {unread}
+                    </span>
+                  )}
+                  {activeTab === tab.key && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 rounded-full" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search */}
+          <div className="p-2.5 border-b border-border flex-shrink-0">
             <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-1.5">
               <Search size={14} className="text-muted-foreground flex-shrink-0" />
               <input className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" placeholder="Search conversations..." value={convSearch} onChange={e => setConvSearch(e.target.value)} />
               {convSearch && <button onClick={() => setConvSearch('')} className="text-muted-foreground hover:text-foreground"><X size={13} /></button>}
             </div>
           </div>
+
+          {/* Conversation List */}
           <div className="flex-1 overflow-auto p-1.5">
             {loading ? (
               [1, 2, 3].map(i => (
@@ -254,9 +358,19 @@ export default function MessagesPage() {
               ))
             ) : filteredConvs.length === 0 ? (
               <div className="text-center p-8 text-muted-foreground">
-                <MessageCircle size={32} className="mx-auto mb-2 opacity-40" />
-                <p className="text-sm">{convSearch ? 'No matches' : 'No conversations yet'}</p>
-                <button className="mt-3 text-xs text-amber-500 hover:underline" onClick={() => setShowNewChat(true)}>Start a chat</button>
+                {activeTab === 'lost_found' ? (
+                  <SearchX size={32} className="mx-auto mb-2 opacity-40" />
+                ) : activeTab === 'buy_sell' ? (
+                  <PackageSearch size={32} className="mx-auto mb-2 opacity-40" />
+                ) : (
+                  <MessageCircle size={32} className="mx-auto mb-2 opacity-40" />
+                )}
+                <p className="text-sm">
+                  {convSearch ? 'No matches' : activeTab === 'lost_found' ? 'No Lost & Found inquiries yet' : activeTab === 'buy_sell' ? 'No Buy & Sell inquiries yet' : 'No conversations yet'}
+                </p>
+                {activeTab === 'all' && (
+                  <button className="mt-3 text-xs text-amber-500 hover:underline" onClick={() => setShowNewChat(true)}>Start a chat</button>
+                )}
               </div>
             ) : (
               filteredConvs.map(conv => (
@@ -269,14 +383,21 @@ export default function MessagesPage() {
                     {conv.participant.profile_picture_url ? <img src={conv.participant.profile_picture_url} alt={conv.participant.full_name} className="w-full h-full object-cover" /> : getInitials(conv.participant.full_name)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline">
+                    <div className="flex justify-between items-baseline gap-1">
                       <p className={`text-sm truncate ${conv.unread_count > 0 ? 'font-bold text-foreground' : 'font-medium text-foreground'}`}>{conv.participant.full_name}</p>
-                      {conv.last_message_at && <span className={`text-xs flex-shrink-0 ml-2 ${conv.unread_count > 0 ? 'text-green-500 font-medium' : 'text-muted-foreground'}`}>{formatTime(conv.last_message_at)}</span>}
+                      {conv.last_message_at && <span className={`text-xs flex-shrink-0 ${conv.unread_count > 0 ? 'text-green-500 font-medium' : 'text-muted-foreground'}`}>{formatTime(conv.last_message_at)}</span>}
                     </div>
-                    <p className={`text-xs truncate flex items-center gap-1 ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                      {conv.last_message_sender_id === user.id && conv.last_message && (conv.last_message_is_read ? <CheckCheck size={12} className="text-sky-400 flex-shrink-0" /> : <Check size={12} className="text-muted-foreground flex-shrink-0" />)}
-                      <span className="truncate">{conv.last_message || <span className="italic">No messages yet</span>}</span>
-                    </p>
+                    <div className="flex items-center gap-1">
+                      {conv.context_type && (
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full flex-shrink-0 ${conv.context_type === 'lost_found' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                          {conv.context_type === 'lost_found' ? 'L&F' : 'B&S'}
+                        </span>
+                      )}
+                      <p className={`text-xs truncate flex items-center gap-1 ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                        {conv.last_message_sender_id === user.id && conv.last_message && (conv.last_message_is_read ? <CheckCheck size={12} className="text-sky-400 flex-shrink-0" /> : <Check size={12} className="text-muted-foreground flex-shrink-0" />)}
+                        <span className="truncate">{conv.last_message || <span className="italic">No messages yet</span>}</span>
+                      </p>
+                    </div>
                   </div>
                   {conv.unread_count > 0 && (
                     <span className="bg-green-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{conv.unread_count}</span>
@@ -331,7 +452,14 @@ export default function MessagesPage() {
                   {activeConv.participant.profile_picture_url ? <img src={activeConv.participant.profile_picture_url} alt={activeConv.participant.full_name} className="w-full h-full object-cover" /> : getInitials(activeConv.participant.full_name)}
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-sm">{activeConv.participant.full_name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm">{activeConv.participant.full_name}</p>
+                    {activeConv.context_type && (
+                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${activeConv.context_type === 'lost_found' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                        {activeConv.context_type === 'lost_found' ? 'Lost & Found' : 'Buy & Sell'}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">{activeConv.participant.email} · {activeConv.participant.role}{activeConv.participant.department ? ` · ${activeConv.participant.department}` : ''}</p>
                 </div>
                 <button onClick={() => { setActiveConv(null); setMessages([]); }} className="p-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-muted-foreground"><X size={16} /></button>

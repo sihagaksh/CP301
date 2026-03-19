@@ -1,17 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useLostFound, useLostFoundItem } from '@/lib/hooks/useLostFound';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Calendar, MapPin, Search, Phone, CheckCircle2, User } from 'lucide-react';
+import { Loader2, ArrowLeft, Calendar, MapPin, Search, Phone, CheckCircle2, MessageCircle, Send, X, CheckCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/db';
 
 export function LFItemDetail() {
     const params = useParams();
@@ -21,6 +22,11 @@ export function LFItemDetail() {
     const { item, loading, error } = useLostFoundItem(id);
     const { resolveItem } = useLostFound();
     const { user } = useAuth();
+
+    const [showInquiry, setShowInquiry] = useState(false);
+    const [inquiryText, setInquiryText] = useState('');
+    const [sending, setSending] = useState(false);
+    const [sent, setSent] = useState(false);
 
     if (loading) {
         return (
@@ -48,20 +54,61 @@ export function LFItemDetail() {
 
     const handleResolve = async () => {
         if (!isOwner) return;
-        const newStatus = item.status === 'lost' ? 'found' : 'returned'; // 'found' effectively means 'claimed' here, but let's be technically accurate.
         const finalStatus = item.status === 'lost' ? 'claimed' : 'returned';
-
         if (confirm(`Are you sure you want to mark this item as ${finalStatus}?`)) {
             await resolveItem(item.id, finalStatus);
-            // Refresh or optimistic update is handled in hook/page
             window.location.reload();
+        }
+    };
+
+    const handleSendInquiry = async () => {
+        if (!inquiryText.trim() || !user || !item.reporterId) return;
+        setSending(true);
+        try {
+            // Find or create conversation tagged AS lost_found exclusively
+            const { data: existing } = await db
+                .from('conversations')
+                .select('id')
+                .eq('context_type', 'lost_found')
+                .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${item.reporterId}),and(participant1_id.eq.${item.reporterId},participant2_id.eq.${user.id})`)
+                .maybeSingle();
+
+            let convId: string;
+            if (existing) {
+                convId = existing.id;
+            } else {
+                const { data: created } = await db
+                    .from('conversations')
+                    .insert({ participant1_id: user.id, participant2_id: item.reporterId, context_type: 'lost_found' })
+                    .select('id')
+                    .single();
+                convId = created!.id;
+            }
+
+            const content = inquiryText.trim();
+            await db.from('messages').insert({
+                conversation_id: convId,
+                sender_id: user.id,
+                receiver_id: item.reporterId,
+                content,
+            });
+            await db.from('conversations').update({
+                last_message: content,
+                last_message_at: new Date().toISOString(),
+                last_message_sender_id: user.id,
+            }).eq('id', convId);
+
+            setSent(true);
+            setInquiryText('');
+        } finally {
+            setSending(false);
         }
     };
 
     return (
         <div className="max-w-5xl mx-auto py-8 animate-fade-in space-y-6">
             <Button variant="ghost" size="sm" asChild className="-ml-4 mb-2 text-muted-foreground hover:text-foreground">
-                <Link href="/lost-found"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Lost & Found</Link>
+                <Link href="/lost-found"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Lost &amp; Found</Link>
             </Button>
 
             {isResolved && (
@@ -137,26 +184,77 @@ export function LFItemDetail() {
                         )}
                     </GlassSurface>
 
-                    <GlassSurface className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-accent-gold/20">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-12 w-12 border border-border">
-                                <AvatarImage src={item.reporter?.profilePictureUrl} />
-                                <AvatarFallback className="bg-zinc-200 font-bold text-lg">{getInitials(item.reporter?.fullName || '?')}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Reported By</p>
-                                <p className="font-bold text-foreground">{item.reporter?.fullName}</p>
+                    {/* Reporter Card */}
+                    <GlassSurface className="p-5 space-y-4 border-accent-gold/20">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-12 w-12 border border-border">
+                                    <AvatarImage src={item.reporter?.profilePictureUrl} />
+                                    <AvatarFallback className="bg-zinc-200 font-bold text-lg">{getInitials(item.reporter?.fullName || '?')}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Reported By</p>
+                                    <p className="font-bold text-foreground">{item.reporter?.fullName}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col sm:items-end gap-2">
+                                {item.contactInfo && !isResolved && (
+                                    <div className="sm:text-right">
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1 flex sm:justify-end items-center gap-1">
+                                            <Phone className="w-3 h-3" /> Contact Info
+                                        </p>
+                                        <p className="text-sm font-medium text-foreground bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-md border shadow-sm">
+                                            {item.contactInfo}
+                                        </p>
+                                    </div>
+                                )}
+                                {!isOwner && !isResolved && item.reporterId && !sent && (
+                                    <Button
+                                        onClick={() => setShowInquiry(prev => !prev)}
+                                        className={cn("gap-2 shadow-md transition-all", showInquiry ? "bg-zinc-700 hover:bg-zinc-800 text-white" : "bg-amber-500 hover:bg-amber-600 text-white")}
+                                    >
+                                        {showInquiry ? <X className="w-4 h-4" /> : <MessageCircle className="w-4 h-4" />}
+                                        {showInquiry ? 'Cancel' : 'Send Inquiry'}
+                                    </Button>
+                                )}
+                                {sent && (
+                                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-medium bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg border border-green-200 dark:border-green-800">
+                                        <CheckCheck className="w-4 h-4" />
+                                        Inquiry sent! Check your <button onClick={() => router.push('/messages')} className="underline font-semibold">messages</button>.
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        {item.contactInfo && !isResolved && (
-                            <div className="sm:text-right">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1 flex sm:justify-end items-center gap-1">
-                                    <Phone className="w-3 h-3" /> Contact Info
+                        {/* Inline Inquiry Form */}
+                        {showInquiry && !isOwner && !isResolved && !sent && (
+                            <div className="border-t border-border pt-4 space-y-3 animate-fade-in">
+                                <p className="text-sm font-medium text-foreground">
+                                    Send a message to <span className="font-bold">{item.reporter?.fullName}</span> about this item:
                                 </p>
-                                <p className="text-sm font-medium text-foreground bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-md border shadow-sm">
-                                    {item.contactInfo}
-                                </p>
+                                <textarea
+                                    autoFocus
+                                    rows={3}
+                                    placeholder={`Hi! I think I found your ${item.itemName}...`}
+                                    value={inquiryText}
+                                    onChange={e => setInquiryText(e.target.value)}
+                                    className="w-full resize-none rounded-xl border border-border bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-amber-400 transition-all"
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => { setShowInquiry(false); setInquiryText(''); }}>
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSendInquiry}
+                                        disabled={!inquiryText.trim() || sending}
+                                        className="bg-amber-500 hover:bg-amber-600 text-white gap-2"
+                                    >
+                                        {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                        {sending ? 'Sending...' : 'Send'}
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </GlassSurface>

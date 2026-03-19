@@ -1060,6 +1060,10 @@
     margin-left: calc(var(--spacing) * -4);
   }
 
+  .ml-0\.5 {
+    margin-left: calc(var(--spacing) * .5);
+  }
+
   .ml-1 {
     margin-left: calc(var(--spacing) * 1);
   }
@@ -1237,6 +1241,10 @@
     height: var(--cell-size);
   }
 
+  .h-0\.5 {
+    height: calc(var(--spacing) * .5);
+  }
+
   .h-1 {
     height: calc(var(--spacing) * 1);
   }
@@ -1335,6 +1343,10 @@
 
   .h-\[1\.15rem\] {
     height: 1.15rem;
+  }
+
+  .h-\[15px\] {
+    height: 15px;
   }
 
   .h-\[18px\] {
@@ -1769,6 +1781,10 @@
     min-width: 12rem;
   }
 
+  .min-w-\[15px\] {
+    min-width: 15px;
+  }
+
   .min-w-\[18px\] {
     min-width: 18px;
   }
@@ -1990,10 +2006,6 @@
 
   .grid-cols-1 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
-
-  .grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .grid-cols-3 {
@@ -3365,6 +3377,10 @@
     }
   }
 
+  .bg-zinc-700 {
+    background-color: var(--color-zinc-700);
+  }
+
   .bg-zinc-900 {
     background-color: var(--color-zinc-900);
   }
@@ -4136,10 +4152,6 @@
     color: var(--primary-foreground);
   }
 
-  .text-purple-500 {
-    color: var(--color-purple-500);
-  }
-
   .text-purple-600 {
     color: var(--color-purple-600);
   }
@@ -4313,6 +4325,10 @@
 
   .no-underline {
     text-decoration-line: none;
+  }
+
+  .underline {
+    text-decoration-line: underline;
   }
 
   .underline-offset-4 {
@@ -7060,12 +7076,6 @@
   }
 
   @media (min-width: 40rem) {
-    .sm\:grid-cols-4 {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 40rem) {
     .sm\:flex-col {
       flex-direction: column;
     }
@@ -7517,12 +7527,6 @@
   }
 
   @media (min-width: 64rem) {
-    .lg\:static {
-      position: static;
-    }
-  }
-
-  @media (min-width: 64rem) {
     .lg\:sticky {
       position: sticky;
     }
@@ -7723,6 +7727,10 @@
     .dark\:border-green-500\/30:is(.dark *) {
       border-color: color-mix(in oklab, var(--color-green-500) 30%, transparent);
     }
+  }
+
+  .dark\:border-green-800:is(.dark *) {
+    border-color: var(--color-green-800);
   }
 
   .dark\:border-green-900\/50:is(.dark *) {

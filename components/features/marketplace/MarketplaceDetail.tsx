@@ -1,18 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useMarketplace, useMarketplaceItem } from '@/lib/hooks/useMarketplace';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, MapPin, User, IndianRupee, Tag, Package, Truck, Clock, Eye, Image as ImageIcon, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, MapPin, IndianRupee, Tag, Package, Truck, Clock, Eye, Image as ImageIcon, CheckCircle2, XCircle, MessageCircle, Send, X, CheckCheck } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/db';
 
 export function MarketplaceDetail() {
     const params = useParams();
@@ -22,6 +23,11 @@ export function MarketplaceDetail() {
     const { item, loading, error } = useMarketplaceItem(id);
     const { updateStatus } = useMarketplace();
     const { user } = useAuth();
+
+    const [showInquiry, setShowInquiry] = useState(false);
+    const [inquiryText, setInquiryText] = useState('');
+    const [sending, setSending] = useState(false);
+    const [sent, setSent] = useState(false);
 
     if (loading) {
         return (
@@ -68,6 +74,51 @@ export function MarketplaceDetail() {
         if (confirm('Cancel this listing? It will be removed from the marketplace.')) {
             await updateStatus(item.id, 'cancelled');
             window.location.reload();
+        }
+    };
+
+    const handleSendInquiry = async () => {
+        if (!inquiryText.trim() || !user || !item.sellerId) return;
+        setSending(true);
+        try {
+            // Find or create conversation tagged AS buy_sell exclusively
+            const { data: existing } = await db
+                .from('conversations')
+                .select('id')
+                .eq('context_type', 'buy_sell')
+                .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${item.sellerId}),and(participant1_id.eq.${item.sellerId},participant2_id.eq.${user.id})`)
+                .maybeSingle();
+
+            let convId: string;
+            if (existing) {
+                convId = existing.id;
+            } else {
+                const { data: created } = await db
+                    .from('conversations')
+                    .insert({ participant1_id: user.id, participant2_id: item.sellerId, context_type: 'buy_sell' })
+                    .select('id')
+                    .single();
+                convId = created!.id;
+            }
+
+            const content = inquiryText.trim();
+            await db.from('messages').insert({
+                conversation_id: convId,
+                sender_id: user.id,
+                receiver_id: item.sellerId,
+                content,
+            });
+            await db.from('conversations').update({
+                last_message: content,
+                last_message_at: new Date().toISOString(),
+                last_message_sender_id: user.id,
+            }).eq('id', convId);
+
+            setSent(true);
+            setInquiryText('');
+            setShowInquiry(false);
+        } finally {
+            setSending(false);
         }
     };
 
@@ -191,18 +242,67 @@ export function MarketplaceDetail() {
                         </div>
                     </GlassSurface>
 
-                    {/* Seller Card */}
-                    <GlassSurface className="p-5 flex items-center justify-between gap-4 border-accent-gold/20">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-12 w-12 border border-border">
-                                <AvatarImage src={item.seller?.profilePictureUrl} />
-                                <AvatarFallback className="bg-zinc-200 font-bold text-lg">{getInitials(item.seller?.fullName || '?')}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Seller</p>
-                                <p className="font-bold text-foreground">{item.seller?.fullName}</p>
+                    {/* Seller Card + Inquiry */}
+                    <GlassSurface className="p-5 space-y-4 border-accent-gold/20">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-12 w-12 border border-border">
+                                    <AvatarImage src={item.seller?.profilePictureUrl} />
+                                    <AvatarFallback className="bg-zinc-200 font-bold text-lg">{getInitials(item.seller?.fullName || '?')}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Seller</p>
+                                    <p className="font-bold text-foreground">{item.seller?.fullName}</p>
+                                </div>
                             </div>
+
+                            {!isOwner && isAvailable && item.sellerId && !sent && (
+                                <Button
+                                    onClick={() => setShowInquiry(prev => !prev)}
+                                    className={cn("gap-2 shadow-md transition-all", showInquiry ? "bg-zinc-700 hover:bg-zinc-800 text-white" : "bg-amber-500 hover:bg-amber-600 text-white")}
+                                >
+                                    {showInquiry ? <X className="w-4 h-4" /> : <MessageCircle className="w-4 h-4" />}
+                                    {showInquiry ? 'Cancel' : 'Send Inquiry'}
+                                </Button>
+                            )}
+                            {sent && (
+                                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-medium bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg border border-green-200 dark:border-green-800">
+                                    <CheckCheck className="w-4 h-4" />
+                                    Sent! View in <button onClick={() => router.push('/messages')} className="underline font-semibold ml-0.5">Messages</button>.
+                                </div>
+                            )}
                         </div>
+
+                        {/* Inline Inquiry Form */}
+                        {showInquiry && !isOwner && isAvailable && !sent && (
+                            <div className="border-t border-border pt-4 space-y-3 animate-fade-in">
+                                <p className="text-sm font-medium text-foreground">
+                                    Send a message to <span className="font-bold">{item.seller?.fullName}</span> about this listing:
+                                </p>
+                                <textarea
+                                    autoFocus
+                                    rows={3}
+                                    placeholder={`Hi! I'm interested in your ${item.title}. Is it still available?`}
+                                    value={inquiryText}
+                                    onChange={e => setInquiryText(e.target.value)}
+                                    className="w-full resize-none rounded-xl border border-border bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-amber-400 transition-all"
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => { setShowInquiry(false); setInquiryText(''); }}>
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSendInquiry}
+                                        disabled={!inquiryText.trim() || sending}
+                                        className="bg-amber-500 hover:bg-amber-600 text-white gap-2"
+                                    >
+                                        {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                        {sending ? 'Sending...' : 'Send'}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </GlassSurface>
 
                     {/* Owner Actions */}

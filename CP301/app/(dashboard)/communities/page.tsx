@@ -169,7 +169,7 @@ export default function CommunitiesPage() {
         : false;
 
     return (
-        <div className="flex h-[calc(100vh-120px)] gap-0 rounded-xl overflow-hidden border border-border bg-card shadow-sm">
+        <div className="flex h-[calc(100vh-180px)] md:h-[calc(100vh-120px)] gap-0 rounded-xl overflow-hidden border border-border bg-card shadow-sm">
 
             {/* ============================================================
                 LEFT PANEL: Communities List

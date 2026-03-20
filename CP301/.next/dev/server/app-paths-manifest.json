@@ -1,0 +1,7 @@
+{
+  "/(dashboard)/communities/page": "app/(dashboard)/communities/page.js",
+  "/(dashboard)/page": "app/(dashboard)/page.js",
+  "/(dashboard)/users/[id]/page": "app/(dashboard)/users/[id]/page.js",
+  "/api/auth/set-cookie/route": "app/api/auth/set-cookie/route.js",
+  "/offline/page": "app/offline/page.js"
+}

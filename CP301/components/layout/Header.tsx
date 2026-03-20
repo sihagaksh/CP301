@@ -1,0 +1,178 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Bell, MessageCircle, Search, Menu, User, LogOut } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { PostingIdentitySelector } from '@/components/features/profile/PostingIdentitySelector';
+import { useAuth } from '@/contexts/AuthContext';
+import { getInitials } from '@/lib/utils';
+import { db } from '@/lib/db';
+
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
+  const { user, signOut } = useAuth();
+  const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    // Fetch initial unread count
+    db.from('notifications').select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id).eq('is_read', false)
+      .then(({ count }) => setUnreadCount(count || 0));
+    // Subscribe to new notifications in real time
+    const channel = db.channel('header-notifs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
+        setUnreadCount(c => c + 1);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => {
+        // Recount when a notification is marked read
+        db.from('notifications').select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id).eq('is_read', false)
+          .then(({ count }) => setUnreadCount(count || 0));
+      })
+      .subscribe();
+    return () => { db.removeChannel(channel); };
+  }, [user]);
+
+  const handleSignOut = () => {
+    // 1. Clear auth cookie CLIENT-SIDE (instant, no network needed).
+    //    This ensures the proxy allows /login on the next request.
+    document.cookie = 'sb-auth-token=; path=/; max-age=0';
+
+    // 2. Clear Supabase local storage explicitly.
+    //    If we just rely on signOut() in the background, the redirect to
+    //    /login might happen before Supabase clears it, causing the login
+    //    page to auto-login.
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        localStorage.removeItem(key);
+      }
+    }
+
+    // 3. Fire server-side cleanup in background.
+    //    We explicitly DO NOT call Supabase's client-side signOut() here
+    //    because it attempts to acquire a Web Lock. Navigating away while
+    //    it holds the lock leaves the lock orphaned, causing a 5-second
+    //    delay on the /login page before it "steals" the broken lock.
+    fetch('/api/auth/clear-cookie', { method: 'POST' }).catch(() => { });
+
+    // 4. Redirect immediately — always works, no lock issues.
+    window.location.replace('/login');
+  };
+
+  return (
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
+      <div className="max-w-screen-2xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        {/* Left section: Logo and menu */}
+        <div className="flex items-center gap-3">
+          {onMenuClick && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMenuClick}
+              className="lg:hidden"
+              aria-label="Toggle menu"
+            >
+              <Menu size={20} />
+            </Button>
+          )}
+
+          <Link href="/" className="flex items-center gap-2 font-serif font-bold text-lg md:text-xl">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white text-sm font-bold">
+              R
+            </div>
+            <span className="hidden sm:inline text-foreground">IIT Ropar</span>
+          </Link>
+        </div>
+
+        {/* Center section: Search */}
+        <div className="hidden md:flex flex-1 max-w-md">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="search"
+              placeholder="Search..."
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+            />
+          </div>
+        </div>
+
+        {/* Right section: Actions */}
+        <div className="flex items-center gap-2">
+          <Link href="/notifications" aria-label="Notifications">
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Button>
+          </Link>
+
+
+
+          <ThemeToggle />
+
+          {user && (
+            <>
+              <div className="hidden sm:block border-r border-border h-6 mx-2" />
+              <PostingIdentitySelector />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="ml-1 shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-background">
+                    <Avatar className="w-8 h-8 border-2 border-amber-400 cursor-pointer">
+                      <AvatarImage src={user.profilePictureUrl} alt={user.fullName} />
+                      <AvatarFallback className="bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-sm font-medium">
+                        {getInitials(user.fullName)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium text-foreground truncate">{user.fullName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer">
+                      <User size={16} className="mr-2" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="text-red-600 dark:text-red-400 cursor-pointer focus:text-red-600 dark:focus:text-red-400"
+                  >
+                    <LogOut size={16} className="mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+

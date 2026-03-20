@@ -1,0 +1,1 @@
+globalThis.__RSC_MANIFEST=(globalThis.__RSC_MANIFEST||{});globalThis.__RSC_MANIFEST["/api/auth/set-cookie/route"]={"moduleLoading":{"prefix":"/_next/"},"ssrModuleMapping":{},"edgeSSRModuleMapping":{},"clientModules":{},"entryCSSFiles":{"/home/sihagaksh/Desktop/DEP/CP301/app/api/auth/set-cookie/route":[]},"rscModuleMapping":{},"edgeRscModuleMapping":{}};

@@ -1,0 +1,78 @@
+{
+  "name": "IIT Ropar Community Platform",
+  "short_name": "IITRPR",
+  "description": "The official community platform for IIT Ropar – connecting students, faculty, and staff.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "categories": ["education", "social"],
+  "shortcuts": [
+    {
+      "name": "Feed",
+      "short_name": "Feed",
+      "description": "View the community feed",
+      "url": "/feed",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Marketplace",
+      "short_name": "Market",
+      "description": "Buy and sell on campus",
+      "url": "/marketplace",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Communities",
+      "short_name": "Comms",
+      "description": "Join and chat in communities",
+      "url": "/communities",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop.png",
+      "sizes": "640x640",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "IIT Ropar Community Platform — Desktop view showing feed and sidebar navigation"
+    },
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "640x640",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "IIT Ropar Community Platform — Mobile view showing feed and bottom navigation"
+    }
+  ]
+}

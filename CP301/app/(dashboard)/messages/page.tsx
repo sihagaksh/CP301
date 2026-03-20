@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageCircle, Search, Send, User, X, Plus, Check, CheckCheck, Loader2, PackageSearch, SearchX, ChevronLeft } from 'lucide-react';
+import { MessageCircle, Search, Send, User, X, Plus, Check, CheckCheck, Loader2, PackageSearch, SearchX, ChevronLeft, ArrowDown } from 'lucide-react';
 import { db } from '@/lib/db';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -79,6 +79,15 @@ export default function MessagesPage() {
   const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [searching, setSearching] = useState(false);
 
+  // Pagination
+  const PAGE_SIZE = 30;
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const oldestMsgIdRef = useRef<string | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  const preserveScrollRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const userSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -132,11 +141,44 @@ export default function MessagesPage() {
   }, []);
 
   const fetchMessages = useCallback(async (convId: string, scroll = true) => {
-    const { data } = await db.from('messages').select('*').eq('conversation_id', convId).order('created_at', { ascending: true }).limit(100);
-    setMessages((data as Message[]) || []);
-    if (scroll) setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+    const { data } = await db
+      .from('messages')
+      .select('*')
+      .eq('conversation_id', convId)
+      .order('created_at', { ascending: false })
+      .limit(PAGE_SIZE);
+    const msgs = ((data as Message[]) || []).reverse();
+    setMessages(msgs);
+    setHasMoreMessages(msgs.length === PAGE_SIZE);
+    oldestMsgIdRef.current = msgs[0]?.created_at ?? null;
+    if (scroll) setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'instant' }), 80);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadMoreMessages = useCallback(async (convId: string) => {
+    if (!hasMoreMessages || loadingMore || !oldestMsgIdRef.current) return;
+    setLoadingMore(true);
+    // Save scroll position before prepending
+    if (chatScrollRef.current) {
+      preserveScrollRef.current = {
+        scrollHeight: chatScrollRef.current.scrollHeight,
+        scrollTop: chatScrollRef.current.scrollTop,
+      };
+    }
+    const { data } = await db
+      .from('messages')
+      .select('*')
+      .eq('conversation_id', convId)
+      .lt('created_at', oldestMsgIdRef.current)
+      .order('created_at', { ascending: false })
+      .limit(PAGE_SIZE);
+    const older = ((data as Message[]) || []).reverse();
+    setMessages(prev => [...older, ...prev]);
+    setHasMoreMessages(older.length === PAGE_SIZE);
+    if (older[0]) oldestMsgIdRef.current = older[0].created_at;
+    setLoadingMore(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMoreMessages, loadingMore]);
 
   const markAsRead = useCallback(async (convId: string) => {
     const u = userRef.current;
@@ -299,8 +341,30 @@ export default function MessagesPage() {
     );
   }
 
+  // Restore scroll position after older messages are prepended
+  useEffect(() => {
+    if (!loadingMore && preserveScrollRef.current && chatScrollRef.current) {
+      const { scrollHeight, scrollTop } = preserveScrollRef.current;
+      const newScrollHeight = chatScrollRef.current.scrollHeight;
+      chatScrollRef.current.scrollTop = scrollTop + (newScrollHeight - scrollHeight);
+      preserveScrollRef.current = null;
+    }
+  }, [messages, loadingMore]);
+
+  // Intersection observer — fires when user scrolls to the top sentinel
+  useEffect(() => {
+    const sentinel = topSentinelRef.current;
+    if (!sentinel || !activeConv) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) loadMoreMessages(activeConv.id); },
+      { root: chatScrollRef.current, threshold: 0.1 }
+    );
+    obs.observe(sentinel);
+    return () => obs.disconnect();
+  }, [activeConv, loadMoreMessages]);
+
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)]">
+    <div className="flex flex-col h-full px-3 pt-4 md:px-6 md:pt-6">
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <h1 className="font-bold text-2xl">💬 Messages</h1>
         <button className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors" onClick={() => { setShowNewChat(true); setUserSearch(''); }}>
@@ -480,7 +544,14 @@ export default function MessagesPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-auto px-4 py-3 flex flex-col gap-1.5 min-h-0">
+              <div ref={chatScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 flex flex-col gap-1.5 min-h-0 overscroll-contain">
+                {/* Top sentinel for scroll-up pagination */}
+                <div ref={topSentinelRef} className="h-1" />
+                {loadingMore && (
+                  <div className="flex justify-center py-2">
+                    <Loader2 size={16} className="animate-spin text-muted-foreground" />
+                  </div>
+                )}
                 {messages.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center flex-col gap-2 text-muted-foreground">
                     <MessageCircle size={40} className="opacity-30" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
@@ -13,6 +13,10 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Pages that manage their own scroll and need full-bleed layout
+  const isFullBleed = pathname === '/messages';
 
   const openSidebar = () => setSidebarOpen(true);
   const closeSidebar = () => setSidebarOpen(false);
@@ -38,16 +42,26 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen overflow-hidden bg-background flex flex-col">
       <Header onMenuClick={openSidebar} />
 
-      <div className="flex">
+      <div className="flex flex-1 min-h-0">
         <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
 
-        <main className="flex-1 min-w-0 min-h-[calc(100vh-4rem)] pb-20 md:pb-0">
-          <div className="max-w-screen-xl mx-auto px-3 py-4 sm:p-4 md:p-6">
-            {children}
-          </div>
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          {isFullBleed ? (
+            // Full-bleed pages (messages) handle their own height & scroll
+            <div className="flex-1 min-h-0 pb-16 md:pb-0">
+              {children}
+            </div>
+          ) : (
+            // Regular pages: scrollable with padding
+            <div className="flex-1 overflow-y-auto overscroll-contain pb-20 md:pb-0">
+              <div className="max-w-screen-xl mx-auto px-3 py-4 sm:p-4 md:p-6">
+                {children}
+              </div>
+            </div>
+          )}
         </main>
       </div>
 

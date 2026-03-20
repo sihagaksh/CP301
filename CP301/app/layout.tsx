@@ -12,26 +12,26 @@ const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: '--font-mon
 export const metadata: Metadata = {
   title: 'IIT Ropar Community Platform',
   description: 'Connect, collaborate, and celebrate the IIT Ropar community',
-  generator: 'v0.app',
   applicationName: 'IIT Ropar Community Platform',
   keywords: ['IIT Ropar', 'community', 'students', 'events', 'marketplace', 'blogs'],
   authors: [{ name: 'IIT Ropar' }],
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/icons/icon-512.png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/icons/icon-512.png',
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: '/icons/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/icons/icon-512.png',
   },
   manifest: '/manifest.json',
 }
@@ -39,8 +39,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: '#f59e0b',
 }
 

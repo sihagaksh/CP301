@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, ShoppingBag, Megaphone, Search, MoreHorizontal } from 'lucide-react';
+import { Home, Megaphone, MessageSquare, Users, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Feed', icon: Home },
-  { href: '/marketplace', label: 'Market', icon: ShoppingBag },
   { href: '/notices', label: 'Notices', icon: Megaphone },
-  { href: '/lost-found', label: 'L&F', icon: Search },
+  { href: '/messages', label: 'Messages', icon: MessageSquare },
+  { href: '/', label: 'Feed', icon: Home },
+  { href: '/communities', label: 'Communities', icon: Users },
 ];
 
 interface BottomNavProps {

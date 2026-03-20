@@ -62,6 +62,126 @@ const TABS: { key: TabType; label: string; icon?: string }[] = [
   { key: 'buy_sell', label: 'Buy & Sell' },
 ];
 
+function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnread, onDelete, user }: { conv: Conversation, activeConv: Conversation | null, onClick: () => void, onContextMenu: (e: React.MouseEvent) => void, onMarkUnread: () => void, onDelete: () => void, user: any }) {
+  const [offsetX, setOffsetX] = useState(0);
+  const startXRef = useRef(0);
+  const currentXRef = useRef(0);
+  const isDraggingRef = useRef(false);
+
+  // Width of back actions (2 buttons * 70px)
+  const ACTIONS_WIDTH = 140; 
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+    isDraggingRef.current = true;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingRef.current) return;
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - startXRef.current;
+    
+    // Only allow left-swipe to reveal (diff < 0) or right-wrap to close
+    let newOffset = currentXRef.current + diff;
+    if (newOffset > 0) newOffset = 0;
+    if (newOffset < -ACTIONS_WIDTH) newOffset = -ACTIONS_WIDTH;
+    
+    setOffsetX(newOffset);
+  };
+
+  const handleTouchEnd = () => {
+    isDraggingRef.current = false;
+    currentXRef.current = offsetX;
+    // Snap open if swiped more than half-way (40% of width)
+    if (offsetX < -(ACTIONS_WIDTH * 0.4)) {
+      setOffsetX(-ACTIONS_WIDTH);
+      currentXRef.current = -ACTIONS_WIDTH;
+    } else {
+      setOffsetX(0);
+      currentXRef.current = 0;
+    }
+  };
+
+  // Close swipe if another chat is selected
+  useEffect(() => {
+    if (activeConv?.id !== conv.id && offsetX !== 0) {
+      setOffsetX(0);
+      currentXRef.current = 0;
+    }
+  }, [activeConv?.id, conv.id, offsetX]);
+
+  // Prevent parent click if swipe is open
+  const handleClick = (e: React.MouseEvent) => {
+    if (offsetX !== 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      setOffsetX(0);
+      currentXRef.current = 0;
+    } else {
+      onClick();
+    }
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-lg mb-1 bg-muted/40" style={{ touchAction: 'pan-y' }}>
+      {/* Background Actions - Only visible when swiping */}
+      <div className={`absolute inset-y-0 right-0 flex items-center justify-end w-full ${offsetX === 0 ? 'invisible' : 'visible'}`}>
+        <div className="flex bg-muted/20 h-full rounded-r-lg overflow-hidden" style={{ width: ACTIONS_WIDTH }}>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onMarkUnread(); setOffsetX(0); currentXRef.current = 0; }}
+            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white flex flex-col items-center justify-center text-[10px] font-bold transition-colors"
+          >
+            <Check size={16} className="mb-0.5" /> UNREAD
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onDelete(); setOffsetX(0); currentXRef.current = 0; }}
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white flex flex-col items-center justify-center text-[10px] font-bold transition-colors border-l border-white/10"
+          >
+            <X size={16} className="mb-0.5" /> DELETE
+          </button>
+        </div>
+      </div>
+
+      {/* Foreground Container */}
+      <button
+        onClick={handleClick}
+        onContextMenu={onContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ transform: `translateX(${offsetX}px)` }}
+        className={`w-full relative z-10 flex items-center gap-2.5 p-2.5 rounded-lg text-left transition-transform duration-200 ease-out border-l-2 ${
+          offsetX !== 0 ? '!duration-0' : ''
+        } ${activeConv?.id === conv.id ? 'bg-amber-50 dark:bg-amber-500/15 border-amber-500' : 'bg-card dark:bg-[#1c1c1c] hover:bg-accent border-transparent'}`}
+      >
+        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold flex-shrink-0 overflow-hidden shadow-sm pointer-events-none">
+          {conv.participant.profile_picture_url ? <img src={conv.participant.profile_picture_url} alt={conv.participant.full_name} className="w-full h-full object-cover" /> : getInitials(conv.participant.full_name)}
+        </div>
+        <div className="flex-1 min-w-0 pointer-events-none">
+          <div className="flex justify-between items-baseline gap-1">
+            <p className={`text-sm truncate ${conv.unread_count > 0 ? 'font-bold text-foreground' : 'font-medium text-foreground'}`}>{conv.participant.full_name}</p>
+            {conv.last_message_at && <span className={`text-xs flex-shrink-0 ${conv.unread_count > 0 ? 'text-green-500 font-medium' : 'text-muted-foreground'}`}>{formatTime(conv.last_message_at)}</span>}
+          </div>
+          <div className="flex items-center gap-1">
+            {conv.context_type && (
+              <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full flex-shrink-0 ${conv.context_type === 'lost_found' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                {conv.context_type === 'lost_found' ? 'L&F' : 'B&S'}
+              </span>
+            )}
+            <p className={`text-xs truncate flex items-center gap-1 ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+              {conv.last_message_sender_id === user?.id && conv.last_message && (conv.last_message_is_read ? <CheckCheck size={12} className="text-sky-400 flex-shrink-0" /> : <Check size={12} className="text-muted-foreground flex-shrink-0" />)}
+              <span className="truncate">{conv.last_message || <span className="italic">No messages yet</span>}</span>
+            </p>
+          </div>
+        </div>
+        {conv.unread_count > 0 && (
+          <span className="bg-green-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 pointer-events-none">{conv.unread_count}</span>
+        )}
+      </button>
+    </div>
+  );
+}
+
 export default function MessagesPage() {
   const { user } = useAuth();
 
@@ -78,6 +198,9 @@ export default function MessagesPage() {
   const [userSearch, setUserSearch] = useState('');
   const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [searching, setSearching] = useState(false);
+
+  // Context Menu State (PC Right-Click)
+  const [contextMenu, setContextMenu] = useState<{ convId: string, x: number, y: number } | null>(null);
 
   // Pagination
   const PAGE_SIZE = 30;
@@ -188,10 +311,54 @@ export default function MessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const deleteChat = async (convId: string) => {
+    if (!confirm('Are you sure you want to delete this chat? This cannot be undone.')) {
+      setContextMenu(null);
+      return;
+    }
+    try {
+      await db.from('conversations').delete().eq('id', convId);
+      setConversations(prev => prev.filter(c => c.id !== convId));
+      if (activeConv?.id === convId) setActiveConv(null);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to delete chat.');
+    }
+    setContextMenu(null);
+  };
+
+  const markAsUnreadAction = async (convId: string) => {
+    const u = userRef.current;
+    if (!u) return;
+    // Find the last message received by this user
+    const { data } = await db.from('messages')
+      .select('id')
+      .eq('conversation_id', convId)
+      .eq('receiver_id', u.id)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    if (data && data.length > 0) {
+      await db.from('messages').update({ is_read: false }).eq('id', data[0].id);
+      setConversations(prev => prev.map(c => c.id === convId ? { ...c, unread_count: (c.unread_count || 0) + 1 } : c));
+    }
+    setContextMenu(null);
+  };
+
   const openConversationWith = useCallback(async (other: UserResult, context?: InquiryContext) => {
     if (!userRef.current) return;
     const u = userRef.current;
-    const { data: existing } = await db.from('conversations').select('id, context_type').or(`and(participant1_id.eq.${u.id},participant2_id.eq.${other.id}),and(participant1_id.eq.${other.id},participant2_id.eq.${u.id})`).maybeSingle();
+    const { data: existingConvs } = await db.from('conversations').select('id, context_type').or(`and(participant1_id.eq.${u.id},participant2_id.eq.${other.id}),and(participant1_id.eq.${other.id},participant2_id.eq.${u.id})`);
+    
+    let existing = null;
+    if (existingConvs && existingConvs.length > 0) {
+      if (context) {
+        existing = existingConvs.find(c => c.context_type === context.type) || existingConvs[0];
+      } else {
+        existing = existingConvs.find(c => !c.context_type) || existingConvs[0];
+      }
+    }
+
     let convId: string;
     let convContextType: 'lost_found' | 'buy_sell' | null = existing?.context_type ?? null;
 
@@ -441,35 +608,19 @@ export default function MessagesPage() {
               </div>
             ) : (
               filteredConvs.map(conv => (
-                <button
+                <SwipeableChatItem
                   key={conv.id}
+                  conv={conv}
+                  activeConv={activeConv}
+                  user={user}
                   onClick={() => { setActiveConv(conv); fetchMessages(conv.id); markAsRead(conv.id); setShowNewChat(false); }}
-                  className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg text-left transition-colors ${activeConv?.id === conv.id ? 'bg-amber-50 dark:bg-amber-500/10 border-l-2 border-amber-500' : 'hover:bg-accent border-l-2 border-transparent'}`}
-                >
-                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold flex-shrink-0 overflow-hidden">
-                    {conv.participant.profile_picture_url ? <img src={conv.participant.profile_picture_url} alt={conv.participant.full_name} className="w-full h-full object-cover" /> : getInitials(conv.participant.full_name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline gap-1">
-                      <p className={`text-sm truncate ${conv.unread_count > 0 ? 'font-bold text-foreground' : 'font-medium text-foreground'}`}>{conv.participant.full_name}</p>
-                      {conv.last_message_at && <span className={`text-xs flex-shrink-0 ${conv.unread_count > 0 ? 'text-green-500 font-medium' : 'text-muted-foreground'}`}>{formatTime(conv.last_message_at)}</span>}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {conv.context_type && (
-                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full flex-shrink-0 ${conv.context_type === 'lost_found' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                          {conv.context_type === 'lost_found' ? 'L&F' : 'B&S'}
-                        </span>
-                      )}
-                      <p className={`text-xs truncate flex items-center gap-1 ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                        {conv.last_message_sender_id === user.id && conv.last_message && (conv.last_message_is_read ? <CheckCheck size={12} className="text-sky-400 flex-shrink-0" /> : <Check size={12} className="text-muted-foreground flex-shrink-0" />)}
-                        <span className="truncate">{conv.last_message || <span className="italic">No messages yet</span>}</span>
-                      </p>
-                    </div>
-                  </div>
-                  {conv.unread_count > 0 && (
-                    <span className="bg-green-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{conv.unread_count}</span>
-                  )}
-                </button>
+                  onContextMenu={(e: React.MouseEvent) => {
+                    e.preventDefault();
+                    setContextMenu({ convId: conv.id, x: e.pageX, y: e.pageY });
+                  }}
+                  onMarkUnread={() => markAsUnreadAction(conv.id)}
+                  onDelete={() => deleteChat(conv.id)}
+                />
               ))
             )}
           </div>
@@ -605,6 +756,30 @@ export default function MessagesPage() {
           )}
         </div>
       </div>
+
+      {contextMenu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
+          <div 
+            className="fixed z-50 bg-popover text-popover-foreground border border-border shadow-md rounded-md py-1 min-w-[160px] text-sm animate-in fade-in zoom-in-95"
+            style={{ top: Math.min(contextMenu.y, window.innerHeight - 100), left: Math.min(contextMenu.x, window.innerWidth - 180) }}
+          >
+            <button 
+              className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
+              onClick={(e) => { e.stopPropagation(); markAsUnreadAction(contextMenu.convId); }}
+            >
+              <Check size={14} className="text-muted-foreground" /> Mark as unread
+            </button>
+            <button 
+              className="w-full text-left px-3 py-2 text-red-500 hover:bg-red-500/10 flex items-center gap-2"
+              onClick={(e) => { e.stopPropagation(); deleteChat(contextMenu.convId); }}
+            >
+              <X size={14} /> Delete chat
+            </button>
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

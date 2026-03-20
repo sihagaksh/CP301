@@ -37,6 +37,36 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const [submitting, setSubmitting] = useState(false);
   const [shareTooltip, setShareTooltip] = useState(false);
   const [carouselIdx, setCarouselIdx] = useState(0);
+  const [aspectRatio, setAspectRatio] = useState<string>('16/9');
+
+  useEffect(() => {
+    if (!post?.media_urls || post.media_urls.length === 0) return;
+    let isMounted = true;
+    Promise.all(post.media_urls.map(url => new Promise<{w:number, h:number}>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.width, h: img.height });
+      img.onerror = () => resolve({ w: 0, h: 0 });
+      img.src = url;
+    }))).then(dimensions => {
+      if (!isMounted) return;
+      let maxW = 0, maxH = 0;
+      dimensions.forEach(d => {
+        if (d.w > maxW) maxW = d.w;
+        if (d.h > maxH) maxH = d.h;
+      });
+      if (maxW > 0 && maxH > 0) {
+        const ratio = maxW / maxH;
+        let finalRatioStr = `${maxW}/${maxH}`;
+        if (ratio < 0.8) {
+          finalRatioStr = '4/5';
+        } else if (ratio > 1.91) {
+          finalRatioStr = '1.91/1';
+        }
+        setAspectRatio(finalRatioStr);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [post?.media_urls]);
 
   useEffect(() => { fetchPost(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -159,8 +189,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
 
         {post.media_urls && post.media_urls.length > 0 && (
           <div className="relative px-5 pb-5">
-            <div className="relative w-full rounded-xl overflow-hidden border border-border" style={{ aspectRatio: '16/9' }}>
-              <img src={post.media_urls[carouselIdx]} alt={`Media ${carouselIdx + 1}`} className="w-full h-full object-cover" />
+            <div className="relative w-full max-h-[700px] mx-auto rounded-xl overflow-hidden border border-border bg-white dark:bg-black flex items-center justify-center" style={{ aspectRatio }}>
+              <img src={post.media_urls[carouselIdx]} alt={`Media ${carouselIdx + 1}`} className="w-full h-full object-contain" />
               {post.media_urls.length > 1 && (
                 <>
                   <button onClick={() => setCarouselIdx((carouselIdx - 1 + post.media_urls!.length) % post.media_urls!.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center"><ChevronLeft size={18} /></button>

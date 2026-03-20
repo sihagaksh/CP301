@@ -49,6 +49,109 @@ interface FeedItem {
   carouselIndex?: number;
 }
 
+function FeedPhotoCarousel({ item }: { item: FeedItem }) {
+  const [aspectRatio, setAspectRatio] = useState<string>('16/9'); // fallback
+  const [carouselIdx, setCarouselIdx] = useState(0);
+  const touchStartXRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!item.media_urls || item.media_urls.length === 0) return;
+    
+    let isMounted = true;
+    Promise.all(item.media_urls.map(url => new Promise<{w:number, h:number}>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.width, h: img.height });
+      img.onerror = () => resolve({ w: 0, h: 0 });
+      img.src = url;
+    }))).then(dimensions => {
+      if (!isMounted) return;
+      let maxW = 0;
+      let maxH = 0;
+      dimensions.forEach(d => {
+        if (d.w > maxW) maxW = d.w;
+        if (d.h > maxH) maxH = d.h;
+      });
+      if (maxW > 0 && maxH > 0) {
+        // Clamp aspect ratio between 4:5 (tallest) and 1.91:1 (widest) - Instagram standard
+        const ratio = maxW / maxH;
+        let finalRatioStr = `${maxW}/${maxH}`;
+        if (ratio < 0.8) {
+          finalRatioStr = '4/5';
+        } else if (ratio > 1.91) {
+          finalRatioStr = '1.91/1';
+        }
+        setAspectRatio(finalRatioStr);
+      }
+    });
+
+    return () => { isMounted = false; };
+  }, [item.media_urls]);
+  
+  if (!item.media_urls || item.media_urls.length === 0) return null;
+  const hasMultipleImages = item.media_urls.length > 1;
+
+  const changeSlide = (dir: number) => {
+    setCarouselIdx(prev => {
+      let next = prev + dir;
+      if (next < 0) next = item.media_urls!.length - 1;
+      if (next >= item.media_urls!.length) next = 0;
+      return next;
+    });
+  };
+
+  return (
+    <div className="relative px-4 pb-4">
+      <div
+        className="relative w-full max-h-[600px] mx-auto rounded-xl overflow-hidden border border-border select-none bg-white dark:bg-black flex items-center justify-center"
+        style={{ aspectRatio }}
+        onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          if (touchStartXRef.current === null) return;
+          const delta = e.changedTouches[0].clientX - touchStartXRef.current;
+          touchStartXRef.current = null;
+          if (Math.abs(delta) < 40) return; // too small to register swipe
+          changeSlide(delta < 0 ? 1 : -1);
+        }}
+      >
+        <img
+          src={item.media_urls[carouselIdx]}
+          alt={`Photo ${carouselIdx + 1}`}
+          className="w-full h-full object-contain"
+        />
+        {hasMultipleImages && (
+          <>
+            <button onClick={() => changeSlide(-1)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
+              <ChevronLeft size={18} />
+            </button>
+            <button onClick={() => changeSlide(1)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
+              <ChevronRight size={18} />
+            </button>
+          </>
+        )}
+      </div>
+      {hasMultipleImages && (
+        <div className="flex justify-center gap-1.5 mt-2">
+          {item.media_urls.map((_, dotIdx) => (
+            <button
+              key={dotIdx}
+              onClick={() => setCarouselIdx(dotIdx)}
+              className="rounded-full transition-all"
+              style={{
+                width: dotIdx === carouselIdx ? 18 : 7,
+                height: 7,
+                background: dotIdx === carouselIdx ? 'rgb(245,158,11)' : 'var(--muted-foreground, #888)',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FeedPage() {
   const { user, postingIdentities, activeIdentity, setActiveIdentity } = useAuth();
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
@@ -237,14 +340,7 @@ export default function FeedPage() {
     }
   }
 
-  function changeCarousel(postId: string, direction: 1 | -1) {
-    const post = feedItems.find(p => p.id === postId);
-    if (!post?.media_urls) return;
-    const total = post.media_urls.length;
-    const current = post.carouselIndex ?? 0;
-    const next = (current + direction + total) % total;
-    setFeedItems(prev => prev.map(p => p.id === postId ? { ...p, carouselIndex: next } : p));
-  }
+
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []).slice(0, 10);
@@ -500,55 +596,7 @@ export default function FeedPage() {
                     </div>
 
                     {item.media_urls && item.media_urls.length > 0 && (
-                      <div className="relative px-4 pb-4">
-                        <div
-                          className="relative w-full rounded-xl overflow-hidden border border-border select-none"
-                          style={{ aspectRatio: '16/9' }}
-                          onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; }}
-                          onTouchEnd={(e) => {
-                            if (touchStartXRef.current === null) return;
-                            const delta = e.changedTouches[0].clientX - touchStartXRef.current;
-                            touchStartXRef.current = null;
-                            if (Math.abs(delta) < 40) return; // too small to register
-                            changeCarousel(item.id, delta < 0 ? 1 : -1);
-                          }}
-                        >
-                          <img
-                            src={item.media_urls[carouselIdx]}
-                            alt={`Photo ${carouselIdx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          {hasMultipleImages && (
-                            <>
-                              <button onClick={() => changeCarousel(item.id, -1)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
-                                <ChevronLeft size={18} />
-                              </button>
-                              <button onClick={() => changeCarousel(item.id, 1)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10">
-                                <ChevronRight size={18} />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                        {hasMultipleImages && (
-                          <div className="flex justify-center gap-1.5 mt-2">
-                            {item.media_urls!.map((_, dotIdx) => (
-                              <button
-                                key={dotIdx}
-                                onClick={() => setFeedItems(prev => prev.map(p => p.id === item.id ? { ...p, carouselIndex: dotIdx } : p))}
-                                className="rounded-full transition-all"
-                                style={{
-                                  width: dotIdx === carouselIdx ? 18 : 7,
-                                  height: 7,
-                                  background: dotIdx === carouselIdx ? 'rgb(245,158,11)' : 'var(--muted-foreground, #888)',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  padding: 0,
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <FeedPhotoCarousel item={item} />
                     )}
 
                     <div className="px-4 py-2.5 border-t border-border flex items-center gap-1">

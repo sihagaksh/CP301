@@ -41,7 +41,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   useEffect(() => { fetchPost(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchPost() {
-    const { data: postData } = await db.from('feed_posts').select('*, author:users(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(title, organization:organizations(name))').eq('id', id).single();
+    const { data: postData } = await db.from('feed_posts').select('*, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(title, organization:organizations(name))').eq('id', id).single();
     if (!postData) { setLoading(false); return; }
     setPost(postData);
 

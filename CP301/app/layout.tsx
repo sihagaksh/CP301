@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Playfair_Display, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import Script from 'next/script'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import './globals.css'
@@ -53,18 +54,18 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Theme flash prevention script */}
-        <script dangerouslySetInnerHTML={{
-          __html: `
+      </head>
+      <body className={`${dmSans.variable} ${playfair.variable} ${jetBrainsMono.variable} font-sans antialiased`}>
+        <Script id="theme-script" strategy="beforeInteractive">
+          {`
             (function() {
               const theme = localStorage.getItem('theme');
               const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
               const isDark = theme ? theme === 'dark' : prefersDark;
               if (isDark) document.documentElement.classList.add('dark');
             })();
-          `,
-        }} />
-      </head>
-      <body className={`${dmSans.variable} ${playfair.variable} ${jetBrainsMono.variable} font-sans antialiased`}>
+          `}
+        </Script>
         <AuthProvider>
           {children}
           <ServiceWorkerRegistration />

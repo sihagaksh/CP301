@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Eye, Clock, MessageSquare, Briefcase } from 'lucide-react';
+import { Eye, Clock, MessageSquare, Briefcase, Heart } from 'lucide-react';
 import { BlogPost } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -104,6 +104,10 @@ export function BlogCard({ blog, className, isDraft }: BlogCardProps) {
             </div>
 
             <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs font-medium">
+                <Heart size={14} className="opacity-70" />
+                <span>{(blog.likeCount ?? 0).toLocaleString()}</span>
+              </div>
               <div className="flex items-center gap-1.5 text-xs font-medium">
                 <Eye size={14} className="opacity-70" />
                 <span>{(blog.viewCount ?? 0).toLocaleString()}</span>

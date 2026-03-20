@@ -15,9 +15,9 @@ export async function getFeedPosts(limit = 20, offset = 0): Promise<FeedPost[]> 
         .from('feed_posts')
         .select(`
       id, author_id, posting_identity_id, content, media_urls,
-      source_type, source_id, like_count, comment_count,
+      source_type, source_id, like_count, comment_count, view_count,
       is_public, target_roles, created_at, updated_at,
-      author:users(id, full_name, role, profile_picture_url)
+      author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
         .eq('is_public', true)
         .order('created_at', { ascending: false })
@@ -50,9 +50,9 @@ export async function createFeedPost(
         })
         .select(`
       id, author_id, posting_identity_id, content, media_urls,
-      source_type, source_id, like_count, comment_count,
+      source_type, source_id, like_count, comment_count, view_count,
       is_public, target_roles, created_at, updated_at,
-      author:users(id, full_name, role, profile_picture_url)
+      author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
         .single();
 
@@ -75,6 +75,7 @@ export function mapFeedPost(row: any): FeedPost {
         sourceId: row.source_id,
         likeCount: row.like_count || 0,
         commentCount: row.comment_count || 0,
+        viewCount: row.view_count || 0,
         isPublic: row.is_public,
         targetRoles: row.target_roles || [],
         createdAt: row.created_at,

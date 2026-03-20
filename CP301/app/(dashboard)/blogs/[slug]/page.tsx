@@ -1,17 +1,19 @@
 'use client';
 
-import React, { use, useState } from 'react';
+import React, { use, useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Clock, Eye, MessageSquare, Briefcase, User, Calendar, Send, FileText, Pencil, Trash2 } from 'lucide-react';
+import { Clock, Eye, MessageSquare, Briefcase, User, Calendar, Send, FileText, Pencil, Trash2, Heart, HeartOff, Loader2 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useBlog } from '@/lib/hooks/useBlogs';
 import { useAuth } from '@/contexts/AuthContext';
 import { publishBlogPost, deleteBlogPost } from '@/lib/db/blogs';
+import { getBlogComments, submitBlogComment, toggleBlogLike, checkBlogLike, incrementBlogViewsRPC, BlogComment } from '@/lib/db/blogEngagement';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -23,6 +25,66 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
     const { user } = useAuth();
     const [publishing, setPublishing] = useState(false);
     const [deleting, setDeleting] = useState(false);
+
+    // Engagement State
+    const [likedByMe, setLikedByMe] = useState(false);
+    const [likesCount, setLikesCount] = useState(0);
+    const [comments, setComments] = useState<BlogComment[]>([]);
+    const [commentsLoading, setCommentsLoading] = useState(true);
+    const [commentInput, setCommentInput] = useState('');
+    const [submittingComment, setSubmittingComment] = useState(false);
+    const [viewIncremented, setViewIncremented] = useState(false);
+    const initialized = useRef(false);
+
+    // Fetch initial engagement data and increment views
+    useEffect(() => {
+        if (!blog || !user || initialized.current) return;
+        initialized.current = true;
+        
+        setLikesCount(blog.likeCount);
+
+        const initEngagement = async () => {
+            if (!viewIncremented) {
+                incrementBlogViewsRPC(blog.id);
+                setViewIncremented(true);
+            }
+            
+            const [isLiked, fetchedComments] = await Promise.all([
+                checkBlogLike(blog.id, user.id),
+                getBlogComments(blog.id)
+            ]);
+            
+            setLikedByMe(isLiked);
+            setComments(fetchedComments);
+            setCommentsLoading(false);
+        };
+        
+        initEngagement();
+    }, [blog, user, viewIncremented]);
+
+    const handleToggleLike = async () => {
+        if (!user || !blog) return;
+        
+        // Optimistic UI update
+        const newLikedState = !likedByMe;
+        setLikedByMe(newLikedState);
+        setLikesCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
+        
+        // Background DB sync
+        await toggleBlogLike(blog.id, user.id);
+    };
+
+    const handleNextComment = async () => {
+        if (!user || !blog || !commentInput.trim()) return;
+        setSubmittingComment(true);
+        
+        const newComment = await submitBlogComment(blog.id, user.id, commentInput.trim());
+        if (newComment) {
+            setComments(prev => [...prev, newComment]);
+            setCommentInput('');
+        }
+        setSubmittingComment(false);
+    };
 
     const handlePublish = async () => {
         if (!blog || publishing) return;
@@ -159,7 +221,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
                             {blog.publishedAt ? formatDistanceToNow(new Date(blog.publishedAt), { addSuffix: true }) : 'Draft'}
                         </span>
                         <span className="text-sm text-muted-foreground flex items-center gap-1.5 ml-auto">
-                            <Eye size={14} /> {blog.viewCount.toLocaleString()} views
+                            <Eye size={14} /> {(blog.viewCount + (viewIncremented ? 1 : 0)).toLocaleString()} views
                         </span>
                     </div>
 
@@ -240,21 +302,98 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
                 </div>
 
                 {/* Footer Actions */}
-                <footer className="pt-10 pb-20 border-t border-border mt-10 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex gap-2">
-                        {blog.tags?.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="capitalize">
-                                #{tag}
-                            </Badge>
-                        ))}
+                <footer className="pt-10 border-t border-border mt-10">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
+                        <div className="flex gap-2">
+                            {blog.tags?.map((tag) => (
+                                <Badge key={tag} variant="secondary" className="capitalize">
+                                    #{tag}
+                                </Badge>
+                            ))}
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <Button 
+                                variant={likedByMe ? "default" : "outline"} 
+                                className="gap-2 rounded-full"
+                                onClick={handleToggleLike}
+                            >
+                                <Heart size={16} className={likedByMe ? "fill-current" : ""} />
+                                {likedByMe ? 'Liked' : 'Like'} ({likesCount})
+                            </Button>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <Button variant="outline" className="gap-2 rounded-full">
-                            <MessageSquare size={16} />
-                            Discuss ({blog.commentCount})
-                        </Button>
-                    </div>
+                    {/* Comments Section */}
+                    {blog.allowComments && (
+                        <div className="mt-12">
+                            <h3 className="text-2xl font-serif font-bold mb-6 flex items-center gap-2">
+                                <MessageSquare className="text-amber-500" />
+                                Discussion ({comments.length})
+                            </h3>
+                            
+                            <div className="space-y-6 mb-8">
+                                {commentsLoading ? (
+                                    <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+                                ) : comments.length === 0 ? (
+                                    <p className="text-muted-foreground text-center py-8 bg-muted/20 rounded-xl border border-dashed border-border">No comments yet. Be the first to share your thoughts!</p>
+                                ) : (
+                                    comments.map((comment) => (
+                                        <div key={comment.id} className="flex gap-4">
+                                            <Avatar className="w-10 h-10 border border-border">
+                                                <AvatarImage src={comment.user?.profile_picture_url} />
+                                                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                                                    {comment.user?.full_name?.substring(0, 2).toUpperCase() || '?'}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 bg-muted/40 p-4 rounded-2xl rounded-tl-sm border border-border/50">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="font-semibold text-sm">{comment.user?.full_name || 'Anonymous'}</span>
+                                                    <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</span>
+                                                </div>
+                                                <p className="text-sm text-foreground/90 whitespace-pre-wrap">{comment.content}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Comment Input */}
+                            <div className="flex gap-3 items-start pb-20">
+                                <Avatar className="w-10 h-10 border border-border shrink-0">
+                                    <AvatarImage src={user?.profilePictureUrl} />
+                                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                        {user?.fullName?.substring(0, 2).toUpperCase() || '?'}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 right-0">
+                                    <Input
+                                        placeholder="Add to the discussion..."
+                                        value={commentInput}
+                                        onChange={(e) => setCommentInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleNextComment();
+                                            }
+                                        }}
+                                        className="rounded-2xl bg-muted/40 border-border"
+                                    />
+                                    <div className="flex justify-end mt-2">
+                                        <Button 
+                                            size="sm" 
+                                            className="rounded-full px-5" 
+                                            disabled={!commentInput.trim() || submittingComment}
+                                            onClick={handleNextComment}
+                                            isLoading={submittingComment}
+                                        >
+                                            Post Comment
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </footer>
 
             </article>

@@ -6,11 +6,12 @@ import {
   Heart, MessageCircle, Share2, TrendingUp,
   BookOpen, Calendar, Megaphone,
   Sparkles, Send, ChevronDown,
-  ImageIcon, X, ChevronLeft, ChevronRight, Check, Loader2
+  ImageIcon, X, ChevronLeft, ChevronRight, Check, Loader2, Eye
 } from 'lucide-react';
 import { db } from '@/lib/db';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { incrementFeedViewsRPC } from '@/lib/db/blogEngagement';
 
 interface FeedComment {
   id: string;
@@ -27,6 +28,7 @@ interface FeedItem {
   media_urls?: string[];
   source_type?: string;
   source_id?: string;
+  view_count: number;
   like_count: number;
   comment_count: number;
   created_at: string;
@@ -63,13 +65,35 @@ export default function FeedPage() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
   const [stats, setStats] = useState({ members: 0, blogs: 0, items: 0, events: 0 });
+  const viewedPosts = useRef(new Set<string>());
 
   useEffect(() => { loadFeed(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    // Observer to track feed views
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const postId = entry.target.getAttribute('data-feed-id');
+          if (postId && !viewedPosts.current.has(postId)) {
+            viewedPosts.current.add(postId);
+            incrementFeedViewsRPC(postId);
+            setFeedItems(prev => prev.map(p => p.id === postId ? { ...p, view_count: (p.view_count || 0) + 1 } : p));
+          }
+        }
+      });
+    }, { threshold: 0.5 });
+
+    const items = document.querySelectorAll('[data-feed-id]');
+    items.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [feedItems.length]); // Re-attach when new items are added
 
   async function loadFeed() {
     const { data: posts } = await db
       .from('feed_posts')
-      .select('*, author:users(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug))')
+      .select('*, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug))')
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -443,7 +467,7 @@ export default function FeedPage() {
                 const carouselIdx = item.carouselIndex ?? 0;
 
                 return (
-                  <div key={item.id} className="bg-card border border-border rounded-xl overflow-hidden">
+                  <div key={item.id} data-feed-id={item.id} className="bg-card border border-border rounded-xl overflow-hidden">
                     <div className="p-4 pb-0">
                       <div className="flex gap-3 mb-3">
                         <Link href={`/users/${item.author?.id}`} className="no-underline">

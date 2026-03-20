@@ -319,6 +319,7 @@ export interface FeedPost {
   mediaUrls: string[];
   sourceType: 'post' | 'blog' | 'event' | 'notice';
   sourceId?: string;
+  viewCount: number;
   likeCount: number;
   commentCount: number;
   isPublic: boolean;

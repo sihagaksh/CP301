@@ -330,17 +330,6 @@ export default function MessagesPage() {
       .reduce((sum, c) => sum + c.unread_count, 0);
   };
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <User size={48} className="mx-auto mb-4 text-muted-foreground/40" />
-          <p className="text-muted-foreground">Please sign in to view messages</p>
-        </div>
-      </div>
-    );
-  }
-
   // Restore scroll position after older messages are prepended
   useEffect(() => {
     if (!loadingMore && preserveScrollRef.current && chatScrollRef.current) {
@@ -362,6 +351,17 @@ export default function MessagesPage() {
     obs.observe(sentinel);
     return () => obs.disconnect();
   }, [activeConv, loadMoreMessages]);
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <User size={48} className="mx-auto mb-4 text-muted-foreground/40" />
+          <p className="text-muted-foreground">Please sign in to view messages</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full px-3 pt-4 md:px-6 md:pt-6">

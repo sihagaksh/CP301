@@ -41,6 +41,23 @@ export function MainLayout({ children }: MainLayoutProps) {
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
 
+  // In development, unregister stale service workers so they don't serve
+  // old cached bundles and cause hydration mismatches.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (const reg of regs) {
+          reg.unregister();
+          console.log('[SW-dev] Unregistered stale SW:', reg.scope);
+        }
+      });
+      // Also clear all caches in dev to avoid stale asset serving
+      if ('caches' in window) {
+        caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
+      }
+    }
+  }, []);
+
   return (
     <div className="h-screen overflow-hidden bg-background flex flex-col">
       <Header onMenuClick={openSidebar} />

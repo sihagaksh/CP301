@@ -24,7 +24,7 @@ export async function getPublishedBlogs(
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
       author_id, posting_identity_id,
-      author:users(id, full_name, role, profile_picture_url)
+      author:users!blog_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
     .eq('status', 'published')
     .order('published_at', { ascending: false })
@@ -55,7 +55,7 @@ export async function getBlogBySlug(slug: string): Promise<BlogPost | null> {
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
       author_id, posting_identity_id,
-      author:users(id, full_name, role, profile_picture_url)
+      author:users!blog_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
     .eq('slug', slug)
     .single();
@@ -81,7 +81,7 @@ export async function getFeaturedBlogs(limit = 6): Promise<BlogPost[]> {
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
       author_id, posting_identity_id,
-      author:users(id, full_name, role, profile_picture_url)
+      author:users!blog_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
     .eq('status', 'published')
     .eq('is_featured', true)
@@ -134,7 +134,7 @@ export async function createBlogPost(
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
       author_id, posting_identity_id,
-      author:users(id, full_name, role, profile_picture_url)
+      author:users!blog_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
     .single();
 
@@ -160,7 +160,7 @@ export async function publishBlogPost(blogId: string): Promise<BlogPost> {
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
       author_id, posting_identity_id,
-      author:users(id, full_name, role, profile_picture_url)
+      author:users!blog_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
     .single();
 
@@ -209,7 +209,7 @@ export async function updateBlogPost(
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
       author_id, posting_identity_id,
-      author:users(id, full_name, role, profile_picture_url)
+      author:users!blog_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
     .single();
 
@@ -282,7 +282,7 @@ export async function getUserDrafts(userId: string): Promise<BlogPost[]> {
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
       author_id, posting_identity_id,
-      author:users(id, full_name, role, profile_picture_url)
+      author:users!blog_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
     .eq('author_id', userId)
     .eq('status', 'draft')

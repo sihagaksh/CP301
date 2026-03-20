@@ -1,15 +1,19 @@
 {
   "/(dashboard)/blogs/[slug]/page": "app/(dashboard)/blogs/[slug]/page.js",
   "/(dashboard)/blogs/page": "app/(dashboard)/blogs/page.js",
+  "/(dashboard)/clubs/[slug]/page": "app/(dashboard)/clubs/[slug]/page.js",
   "/(dashboard)/clubs/page": "app/(dashboard)/clubs/page.js",
   "/(dashboard)/communities/page": "app/(dashboard)/communities/page.js",
+  "/(dashboard)/events/create/page": "app/(dashboard)/events/create/page.js",
   "/(dashboard)/events/page": "app/(dashboard)/events/page.js",
   "/(dashboard)/lost-found/page": "app/(dashboard)/lost-found/page.js",
   "/(dashboard)/map/page": "app/(dashboard)/map/page.js",
   "/(dashboard)/marketplace/page": "app/(dashboard)/marketplace/page.js",
   "/(dashboard)/messages/page": "app/(dashboard)/messages/page.js",
   "/(dashboard)/notices/page": "app/(dashboard)/notices/page.js",
+  "/(dashboard)/notifications/page": "app/(dashboard)/notifications/page.js",
   "/(dashboard)/page": "app/(dashboard)/page.js",
+  "/(dashboard)/posts/[id]/page": "app/(dashboard)/posts/[id]/page.js",
   "/_not-found/page": "app/_not-found/page.js",
   "/api/auth/set-cookie/route": "app/api/auth/set-cookie/route.js"
 }

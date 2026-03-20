@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageCircle, Search, Send, User, X, Plus, Check, CheckCheck, Loader2, PackageSearch, SearchX, ChevronLeft, ArrowDown } from 'lucide-react';
+import { MessageCircle, Search, Send, User, X, Plus, Check, CheckCheck, Loader2, PackageSearch, SearchX, ChevronLeft, ArrowDown, Pin } from 'lucide-react';
 import { db } from '@/lib/db';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -24,6 +24,7 @@ interface Conversation {
   unread_count: number;
   last_message_is_read: boolean;
   context_type?: 'lost_found' | 'buy_sell' | null;
+  isPinned: boolean;
 }
 
 interface Message {
@@ -62,7 +63,7 @@ const TABS: { key: TabType; label: string; icon?: string }[] = [
   { key: 'buy_sell', label: 'Buy & Sell' },
 ];
 
-function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnread, onDelete, user }: { conv: Conversation, activeConv: Conversation | null, onClick: () => void, onContextMenu: (e: React.MouseEvent) => void, onMarkUnread: () => void, onDelete: () => void, user: any }) {
+function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnread, onDelete, onPin, user }: { conv: Conversation, activeConv: Conversation | null, onClick: () => void, onContextMenu: (e: React.MouseEvent) => void, onMarkUnread: () => void, onDelete: () => void, onPin: () => void, user: any }) {
   const [offsetX, setOffsetX] = useState(0);
   const startXRef = useRef(0);
   const currentXRef = useRef(0);
@@ -70,6 +71,7 @@ function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnr
 
   // Width of back actions (2 buttons * 70px)
   const ACTIONS_WIDTH = 140; 
+  const PIN_WIDTH = 70;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startXRef.current = e.touches[0].clientX;
@@ -81,9 +83,9 @@ function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnr
     const currentX = e.touches[0].clientX;
     const diff = currentX - startXRef.current;
     
-    // Only allow left-swipe to reveal (diff < 0) or right-wrap to close
+    // Allow right swipe up to PIN_WIDTH and left swipe up to -ACTIONS_WIDTH
     let newOffset = currentXRef.current + diff;
-    if (newOffset > 0) newOffset = 0;
+    if (newOffset > PIN_WIDTH) newOffset = PIN_WIDTH;
     if (newOffset < -ACTIONS_WIDTH) newOffset = -ACTIONS_WIDTH;
     
     setOffsetX(newOffset);
@@ -96,6 +98,9 @@ function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnr
     if (offsetX < -(ACTIONS_WIDTH * 0.4)) {
       setOffsetX(-ACTIONS_WIDTH);
       currentXRef.current = -ACTIONS_WIDTH;
+    } else if (offsetX > (PIN_WIDTH * 0.4)) {
+      setOffsetX(PIN_WIDTH);
+      currentXRef.current = PIN_WIDTH;
     } else {
       setOffsetX(0);
       currentXRef.current = 0;
@@ -124,8 +129,19 @@ function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnr
 
   return (
     <div className="relative overflow-hidden rounded-lg mb-1 bg-muted/40" style={{ touchAction: 'pan-y' }}>
-      {/* Background Actions - Only visible when swiping */}
-      <div className={`absolute inset-y-0 right-0 flex items-center justify-end w-full ${offsetX === 0 ? 'invisible' : 'visible'}`}>
+      {/* Background Actions (Left - Pin) */}
+      <div className={`absolute inset-y-0 left-0 flex items-center justify-start h-full ${offsetX <= 0 ? 'invisible' : 'visible'}`}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onPin(); setOffsetX(0); currentXRef.current = 0; }}
+          className="bg-amber-500 hover:bg-amber-600 text-white flex flex-col items-center justify-center text-[10px] font-bold transition-colors h-full rounded-l-lg"
+          style={{ width: PIN_WIDTH }}
+        >
+          <Pin size={16} className={`mb-0.5 ${conv.isPinned ? 'fill-white' : ''}`} /> {conv.isPinned ? 'UNPIN' : 'PIN'}
+        </button>
+      </div>
+
+      {/* Background Actions (Right - Unread/Delete) */}
+      <div className={`absolute inset-y-0 right-0 flex items-center justify-end w-full ${offsetX >= 0 ? 'invisible' : 'visible'}`}>
         <div className="flex bg-muted/20 h-full rounded-r-lg overflow-hidden" style={{ width: ACTIONS_WIDTH }}>
           <button 
             onClick={(e) => { e.stopPropagation(); onMarkUnread(); setOffsetX(0); currentXRef.current = 0; }}
@@ -159,7 +175,10 @@ function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnr
         </div>
         <div className="flex-1 min-w-0 pointer-events-none">
           <div className="flex justify-between items-baseline gap-1">
-            <p className={`text-sm truncate ${conv.unread_count > 0 ? 'font-bold text-foreground' : 'font-medium text-foreground'}`}>{conv.participant.full_name}</p>
+            <p className={`text-sm truncate flex items-center gap-1 ${conv.unread_count > 0 ? 'font-bold text-foreground' : 'font-medium text-foreground'}`}>
+              {conv.isPinned && <Pin size={12} className="text-amber-500 fill-amber-500 shrink-0" />}
+              {conv.participant.full_name}
+            </p>
             {conv.last_message_at && <span className={`text-xs flex-shrink-0 ${conv.unread_count > 0 ? 'text-green-500 font-medium' : 'text-muted-foreground'}`}>{formatTime(conv.last_message_at)}</span>}
           </div>
           <div className="flex items-center gap-1">
@@ -246,6 +265,7 @@ export default function MessagesPage() {
       const p2 = c.participant2 as UserResult;
       const other = p1.id === u.id ? p2 : p1;
       const convId = c.id as string;
+      const isPinned = p1.id === u.id ? (c.is_pinned_p1 as boolean) : (c.is_pinned_p2 as boolean);
       return {
         id: convId,
         participant: other,
@@ -255,7 +275,16 @@ export default function MessagesPage() {
         unread_count: myUnreadMap[convId] || 0,
         last_message_is_read: (sentUnreadMap[convId] || 0) === 0,
         context_type: (c.context_type as 'lost_found' | 'buy_sell' | null) ?? null,
+        isPinned,
       };
+    });
+    // Sort by pinned first, then last_message_at
+    convs.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      const timeA = new Date(a.last_message_at || 0).getTime();
+      const timeB = new Date(b.last_message_at || 0).getTime();
+      return timeB - timeA;
     });
     setConversations(convs);
     setLoading(false);
@@ -396,6 +425,7 @@ export default function MessagesPage() {
       unread_count: 0,
       last_message_is_read: true,
       context_type: convContextType,
+      isPinned: false,
     };
     setActiveConv(conv);
     setShowNewChat(false);
@@ -519,6 +549,32 @@ export default function MessagesPage() {
     return () => obs.disconnect();
   }, [activeConv, loadMoreMessages]);
 
+  const togglePin = async (convId: string) => {
+    const conv = conversations.find(c => c.id === convId);
+    if (!conv) return;
+    const newPinnedStatus = !conv.isPinned;
+    
+    // Optimistic update
+    setConversations(prev => {
+      const updated = prev.map(c => c.id === convId ? { ...c, isPinned: newPinnedStatus } : c);
+      updated.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        const timeA = new Date(a.last_message_at || 0).getTime();
+        const timeB = new Date(b.last_message_at || 0).getTime();
+        return timeB - timeA;
+      });
+      return updated;
+    });
+
+    try {
+      await db.rpc('toggle_conversation_pin', { conv_id: convId, is_pinned: newPinnedStatus });
+    } catch (e) {
+      console.error('Failed to toggle pin', e);
+    }
+    setContextMenu(null);
+  };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -620,6 +676,7 @@ export default function MessagesPage() {
                   }}
                   onMarkUnread={() => markAsUnreadAction(conv.id)}
                   onDelete={() => deleteChat(conv.id)}
+                  onPin={() => togglePin(conv.id)}
                 />
               ))
             )}
@@ -762,8 +819,15 @@ export default function MessagesPage() {
           <div className="fixed inset-0 z-40" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
           <div 
             className="fixed z-50 bg-popover text-popover-foreground border border-border shadow-md rounded-md py-1 min-w-[160px] text-sm animate-in fade-in zoom-in-95"
-            style={{ top: Math.min(contextMenu.y, window.innerHeight - 100), left: Math.min(contextMenu.x, window.innerWidth - 180) }}
+            style={{ top: Math.min(contextMenu.y, window.innerHeight - 150), left: Math.min(contextMenu.x, window.innerWidth - 180) }}
           >
+            <button 
+              className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
+              onClick={(e) => { e.stopPropagation(); togglePin(contextMenu.convId); }}
+            >
+              <Pin size={14} className="text-muted-foreground" /> 
+              {conversations.find(c => c.id === contextMenu.convId)?.isPinned ? 'Unpin chat' : 'Pin chat'}
+            </button>
             <button 
               className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
               onClick={(e) => { e.stopPropagation(); markAsUnreadAction(contextMenu.convId); }}

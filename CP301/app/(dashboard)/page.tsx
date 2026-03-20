@@ -168,9 +168,13 @@ export default function FeedPage() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
   const [stats, setStats] = useState({ members: 0, blogs: 0, items: 0, events: 0 });
+  const [trendingItems, setTrendingItems] = useState<{id: string, title: string, type: string, slug?: string}[]>([]);
   const viewedPosts = useRef(new Set<string>());
 
-  useEffect(() => { loadFeed(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { 
+    loadFeed(); 
+    loadTrending();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Observer to track feed views
@@ -203,9 +207,9 @@ export default function FeedPage() {
     // Fetch live community stats simultaneously
     const [membersRes, blogsRes, itemsRes, eventsRes] = await Promise.all([
       db.from('users').select('*', { count: 'exact', head: true }),
-      db.from('blogs').select('*', { count: 'exact', head: true }),
-      db.from('market_items').select('*', { count: 'exact', head: true }).eq('status', 'available'),
-      db.from('events').select('*', { count: 'exact', head: true }).gte('start_date', new Date().toISOString()),
+      db.from('blog_posts').select('*', { count: 'exact', head: true }),
+      db.from('marketplace_items').select('*', { count: 'exact', head: true }).eq('status', 'available'),
+      db.from('events').select('id', { count: 'exact', head: true }).gte('start_date', new Date().toISOString()),
     ]);
 
     setStats({
@@ -240,6 +244,11 @@ export default function FeedPage() {
       carouselIndex: 0,
     })));
     setLoading(false);
+  }
+
+  async function loadTrending() {
+    const { data } = await db.rpc('get_trending_items', { limit_count: 5 });
+    if (data) setTrendingItems(data);
   }
 
   async function handleLike(postId: string) {
@@ -698,12 +707,18 @@ export default function FeedPage() {
             <div className="bg-card border border-border rounded-xl p-4">
               <h3 className="font-semibold text-sm mb-3">🔥 Trending</h3>
               <div className="space-y-2.5">
-                {['Placement Season Updates', 'Campus Map Expansion', 'New Club Registrations', 'Upcoming ISMP Events'].map((topic, i) => (
-                  <div key={i} className="flex items-center gap-2.5 text-sm">
-                    <span className="text-muted-foreground font-semibold text-xs">#{i + 1}</span>
-                    <span className="text-muted-foreground">{topic}</span>
-                  </div>
-                ))}
+                {trendingItems.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No trending items yet...</p>
+                ) : (
+                  trendingItems.map((item, i) => (
+                    <Link href={item.type === 'blog' ? `/blogs/${item.slug || item.id}` : `/posts/${item.id}`} key={item.id} className="flex items-start gap-2.5 text-sm group">
+                      <span className="text-muted-foreground font-semibold text-xs mt-0.5">#{i + 1}</span>
+                      <span className="text-foreground/80 group-hover:text-amber-500 group-hover:underline transition-colors line-clamp-2">
+                        {item.type === 'blog' ? '📝 ' : ''}{item.title}
+                      </span>
+                    </Link>
+                  ))
+                )}
               </div>
             </div>
 

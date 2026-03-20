@@ -20,9 +20,9 @@ export default function EventsPage() {
                     </p>
                 </div>
 
-                <Button asChild className="bg-accent-gold hover:bg-accent-gold/90 text-white shrink-0 shadow-sm">
-                    <Link href="/events/create">
-                        <PlusCircle className="mr-2 h-4 w-4" />
+                <Button asChild className="bg-accent-gold hover:bg-accent-gold/90 text-black shrink-0 shadow-sm">
+                    <Link href="/events/create" className='text-black'>
+                        <PlusCircle className="mr-2 h-4 w-4 text-black" />
                         Create Event
                     </Link>
                 </Button>

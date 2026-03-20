@@ -94,9 +94,8 @@ export function Header({ onMenuClick }: HeaderProps) {
           )}
 
           <Link href="/" className="flex items-center gap-2 font-serif font-bold text-lg md:text-xl">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white text-sm font-bold">
-              R
-            </div>
+            <img src="/applogo.svg" alt="Logo" className="h-8 w-auto flex-shrink-0 dark:hidden" />
+            <img src="/applogo-dark.svg" alt="Logo" className="h-8 w-auto flex-shrink-0 hidden dark:block" />
             <span className="hidden sm:inline text-foreground">IIT Ropar</span>
           </Link>
         </div>

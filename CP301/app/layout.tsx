@@ -19,20 +19,17 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/icons/icon-512.png',
+        url: '/applogo.svg',
         media: '(prefers-color-scheme: light)',
+        type: 'image/svg+xml',
       },
       {
-        url: '/icons/icon-512.png',
+        url: '/applogo-dark.svg',
         media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icons/icon-512.png',
-        sizes: '512x512',
-        type: 'image/png',
-      },
+        type: 'image/svg+xml',
+      }
     ],
-    apple: '/icons/icon-512.png',
+    apple: '/applogo.jpg',
   },
   manifest: '/manifest.json',
 }

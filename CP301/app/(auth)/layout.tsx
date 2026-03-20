@@ -11,9 +11,8 @@ export default function AuthLayout({
       <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="max-w-screen-2xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 font-serif font-bold text-lg md:text-xl">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white text-sm font-bold">
-              R
-            </div>
+            <img src="/applogo.svg" alt="Logo" className="h-8 w-auto flex-shrink-0 dark:hidden" />
+            <img src="/applogo-dark.svg" alt="Logo" className="h-8 w-auto flex-shrink-0 hidden dark:block" />
             <span className="hidden sm:inline text-foreground">IIT Ropar</span>
           </div>
           <ThemeToggle />

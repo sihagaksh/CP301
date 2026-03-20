@@ -113,7 +113,8 @@ function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnr
       setOffsetX(0);
       currentXRef.current = 0;
     }
-  }, [activeConv?.id, conv.id, offsetX]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConv?.id, conv.id]);
 
   // Prevent parent click if swipe is open
   const handleClick = (e: React.MouseEvent) => {
@@ -166,9 +167,7 @@ function SwipeableChatItem({ conv, activeConv, onClick, onContextMenu, onMarkUnr
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={{ transform: `translateX(${offsetX}px)` }}
-        className={`w-full relative z-10 flex items-center gap-2.5 p-2.5 rounded-lg text-left transition-transform duration-200 ease-out border-l-2 ${
-          offsetX !== 0 ? '!duration-0' : ''
-        } ${activeConv?.id === conv.id ? 'bg-amber-50 dark:bg-amber-500/15 border-amber-500' : 'bg-card dark:bg-[#1c1c1c] hover:bg-accent border-transparent'}`}
+        className={`w-full relative z-10 flex items-center gap-2.5 p-2.5 rounded-lg text-left border-l-2 ${activeConv?.id === conv.id ? 'bg-amber-50 dark:bg-amber-500/15 border-amber-500' : 'bg-card dark:bg-[#1c1c1c] hover:bg-accent border-transparent'}`}
       >
         <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold flex-shrink-0 overflow-hidden shadow-sm pointer-events-none">
           {conv.participant.profile_picture_url ? <img src={conv.participant.profile_picture_url} alt={conv.participant.full_name} className="w-full h-full object-cover" /> : getInitials(conv.participant.full_name)}

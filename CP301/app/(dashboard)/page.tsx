@@ -57,10 +57,12 @@ export default function FeedPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const touchStartXRef = useRef<number | null>(null);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
+  const [stats, setStats] = useState({ members: 0, blogs: 0, items: 0, events: 0 });
 
   useEffect(() => { loadFeed(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -71,14 +73,32 @@ export default function FeedPage() {
       .order('created_at', { ascending: false })
       .limit(20);
 
+    // Fetch live community stats simultaneously
+    const [membersRes, blogsRes, itemsRes, eventsRes] = await Promise.all([
+      db.from('users').select('*', { count: 'exact', head: true }),
+      db.from('blogs').select('*', { count: 'exact', head: true }),
+      db.from('market_items').select('*', { count: 'exact', head: true }).eq('status', 'available'),
+      db.from('events').select('*', { count: 'exact', head: true }).gte('start_date', new Date().toISOString()),
+    ]);
+
+    setStats({
+      members: membersRes.count || 0,
+      blogs: blogsRes.count || 0,
+      items: itemsRes.count || 0,
+      events: eventsRes.count || 0,
+    });
+
     if (!posts) { setLoading(false); return; }
 
+    // Fetch user directly to avoid race conditions with React context on initial mount
+    const { data: { user: dbUser } } = await db.auth.getUser();
+
     let likedSet = new Set<string>();
-    if (user) {
+    if (dbUser) {
       const { data: likes } = await db
         .from('feed_likes')
         .select('post_id')
-        .eq('user_id', user.id)
+        .eq('user_id', dbUser.id)
         .in('post_id', posts.map((p: { id: string }) => p.id));
       likedSet = new Set((likes || []).map((l: { post_id: string }) => l.post_id));
     }
@@ -457,7 +477,18 @@ export default function FeedPage() {
 
                     {item.media_urls && item.media_urls.length > 0 && (
                       <div className="relative px-4 pb-4">
-                        <div className="relative w-full rounded-xl overflow-hidden border border-border" style={{ aspectRatio: '16/9' }}>
+                        <div
+                          className="relative w-full rounded-xl overflow-hidden border border-border select-none"
+                          style={{ aspectRatio: '16/9' }}
+                          onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; }}
+                          onTouchEnd={(e) => {
+                            if (touchStartXRef.current === null) return;
+                            const delta = e.changedTouches[0].clientX - touchStartXRef.current;
+                            touchStartXRef.current = null;
+                            if (Math.abs(delta) < 40) return; // too small to register
+                            changeCarousel(item.id, delta < 0 ? 1 : -1);
+                          }}
+                        >
                           <img
                             src={item.media_urls[carouselIdx]}
                             alt={`Photo ${carouselIdx + 1}`}
@@ -608,10 +639,10 @@ export default function FeedPage() {
               <h3 className="font-semibold text-sm mb-3">📊 Community Stats</h3>
               <div className="space-y-2.5">
                 {[
-                  { label: 'Active Members', value: '2.5K+' },
-                  { label: 'Blogs Published', value: '340+' },
-                  { label: 'Items Listed', value: '128' },
-                  { label: 'Events This Month', value: '12' },
+                  { label: 'Active Members', value: stats.members },
+                  { label: 'Blogs Published', value: stats.blogs },
+                  { label: 'Items Listed', value: stats.items },
+                  { label: 'Upcoming Events', value: stats.events },
                 ].map((stat, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">{stat.label}</span>

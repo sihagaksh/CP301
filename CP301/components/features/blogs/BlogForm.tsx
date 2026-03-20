@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { createBlogPost, updateBlogPost } from '@/lib/db/blogs';
+import { db } from '@/lib/db';
 import { BlogCategory, BlogPost } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Save, Send } from 'lucide-react';
+import { Save, Send, Image as ImageIcon, X } from 'lucide-react';
 
 const CATEGORIES: { label: string; value: BlogCategory }[] = [
     { label: 'Placement', value: 'placement' },
@@ -43,7 +44,11 @@ export function BlogForm({ initialData }: BlogFormProps) {
     const [category, setCategory] = useState<BlogCategory>(initialData?.category || 'general');
     const [content, setContent] = useState(initialData?.content || '');
     const [excerpt, setExcerpt] = useState(initialData?.excerpt || '');
+    
+    // Image Upload State
     const [featuredImageUrl, setFeaturedImageUrl] = useState(initialData?.featuredImageUrl || '');
+    const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(initialData?.featuredImageUrl || null);
 
     // Placement/Internship specific fields
     const [companyName, setCompanyName] = useState(initialData?.companyName || '');
@@ -54,6 +59,39 @@ export function BlogForm({ initialData }: BlogFormProps) {
 
     const generateSlug = (text: string) => {
         return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Date.now().toString().slice(-6);
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setSelectedImageFile(file);
+            setImagePreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const removeImage = () => {
+        setSelectedImageFile(null);
+        setImagePreviewUrl(null);
+        setFeaturedImageUrl('');
+    };
+
+    const uploadImage = async (): Promise<string | null> => {
+        if (!selectedImageFile || !user) return featuredImageUrl || null;
+        
+        const ext = selectedImageFile.name.split('.').pop();
+        const path = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        
+        const { data, error } = await db.storage
+            .from('blogs-media')
+            .upload(path, selectedImageFile, { cacheControl: '3600', upsert: false });
+            
+        if (error) {
+            console.error('Upload Error:', error);
+            throw new Error('Failed to upload image. Make sure the blogs-media bucket exists.');
+        }
+        
+        const { data: { publicUrl } } = db.storage.from('blogs-media').getPublicUrl(path);
+        return publicUrl;
     };
 
     const handleSubmit = async (e: React.FormEvent, publishNow: boolean) => {
@@ -72,6 +110,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
             setLoading(true);
             setError(null);
 
+            const uploadedImageUrl = await uploadImage();
             let updatedBlog;
 
             if (initialData) {
@@ -83,7 +122,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
                         content,
                         category,
                         excerpt: excerpt || undefined,
-                        featuredImageUrl: featuredImageUrl || undefined,
+                        featuredImageUrl: uploadedImageUrl || undefined,
                         companyName: isPlacement ? companyName || undefined : undefined,
                         roleApplied: isPlacement ? roleApplied || undefined : undefined,
                         interviewRound: isPlacement ? interviewRound || undefined : undefined,
@@ -100,7 +139,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
                     content,
                     category,
                     excerpt || undefined,
-                    featuredImageUrl || undefined,
+                    uploadedImageUrl || undefined,
                     isPlacement ? companyName || undefined : undefined,
                     isPlacement ? roleApplied || undefined : undefined,
                     isPlacement ? interviewRound || undefined : undefined,
@@ -202,15 +241,39 @@ export function BlogForm({ initialData }: BlogFormProps) {
                         </div>
                     )}
 
-                    <div className="space-y-2">
-                        <Label htmlFor="featuredImageUrl">Cover Image URL</Label>
-                        <Input
-                            id="featuredImageUrl"
-                            value={featuredImageUrl}
-                            onChange={(e) => setFeaturedImageUrl(e.target.value)}
-                            placeholder="https://example.com/image.jpg"
-                            type="url"
-                        />
+                    <div className="space-y-4">
+                        <Label>Cover Image</Label>
+                        
+                        {imagePreviewUrl ? (
+                            <div className="relative w-full aspect-[21/9] rounded-xl overflow-hidden border border-border group">
+                                <img src={imagePreviewUrl} alt="Cover Preview" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Button type="button" variant="destructive" size="sm" onClick={removeImage} className="gap-2">
+                                        <X className="w-4 h-4" /> Remove Image
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="relative">
+                                <Label 
+                                    htmlFor="featuredImageUpload" 
+                                    className="flex w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/60 transition-colors py-10"
+                                >
+                                    <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
+                                        <div className="rounded-full bg-muted p-3"><ImageIcon className="h-6 w-6" /></div>
+                                        <div className="text-center font-medium">Click to upload a cover image</div>
+                                        <div className="text-xs">PNG, JPG or WEBP (max. 5MB)</div>
+                                    </div>
+                                    <input 
+                                        id="featuredImageUpload" 
+                                        type="file" 
+                                        accept="image/png, image/jpeg, image/webp" 
+                                        className="hidden" 
+                                        onChange={handleImageChange}
+                                    />
+                                </Label>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-2">

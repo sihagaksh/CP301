@@ -10,11 +10,15 @@ import { GlassSurface } from '@/components/ui/GlassSurface';
 import { useLostFound } from '@/lib/hooks/useLostFound';
 import { Loader2, ArrowLeft, AlertCircle, MapPin, Calendar, Image as ImageIcon } from 'lucide-react';
 import type { LFCategory } from '@/lib/types';
+import { db } from '@/lib/db';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
 
 export function ReportItemForm() {
     const router = useRouter();
+    const { user } = useAuth();
     const { reportItem } = useLostFound();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,8 +32,46 @@ export function ReportItemForm() {
     const [locationLostFound, setLocationLostFound] = useState('');
     const [dateLostFound, setDateLostFound] = useState('');
     const [contactInfo, setContactInfo] = useState('');
-    // Keeping it simple for demo: comma-separated URLs
-    const [imagesStr, setImagesStr] = useState('');
+    
+    // Image Upload State
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []).slice(0, 5); // Max 5 images
+        setSelectedFiles(files);
+        setPreviewUrls(files.map(f => URL.createObjectURL(f)));
+    };
+
+    const removeSelectedFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+        setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const uploadImages = async (): Promise<{ urls: string[], error: boolean }> => {
+        if (selectedFiles.length === 0 || !user) return { urls: [], error: false };
+        
+        const uploadedUrls: string[] = [];
+        let anyFailed = false;
+
+        for (const file of selectedFiles) {
+            const ext = file.name.split('.').pop();
+            const path = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+            const { data, error } = await db.storage
+                .from('lost-found-media')
+                .upload(path, file, { cacheControl: '3600', upsert: false });
+                
+            if (error) {
+                anyFailed = true;
+            } else {
+                const { data: { publicUrl } } = db.storage.from('lost-found-media').getPublicUrl(path);
+                uploadedUrls.push(publicUrl);
+            }
+        }
+        
+        return { urls: uploadedUrls, error: anyFailed };
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,11 +79,24 @@ export function ReportItemForm() {
             setError('Item Name, Location, and Date are required.');
             return;
         }
+        if (!user) {
+            setError('You must be logged in to submit a report.');
+            return;
+        }
 
         setIsSubmitting(true);
         setError('');
+        setUploadError(null);
 
-        const images = imagesStr.split(',').map(u => u.trim()).filter(Boolean);
+        const { urls: uploadedImageUrls, error: imgUploadError } = await uploadImages();
+        
+        if (imgUploadError && uploadedImageUrls.length === 0) {
+            setError('Image upload failed. Make sure the "lost-found-media" bucket exists.');
+            setIsSubmitting(false);
+            return;
+        } else if (imgUploadError) {
+            setUploadError('Some images failed to upload, but proceeding with successful ones.');
+        }
 
         let parsedDate = '';
         if (dateLostFound) {
@@ -57,7 +112,7 @@ export function ReportItemForm() {
                 locationLostFound,
                 dateLostFound: parsedDate,
                 contactInfo,
-                images,
+                images: uploadedImageUrls,
             });
 
             if (success) {
@@ -90,6 +145,11 @@ export function ReportItemForm() {
                 {error && (
                     <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-2 text-sm dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
                         <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+                    </div>
+                )}
+                {uploadError && (
+                    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg flex items-center gap-2 text-sm dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-400">
+                        <AlertCircle className="w-4 h-4 shrink-0" /> {uploadError}
                     </div>
                 )}
 
@@ -208,19 +268,46 @@ export function ReportItemForm() {
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="images">Images (URLs, comma separated)</Label>
-                        <div className="relative">
-                            <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input
-                                id="images"
-                                value={imagesStr}
-                                onChange={e => setImagesStr(e.target.value)}
-                                placeholder="https://example.com/image1.jpg, ..."
-                                className="pl-9"
-                            />
-                        </div>
-                        <p className="text-[10px] text-muted-foreground">In a full backend, this would be a file upload to a storage bucket.</p>
+                    <div className="space-y-4">
+                        <Label>Photos of Item (Max 5)</Label>
+                        
+                        {previewUrls.length > 0 && (
+                            <div className="flex gap-3 flex-wrap mb-4">
+                                {previewUrls.map((url, i) => (
+                                    <div key={i} className="relative w-24 h-24 rounded-lg overflow-hidden border border-border group">
+                                        <img src={url} alt={`Preview ${i+1}`} className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <button type="button" onClick={() => removeSelectedFile(i)} className="bg-red-500 text-white p-1 rounded-full">
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        
+                        {previewUrls.length < 5 && (
+                            <div className="relative">
+                                <Label 
+                                    htmlFor="imagesUpload" 
+                                    className="flex w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/60 transition-colors py-8"
+                                >
+                                    <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
+                                        <div className="rounded-full bg-muted p-3"><ImageIcon className="h-6 w-6" /></div>
+                                        <div className="text-center font-medium">Click to upload photos</div>
+                                        <div className="text-xs">PNG, JPG or WEBP (max. 5MB each)</div>
+                                    </div>
+                                    <input 
+                                        id="imagesUpload" 
+                                        type="file" 
+                                        accept="image/png, image/jpeg, image/webp" 
+                                        multiple
+                                        className="hidden" 
+                                        onChange={handleFileSelect}
+                                    />
+                                </Label>
+                            </div>
+                        )}
                     </div>
 
                     <div className="pt-6 border-t border-border flex justify-end gap-4">

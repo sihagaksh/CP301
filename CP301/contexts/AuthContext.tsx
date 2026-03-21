@@ -27,6 +27,8 @@ function isPublicPath(pathname: string): boolean {
 
 interface AuthContextType {
   user: User | null;
+  isGuest: boolean;
+  isGuestChecked: boolean;
   activePositions: UserPosition[] | null;
   positions: UserPosition[];  // alias for activePositions (compat with Folder 1 pages)
   selectedIdentityId: string | null;
@@ -40,6 +42,8 @@ interface AuthContextType {
   signUp: (data: SignUpRequest) => Promise<void>;
   signIn: (data: SignInRequest) => Promise<void>;
   signOut: () => Promise<void>;
+  signInAsGuest: () => void;
+  signOutGuest: () => void;
   updateProfile: (updates: Partial<User>) => Promise<void>;
 }
 
@@ -47,6 +51,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  // Start as false for SSR consistency, sync from cookie in useEffect to avoid hydration mismatch
+  const [isGuest, setIsGuest] = useState<boolean>(false);
+  const [isGuestChecked, setIsGuestChecked] = useState<boolean>(false);
   const [activePositions, setActivePositions] = useState<UserPosition[] | null>(null);
   const [selectedIdentityId, setSelectedIdentityId] = useState<string | null>(null);
   const [postingIdentities, setPostingIdentities] = useState<PostingIdentity[]>([]);
@@ -55,6 +62,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const isInitialized = React.useRef(false);
   const fetchingUserRef = React.useRef(false);
+
+  // Sync guest state from cookie synchronously before any auth check
+  // This runs before checkAuth so isGuest is correct before loading finishes
+  React.useLayoutEffect(() => {
+    const hasGuestCookie = document.cookie.split(';').some(c => c.trim().startsWith('guest-mode=1'));
+    setIsGuest(hasGuestCookie);
+    setIsGuestChecked(true);
+  }, []);
 
   // Concurrency lock for syncCookie — prevents overlapping requests
   const syncingRef = React.useRef(false);
@@ -108,6 +123,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Step 1: Get session on mount (no refreshSession — Supabase handles refresh automatically)
     async function checkAuth() {
       try {
+        // Check guest mode cookie first
+        if (typeof document !== 'undefined' && document.cookie.includes('guest-mode=1')) {
+          setIsGuest(true);
+          setLoading(false);
+          return;
+        }
         const {
           data: { session },
         } = await db.auth.getSession();
@@ -287,6 +308,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // ── Guest Mode ──────────────────────────────────────────────
+  const signInAsGuest = () => {
+    document.cookie = 'guest-mode=1; path=/; max-age=86400; SameSite=Lax';
+    setIsGuest(true);
+    window.location.href = '/notices';
+  };
+
+  const signOutGuest = () => {
+    document.cookie = 'guest-mode=; path=/; max-age=0';
+    setIsGuest(false);
+    window.location.href = '/login';
+  };
+
   // ── Sign Out ────────────────────────────────────────────────
   const signOut = async () => {
     try {
@@ -330,6 +364,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        isGuest,
+        isGuestChecked,
         activePositions,
         positions: activePositions ?? [],
         selectedIdentityId,
@@ -342,6 +378,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signIn,
         signOut,
+        signInAsGuest,
+        signOutGuest,
         updateProfile,
       }}
     >

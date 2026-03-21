@@ -274,4 +274,13 @@ body {
         font-size: 11px;
         padding: 6px 8px;
     }
+    
+    #btnExitFullscreen {
+        position: fixed !important;
+        top: 12px !important;
+        right: 12px !important;
+        z-index: 99999 !important;
+        background: rgba(15,23,42,0.95) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+    }
 }

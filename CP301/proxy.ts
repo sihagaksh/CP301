@@ -8,6 +8,9 @@ import { type NextRequest, NextResponse } from 'next/server';
 // Routes that are ALWAYS public (no auth required)
 const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password'];
 
+// Routes accessible to guest users (no Supabase account needed)
+const GUEST_PATHS = ['/notices', '/events', '/map'];
+
 // File extensions that should never be intercepted by the proxy
 const STATIC_EXTENSIONS = [
     '.js', '.css', '.map', '.json', '.xml',
@@ -39,19 +42,18 @@ export async function proxy(request: NextRequest) {
     }
 
     // ── Check authentication ──
-    // ONLY check our explicitly-managed cookie, NOT Supabase's internal chunked cookies
-    // Supabase sets its own cookies (sb-<project>-auth-token.0, .1, etc.) which persist
-    // independently of actual session validity. We only trust our synced cookie.
     const authCookie = request.cookies.get('sb-auth-token');
+    const guestCookie = request.cookies.get('guest-mode');
     const isAuthenticated = !!authCookie?.value;
-    console.log(`[Proxy] Auth check: sb-auth-token=${!!authCookie}, isAuthenticated=${isAuthenticated}`);
+    const isGuest = guestCookie?.value === '1';
+    console.log(`[Proxy] Auth check: sb-auth-token=${!!authCookie}, guest-mode=${isGuest}`);
 
     // ── Public paths ──
     const isPublicPath = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
 
     if (isPublicPath) {
-        if (isAuthenticated && (pathname === '/login' || pathname === '/signup')) {
-            return NextResponse.redirect(new URL('/', request.url));
+        if ((isAuthenticated || isGuest) && (pathname === '/login' || pathname === '/signup')) {
+            return NextResponse.redirect(new URL(isGuest ? '/notices' : '/', request.url));
         }
         return NextResponse.next();
     }
@@ -61,9 +63,19 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
     }
 
+    // ── Guest access – only allow specific paths ──
+    if (isGuest && !isAuthenticated) {
+        const isGuestPath = GUEST_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+        if (isGuestPath) {
+            return NextResponse.next();
+        }
+        // Guest trying to access restricted route → redirect to /notices
+        return NextResponse.redirect(new URL('/notices', request.url));
+    }
+
     // ── Protect all dashboard routes ──
     if (!isAuthenticated) {
-        console.log(`[${new Date().toISOString()}] [Proxy] [DENIED] Protected route: ${pathname}, isAuthenticated: ${isAuthenticated}. Redirecting to /login`);
+        console.log(`[${new Date().toISOString()}] [Proxy] [DENIED] Protected route: ${pathname}. Redirecting to /login`);
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);

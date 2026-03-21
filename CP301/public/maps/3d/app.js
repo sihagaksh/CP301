@@ -2299,7 +2299,9 @@ document.getElementById('btnCloseSidebar').addEventListener('click', () => {
 window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'fullscreenChange') {
         const btn = document.getElementById('btnExitFullscreen');
-        if (btn) btn.style.display = e.data.isFullscreen ? 'inline-block' : 'none';
+        if (btn) {
+            btn.style.setProperty('display', e.data.isFullscreen ? 'inline-block' : 'none', 'important');
+        }
     }
 });
 

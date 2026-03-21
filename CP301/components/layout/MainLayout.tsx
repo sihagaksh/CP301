@@ -8,9 +8,10 @@ import { BottomNav } from './BottomNav';
 
 interface MainLayoutProps {
   children: React.ReactNode;
+  isGuest?: boolean;
 }
 
-export function MainLayout({ children }: MainLayoutProps) {
+export function MainLayout({ children, isGuest = false }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -31,7 +32,9 @@ export function MainLayout({ children }: MainLayoutProps) {
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
         const hasAuth = document.cookie.includes('sb-auth-token');
-        if (!hasAuth) {
+        const hasGuest = document.cookie.includes('guest-mode=1');
+        // Only reload if neither authenticated nor in guest mode
+        if (!hasAuth && !hasGuest) {
           window.location.reload();
         }
       }
@@ -63,7 +66,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <Header onMenuClick={openSidebar} />
 
       <div className="flex flex-1 min-h-0">
-        <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
+        <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} isGuest={isGuest} />
 
         <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {isFullBleed ? (
@@ -82,7 +85,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </main>
       </div>
 
-      <BottomNav onMoreClick={openSidebar} />
+      <BottomNav onMoreClick={openSidebar} isGuest={isGuest} />
     </div>
   );
 }

@@ -20,11 +20,12 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield } from 'lucide-react';
+import { Shield, LogOut } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isGuest?: boolean;
 }
 
 const MAIN_LINKS = [
@@ -42,9 +43,17 @@ const MAIN_LINKS = [
   { href: '/quick-links', icon: ExternalLink, label: 'Quick Links' },
 ];
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+const GUEST_LINKS = [
+  { href: '/notices', icon: Megaphone, label: 'Notices' },
+  { href: '/events', icon: Calendar, label: 'Events' },
+  { href: '/map', icon: Search, label: 'Campus Map' },
+];
+
+export function Sidebar({ isOpen, onClose, isGuest = false }: SidebarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, signOutGuest } = useAuth();
+
+  const links = isGuest ? GUEST_LINKS : MAIN_LINKS;
 
   return (
     <>
@@ -77,7 +86,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <div className="flex-1 py-2 overflow-y-hidden">
           <nav className="px-3 space-y-1">
-            {MAIN_LINKS.map((item) => {
+            {links.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
@@ -97,8 +106,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               );
             })}
 
-            {/* Admin Link (Only for admins) */}
-            {user?.isAdmin && (
+            {/* Admin Link (Only for authenticated admins) */}
+            {!isGuest && user?.isAdmin && (
               <>
                 <div className="pt-4 pb-2">
                   <div className="h-px bg-sidebar-border w-full" />
@@ -116,6 +125,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <Shield size={18} className={pathname.startsWith('/admin') ? '' : 'text-rose-500'} />
                   Admin Portal
                 </Link>
+              </>
+            )}
+
+            {/* Guest sign out */}
+            {isGuest && (
+              <>
+                <div className="pt-4 pb-2">
+                  <div className="h-px bg-sidebar-border w-full" />
+                </div>
+                <button
+                  onClick={signOutGuest}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full text-sidebar-foreground hover:bg-sidebar-accent/50"
+                >
+                  <LogOut size={18} />
+                  Exit Guest Mode
+                </button>
               </>
             )}
           </nav>

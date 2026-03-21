@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, UserRound } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, loading, error: authError } = useAuth();
+  const { signIn, signInAsGuest, loading, error: authError } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,6 +119,18 @@ export default function LoginPage() {
             disabled={isSubmitting || loading}
           >
             Sign In
+          </Button>
+
+          {/* Guest login */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="md"
+            className="w-full border border-border"
+            onClick={signInAsGuest}
+          >
+            <UserRound size={16} className="mr-2 text-muted-foreground" />
+            Continue as Guest
           </Button>
 
           {/* Forgot password link */}

@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Megaphone, MessageSquare, Users, MoreHorizontal } from 'lucide-react';
+import { Calendar, Megaphone, Map, Home, MessageSquare, Users, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const NAV_ITEMS = [
   { href: '/notices', label: 'Notices', icon: Megaphone },
@@ -12,17 +13,26 @@ const NAV_ITEMS = [
   { href: '/communities', label: 'Communities', icon: Users },
 ];
 
+const GUEST_NAV_ITEMS = [
+  { href: '/notices', label: 'Notices', icon: Megaphone },
+  { href: '/events', label: 'Events', icon: Calendar },
+  { href: '/map', label: 'Map', icon: Map },
+];
+
 interface BottomNavProps {
   onMoreClick?: () => void;
+  isGuest?: boolean;
 }
 
-export function BottomNav({ onMoreClick }: BottomNavProps) {
+export function BottomNav({ onMoreClick, isGuest = false }: BottomNavProps) {
   const pathname = usePathname();
+
+  const items = isGuest ? GUEST_NAV_ITEMS : NAV_ITEMS;
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t z-40 pb-safe">
       <div className="flex items-center justify-around px-1 py-1.5">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const isActive = item.href === '/'
             ? pathname === '/'
             : pathname.startsWith(item.href);
@@ -43,15 +53,18 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
           );
         })}
 
-        {/* More button → opens the Sidebar */}
-        <button
-          onClick={onMoreClick}
-          className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 min-w-[56px] rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <MoreHorizontal size={20} />
-          <span className="text-[10px] font-medium leading-tight">More</span>
-        </button>
+        {/* More button → only show for non-guests */}
+        {!isGuest && (
+          <button
+            onClick={onMoreClick}
+            className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 min-w-[56px] rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <MoreHorizontal size={20} />
+            <span className="text-[10px] font-medium leading-tight">More</span>
+          </button>
+        )}
       </div>
     </nav>
   );
 }
+

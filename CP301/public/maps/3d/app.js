@@ -2294,7 +2294,135 @@ document.getElementById('btnWire').addEventListener('click', function () {
 });
 
 // =====================================================================
-// 17. RESIZE
+// 17. GPS LOCATION TRACKING
+// =====================================================================
+const gpsButton = document.getElementById('gps-button');
+const gpsDisplay = document.getElementById('gps-display');
+const gpsLat = document.getElementById('gps-lat');
+const gpsLng = document.getElementById('gps-lng');
+let userMarker = null;
+let watchId = null;
+
+if (gpsButton) {
+    gpsButton.addEventListener('click', () => {
+        if (!watchId) {
+            startTracking();
+        } else {
+            stopTracking();
+        }
+    });
+}
+
+if (gpsDisplay) {
+    gpsDisplay.addEventListener('click', () => {
+        const text = `${gpsLat.textContent}, ${gpsLng.textContent}`;
+        navigator.clipboard.writeText(text).then(() => {
+            gpsDisplay.classList.add('copied');
+            setTimeout(() => gpsDisplay.classList.remove('copied'), 2000);
+        });
+    });
+}
+
+function startTracking() {
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser");
+        return;
+    }
+
+    gpsButton.classList.add('active');
+    if (gpsDisplay) gpsDisplay.style.display = 'block';
+
+    watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            const { latitude, longitude } = position.coords;
+            
+            // Update display
+            if (gpsLat) gpsLat.textContent = latitude.toFixed(6);
+            if (gpsLng) gpsLng.textContent = longitude.toFixed(6);
+
+            // Convert to 3D world coordinates using existing helper
+            const worldPos = geoToWorld(longitude, latitude);
+
+            if (!userMarker) {
+                // Create a 3D marker (blue sphere with pulsing ring)
+                const markerGroup = new THREE.Group();
+                
+                const dotGeo = new THREE.SphereGeometry(1.5, 16, 16);
+                const dotMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x3b82f6, 
+                    emissive: 0x1d4ed8,
+                    roughness: 0.2,
+                    metalness: 0.5
+                });
+                const dot = new THREE.Mesh(dotGeo, dotMat);
+                dot.position.y = 8;
+                markerGroup.add(dot);
+
+                const ringGeo = new THREE.TorusGeometry(3, 0.3, 8, 24);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = 1;
+                markerGroup.add(ring);
+                
+                scene.add(markerGroup);
+                userMarker = markerGroup;
+                
+                // Add a basic pulse animation to the ring
+                const animateMarker = () => {
+                    if (userMarker) {
+                        ring.scale.x += 0.02;
+                        ring.scale.y += 0.02;
+                        ring.material.opacity = Math.max(0, 1 - (ring.scale.x - 1) / 1.5);
+                        ring.material.transparent = true;
+                        
+                        if (ring.scale.x > 2.5) {
+                            ring.scale.set(1, 1, 1);
+                            ring.material.opacity = 1;
+                        }
+                        requestAnimationFrame(animateMarker);
+                    }
+                };
+                animateMarker();
+            }
+
+            // Update marker position
+            userMarker.position.set(worldPos.x, 0, worldPos.z);
+
+            // Pan camera to user 
+            // Camera slightly offset for a nice view depending on where they are
+            const targetPos = new THREE.Vector3(worldPos.x + 25, 30, worldPos.z + 30);
+            const lookAtPos = new THREE.Vector3(worldPos.x, 0, worldPos.z);
+            animateCamera(targetPos, lookAtPos);
+            
+        },
+        (err) => {
+            console.error("GPS Error:", err);
+            stopTracking();
+        },
+        {
+            enableHighAccuracy: true,
+            maximumAge: 10000,
+            timeout: 5000
+        }
+    );
+}
+
+function stopTracking() {
+    if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+    if (gpsButton) gpsButton.classList.remove('active');
+    if (gpsDisplay) gpsDisplay.style.display = 'none';
+    if (userMarker) {
+        scene.remove(userMarker);
+        userMarker = null;
+    }
+}
+
+// =====================================================================
+// 18. RESIZE
 // =====================================================================
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;

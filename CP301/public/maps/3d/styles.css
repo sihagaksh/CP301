@@ -145,3 +145,73 @@ body {
     transform: translate(-50%, -100%);
     margin-top: -12px;
 }
+
+/* ---- GPS Feature ---- */
+.gps-button {
+    position: absolute;
+    bottom: 18px;
+    left: 18px; /* Changed to left side to avoid overlap with legend */
+    z-index: 1000;
+    width: 44px;
+    height: 44px;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 9px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 20px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.gps-button:hover { background: rgba(30, 41, 59, 0.95); color: #6366f1; }
+.gps-button.active { color: #6366f1; border-color: rgba(99, 102, 241, 0.45); }
+
+#gps-display {
+    position: absolute;
+    bottom: 70px;
+    left: 18px; /* Changed to left side */
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace, sans-serif;
+    font-size: 11px;
+    display: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    line-height: 1.4;
+    transition: all 0.2s;
+    user-select: none;
+}
+#gps-display:hover {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-2px);
+}
+#gps-display:active { transform: translateY(0); }
+#gps-display strong { color: #6366f1; }
+
+#gps-display::after {
+    content: 'Click to copy';
+    display: block;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    color: #64748b;
+    text-align: right;
+    opacity: 0.6;
+}
+
+#gps-display.copied::after {
+    content: 'Copied!';
+    color: #10b981;
+    opacity: 1;
+}

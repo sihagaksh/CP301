@@ -48,6 +48,32 @@
         <h3 id="infoTitle"></h3>
         <p id="infoDesc"></p>
         <div id="infoTags"></div>
+        <button id="btnDirections" class="directions-btn">🧭 Directions</button>
+    </div>
+
+    <!-- Navigation Panel -->
+    <div id="navPanel" class="nav-panel hidden">
+        <div class="nav-header">
+            <span>🧭 Navigation</span>
+            <button id="closeNav">✕</button>
+        </div>
+        <div class="nav-body">
+            <div class="nav-field">
+                <label>📍 From</label>
+                <select id="navFrom">
+                    <option value="__gps__">📍 My Current Location</option>
+                </select>
+            </div>
+            <div class="nav-swap-row">
+                <button id="btnSwapNav" title="Swap">⇅</button>
+            </div>
+            <div class="nav-field">
+                <label>🎯 To</label>
+                <select id="navTo"></select>
+            </div>
+            <button id="btnGetDirections" class="get-directions-btn">🧭 Get Directions</button>
+        </div>
+        <div id="navSteps" class="nav-steps hidden"></div>
     </div>
 
     <!-- Legend -->

@@ -2,5 +2,6 @@
   "/(auth)/login/page": "app/(auth)/login/page.js",
   "/(dashboard)/map/page": "app/(dashboard)/map/page.js",
   "/(dashboard)/page": "app/(dashboard)/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/api/auth/set-cookie/route": "app/api/auth/set-cookie/route.js"
 }

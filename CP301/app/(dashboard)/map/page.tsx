@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { Map, Box, Expand, Shrink } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,18 +10,69 @@ type MapView = '2d' | '3d';
 export default function CampusMapPage() {
     const [view, setView] = useState<MapView>('2d');
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isCSSFullscreen, setIsCSSFullscreen] = useState(false);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
 
     const mapSrc = view === '2d' ? '/maps/2d/index.html' : '/maps/3d/index.html';
 
-    const toggleFullscreen = () => setIsFullscreen(prev => !prev);
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isFull = !!document.fullscreenElement;
+            setIsFullscreen(isFull || isCSSFullscreen);
+            iframeRef.current?.contentWindow?.postMessage({ type: 'fullscreenChange', isFullscreen: isFull }, '*');
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, [isCSSFullscreen]);
+
+    useEffect(() => {
+        const handleMessage = (e: MessageEvent) => {
+            if (e.data?.type === 'exitFullscreen') {
+                if (document.fullscreenElement) document.exitFullscreen().catch(console.error);
+                if (isCSSFullscreen) {
+                    setIsCSSFullscreen(false);
+                    setIsFullscreen(false);
+                    iframeRef.current?.contentWindow?.postMessage({ type: 'fullscreenChange', isFullscreen: false }, '*');
+                }
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [isCSSFullscreen]);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement && !isCSSFullscreen) {
+            // Enter Fullscreen
+            if (iframeRef.current && iframeRef.current.requestFullscreen) {
+                iframeRef.current.requestFullscreen().then(() => {
+                    // native success handled by event listener
+                }).catch(() => {
+                    setIsCSSFullscreen(true);
+                    setIsFullscreen(true);
+                    iframeRef.current?.contentWindow?.postMessage({ type: 'fullscreenChange', isFullscreen: true }, '*');
+                });
+            } else {
+                setIsCSSFullscreen(true);
+                setIsFullscreen(true);
+                iframeRef.current?.contentWindow?.postMessage({ type: 'fullscreenChange', isFullscreen: true }, '*');
+            }
+        } else {
+            // Exit Fullscreen
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(console.error);
+            }
+            if (isCSSFullscreen) {
+                setIsCSSFullscreen(false);
+                setIsFullscreen(false);
+                iframeRef.current?.contentWindow?.postMessage({ type: 'fullscreenChange', isFullscreen: false }, '*');
+            }
+        }
+    };
 
     return (
-        <div className={cn(
-            'space-y-4 animate-fade-in',
-            isFullscreen && 'fixed inset-0 z-50 bg-background p-4 space-y-3'
-        )}>
+        <div className="flex flex-col h-full animate-fade-in p-4 gap-4">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight font-serif">Campus Map</h1>
                     <p className="text-muted-foreground mt-1">
@@ -69,14 +120,15 @@ export default function CampusMapPage() {
 
             {/* Map Iframe */}
             <GlassSurface className={cn(
-                'overflow-hidden',
-                isFullscreen ? 'flex-1 h-[calc(100vh-120px)]' : 'h-[calc(100vh-220px)] min-h-[500px]'
+                "overflow-hidden flex-1 min-h-0",
+                isCSSFullscreen && "fixed inset-0 z-[9999] bg-background rounded-none border-0"
             )}>
                 <iframe
+                    ref={iframeRef}
                     key={view}
                     src={mapSrc}
                     title={`${view.toUpperCase()} Campus Map`}
-                    className="w-full h-full border-0"
+                    className="w-full h-full border-0 bg-background"
                     allow="fullscreen"
                 />
             </GlassSurface>

@@ -2244,7 +2244,12 @@ function populateList(filter = '') {
             row.dataset.id = b.id;
             row.innerHTML = `<div class="bl-dot" style="background:${CAT_COLORS[b.cat] || '#888'}"></div>
                 <div><div class="bl-name">${b.name}</div><div class="bl-sub">${b.tags.slice(0, 2).join(' · ')}</div></div>`;
-            row.addEventListener('click', () => selectBuilding(b.id));
+            row.addEventListener('click', () => {
+                selectBuilding(b.id);
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidePanel').classList.add('collapsed');
+                }
+            });
             el.appendChild(row);
         });
     });
@@ -2285,12 +2290,22 @@ document.getElementById('btnLabels').addEventListener('click', function () {
     Object.values(labelById).forEach(l => { l.visible = labelsVisible; });
 });
 
-document.getElementById('btnWire').addEventListener('click', function () {
-    const active = this.classList.toggle('active');
-    Object.values(meshById).forEach(arr => arr.forEach(m => {
-        m.material = m.material.clone();
-        m.material.wireframe = active;
-    }));
+document.getElementById('btnCloseSidebar').addEventListener('click', () => {
+    document.getElementById('sidePanel').classList.add('collapsed');
+});
+
+// =====================================================================
+// FULLSCREEN COMMUNICATION
+// =====================================================================
+window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'fullscreenChange') {
+        const btn = document.getElementById('btnExitFullscreen');
+        if (btn) btn.style.display = e.data.isFullscreen ? 'inline-block' : 'none';
+    }
+});
+
+document.getElementById('btnExitFullscreen').addEventListener('click', () => {
+    window.parent.postMessage({ type: 'exitFullscreen' }, '*');
 });
 
 // =====================================================================

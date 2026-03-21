@@ -215,3 +215,63 @@ body {
     color: #10b981;
     opacity: 1;
 }
+
+/* Base style for sidebar close button (hidden on desktop) */
+.close-sidebar-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+}
+.close-sidebar-btn:hover { color: #f1f5f9; }
+
+/* ---- Mobile Responsiveness ---- */
+@media (max-width: 768px) {
+    #header {
+        height: auto;
+        padding: 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .header-left .subtitle {
+        display: none;
+    }
+    
+    #sidePanel {
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        z-index: 200;
+        transition: transform .3s ease, opacity .3s ease;
+    }
+    #sidePanel.collapsed {
+        transform: translateX(-100vw);
+        opacity: 0;
+    }
+    .close-sidebar-btn {
+        display: block;
+    }
+    
+    #infoPanel {
+        right: 15px;
+        left: 15px;
+        width: auto;
+        bottom: 80px; /* Leave space for GPS button */
+        padding: 14px;
+    }
+    
+    #legend {
+        display: none; /* Hide legend on mobile to reduce clutter */
+    }
+    
+    .hbtn {
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+}

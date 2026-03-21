@@ -337,6 +337,7 @@
     </style>
 </head>
 <body>
+    <button id="btnExitFullscreen" class="gps-button" style="display: none; position: fixed !important; top: 16px !important; right: 16px !important; width: auto !important; padding: 0 16px !important; font-size: 13px !important; bottom: auto !important; background: rgba(15,23,42,0.95) !important; z-index: 999999 !important; border: 1px solid rgba(255,255,255,0.2) !important;">⛶ Exit Fullscreen</button>
     <!-- Search -->
     <div id="search-container">
         <span id="search-icon">🔍</span>
@@ -948,6 +949,23 @@
         console.log(`Go to this spot on Google Maps to verify!`);
         console.groupEnd();
     });
+
+    // ═══════════════════════════════════════════════════════
+    // FULLSCREEN COMMUNICATION
+    // ═══════════════════════════════════════════════════════
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'fullscreenChange') {
+            const btn = document.getElementById('btnExitFullscreen');
+            if (btn) {
+                btn.style.setProperty('display', e.data.isFullscreen ? 'flex' : 'none', 'important');
+            }
+        }
+    });
+
+    document.getElementById('btnExitFullscreen').addEventListener('click', () => {
+        window.parent.postMessage({ type: 'exitFullscreen' }, '*');
+    });
+
     </script>
 </body>
 </html>

@@ -16,7 +16,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname();
 
   // Pages that manage their own scroll and need full-bleed layout
-  const isFullBleed = pathname === '/messages';
+  const isFullBleed = pathname === '/messages' || pathname === '/map';
 
   const openSidebar = () => setSidebarOpen(true);
   const closeSidebar = () => setSidebarOpen(false);

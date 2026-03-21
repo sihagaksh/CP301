@@ -23,7 +23,7 @@
             <button id="btnReset" class="hbtn">🏠 Reset</button>
             <button id="btnTop" class="hbtn">⬆️ Top View</button>
             <button id="btnLabels" class="hbtn active">🏷️ Labels</button>
-            <button id="btnWire" class="hbtn">🔲 Wireframe</button>
+            <button id="btnExitFullscreen" class="hbtn" style="display: none;">⛶ Exit Fullscreen</button>
         </div>
     </div>
 
@@ -33,7 +33,10 @@
     <!-- Side panel (hidden by default) -->
     <div id="sidePanel" class="collapsed">
         <div class="sp-head">
-            <h2>🏗️ Campus Buildings</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h2 style="margin-bottom: 0;">🏗️ Campus Buildings</h2>
+                <button id="btnCloseSidebar" class="close-sidebar-btn">✕</button>
+            </div>
             <input type="text" id="searchBox" placeholder="Search buildings..." />
         </div>
         <div id="buildingList"></div>

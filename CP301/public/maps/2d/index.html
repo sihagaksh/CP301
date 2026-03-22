@@ -329,6 +329,68 @@
         }
         #creator-toggle.active { color: #10b981; border-color: #10b981; }
 
+        /* ── Calibration Toggle ── */
+        #cal-toggle {
+            position: absolute;
+            top: 136px;
+            right: 16px;
+            z-index: 1000;
+            width: 48px;
+            height: 48px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        #cal-toggle.active { color: #f59e0b; border-color: #f59e0b; }
+
+        /* ── Calibration Panel ── */
+        #cal-panel {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 1001;
+            width: 320px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 16px;
+            padding: 16px;
+            color: #f1f5f9;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        #cal-panel h4 { font-size: 14px; margin-bottom: 2px; color: #f59e0b; }
+        #cal-panel .cal-sub { font-size: 11px; color: #64748b; }
+        #cal-status {
+            font-size: 12px;
+            line-height: 1.7;
+            color: #94a3b8;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 10px;
+            border-radius: 6px;
+        }
+        #cal-result {
+            font-size: 12px;
+            line-height: 1.8;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(16,185,129,0.08);
+            border: 1px solid rgba(16,185,129,0.2);
+            padding: 8px 10px;
+            border-radius: 6px;
+            display: none;
+        }
+        #cal-bias-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
         /* ── Mobile adjustments ── */
         @media (max-width: 480px) {
             #legend { bottom: 12px; left: 8px; padding: 10px 14px; }
@@ -362,6 +424,9 @@
     <!-- Building Creator Toggle -->
     <button id="creator-toggle" title="Building Creator Mode">🏗️</button>
 
+    <!-- Calibration Toggle -->
+    <button id="cal-toggle" title="Bias Calibration Mode">🎯</button>
+
     <!-- Creator Panel -->
     <div id="creator-panel">
         <h4>Building Creator</h4>
@@ -388,6 +453,33 @@
         </div>
     </div>
 
+    <!-- Calibration Panel -->
+    <div id="cal-panel">
+        <h4>🎯 Bias Calibration</h4>
+        <div class="cal-sub">Click a building, then drag it to align with the satellite image.</div>
+
+        <div id="cal-status">
+            Click any building polygon on the map to select it as the reference.
+        </div>
+
+        <div id="cal-result"></div>
+
+        <div id="cal-live" style="display:none;">
+            <div style="font-size:11px; color:#94a3b8; margin-bottom:6px;">Fine-tune manually:</div>
+            <div id="cal-bias-row">
+                <input type="number" id="cal-bias-lat" class="creator-input" placeholder="Bias Lat" step="0.000001" value="0">
+                <input type="number" id="cal-bias-lng" class="creator-input" placeholder="Bias Lng" step="0.000001" value="0">
+            </div>
+        </div>
+
+        <div class="creator-btns">
+            <button class="btn btn-secondary" onclick="resetCal()">Reset</button>
+            <button class="btn" style="background:#f59e0b; color:#1a1a1a;" onclick="previewBias()">👁 Apply Manual</button>
+            <button class="btn btn-success" onclick="copyBias()">📋 Copy GPS_BIAS</button>
+            <button class="btn" style="background:#475569; color:white; grid-column:span 2;" onclick="exitCal()">❌ Exit Calibration</button>
+        </div>
+    </div>
+
     <div id="gps-display" style="bottom: 140px;">
         <div>LAT: <strong id="gps-lat">0.000000</strong></div>
         <div>LNG: <strong id="gps-lng">0.000000</strong></div>
@@ -403,7 +495,7 @@
     // ═══════════════════════════════════════════════════════
     const IMAGE_WIDTH  = 8192;
     const IMAGE_HEIGHT = 4320;
-    const TILE_PATH    = 'tiles/{z}/{x}/{y}.png';
+    const TILE_PATH    = 'tiles2/{z}/{x}/{y}.png';
     const MAX_ZOOM     = 7;
 
     // ═══════════════════════════════════════════════════════
@@ -420,12 +512,33 @@
         east:  76.49041582  // Precise right edge
     };
 
+    // ═══════════════════════════════════════════════════════
+    // GPS BIAS — Compensates for satellite image alignment drift.
+    //
+    // When a new image is downloaded and GPS_BOUNDS are slightly
+    // off, all building polygons shift uniformly. Set these to
+    // realign without touching buildings.json.
+    //
+    // Use the 🎯 Calibration button to compute exact values.
+    // After computing, paste them here to persist across reloads.
+    //
+    // lat: positive = shift all buildings NORTH
+    // lng: positive = shift all buildings EAST
+    // ═══════════════════════════════════════════════════════
+    let GPS_BIAS = {
+    lat: 0.00004285,
+    lng: 0.00001335
+};
+
     /**
      * Converts real-world GPS [lat, lng] to Map Pixels [x, y]
      */
     function gpsToPixels(lat, lng) {
-        const x = ((lng - GPS_BOUNDS.west) / (GPS_BOUNDS.east - GPS_BOUNDS.west)) * IMAGE_WIDTH;
-        const y = ((GPS_BOUNDS.north - lat) / (GPS_BOUNDS.north - GPS_BOUNDS.south)) * IMAGE_HEIGHT;
+        // Apply GPS_BIAS to compensate for image alignment drift
+        const adjLat = lat + GPS_BIAS.lat;
+        const adjLng = lng + GPS_BIAS.lng;
+        const x = ((adjLng - GPS_BOUNDS.west) / (GPS_BOUNDS.east - GPS_BOUNDS.west)) * IMAGE_WIDTH;
+        const y = ((GPS_BOUNDS.north - adjLat) / (GPS_BOUNDS.north - GPS_BOUNDS.south)) * IMAGE_HEIGHT;
         return [x, y];
     }
 
@@ -561,6 +674,11 @@
                 // Prevent map click handler from firing
                 L.DomEvent.stopPropagation(e);
 
+                // In Calibration Mode: select this building as the drag reference
+                if (isCalMode) {
+                    startCalDrag(this, b);
+                    return;
+                }
                 selectBuilding(this, b);
             });
         });
@@ -923,13 +1041,170 @@
             description: document.getElementById('cr-desc').value || "",
             departments: [],
             // Export GPS coordinates instead of image pixels
-            polygon: creatorPoints.map(([px, py]) => pixelsToGps(px, py))
+            // Subtract active bias so stored GPS is the true real-world coordinate.
+            // When rendered with the same bias, the polygon aligns perfectly.
+            polygon: creatorPoints.map(([px, py]) => {
+                const [rawLat, rawLng] = pixelsToGps(px, py);
+                return [
+                    parseFloat((rawLat - GPS_BIAS.lat).toFixed(8)),
+                    parseFloat((rawLng - GPS_BIAS.lng).toFixed(8))
+                ];
+            })
         };
 
         const jsonString = JSON.stringify(building, null, 4);
         navigator.clipboard.writeText(jsonString).then(() => {
             alert("JSON snippet copied! Add this entry to buildings.json to update the map.");
             console.log("New Building JSON:", jsonString);
+        });
+    };
+
+    // ═══════════════════════════════════════════════════════
+    // BIAS CALIBRATION MODE — Drag to Align
+    //
+    // User: click a building polygon → orange drag handle appears.
+    // Drag handle to align polygon with satellite image.
+    // GPS_BIAS updates live; all other buildings shift in sync.
+    // ═══════════════════════════════════════════════════════
+    const calToggle     = document.getElementById('cal-toggle');
+    const calPanel      = document.getElementById('cal-panel');
+    let isCalMode       = false;
+    let calDragMarker   = null;        // Draggable Leaflet marker (orange handle)
+    let calRefStoredGps = null;        // [lat, lng] mean GPS of selected building
+    let calRefBuilding  = null;        // The building object currently selected as reference
+
+    // Drag handle icon — prominent orange circle with move arrow
+    const calDragIcon = L.divIcon({
+        className: '',
+        html: `<div style="
+            width:36px;height:36px;
+            background:rgba(245,158,11,0.95);
+            border:2.5px solid #fff;
+            border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            font-size:18px;cursor:move;
+            box-shadow:0 3px 12px rgba(0,0,0,0.5);
+            user-select:none;touch-action:none;">⤡</div>`,
+        iconSize:   [36, 36],
+        iconAnchor: [18, 18]
+    });
+
+    calToggle.addEventListener('click', () => {
+        isCalMode = !isCalMode;
+        calToggle.classList.toggle('active');
+        calPanel.style.display = isCalMode ? 'flex' : 'none';
+        if (isCalMode && isCreatorMode) exitCreator();
+        if (!isCalMode) resetCal();
+    });
+
+    window.exitCal = function() {
+        isCalMode = false;
+        calToggle.classList.remove('active');
+        calPanel.style.display = 'none';
+        resetCal();
+    };
+
+    window.resetCal = function() {
+        if (calDragMarker) { map.removeLayer(calDragMarker); calDragMarker = null; }
+        calRefStoredGps = null;
+        calRefBuilding  = null;
+        document.getElementById('cal-status').textContent =
+            'Click any building polygon on the map to select it as the reference.';
+        document.getElementById('cal-result').style.display = 'none';
+        document.getElementById('cal-live').style.display = 'none';
+    };
+
+    // Re-applies the white active highlight to the reference polygon after re-render.
+    // renderBuildings() clears all layers each time, so the style must be reapplied.
+    function _highlightCalPoly() {
+        if (!calRefBuilding) return;
+        polygonLayer.eachLayer(function(layer) {
+            if (layer._building && layer._building.shortCode === calRefBuilding.shortCode) {
+                layer.setStyle({
+                    fillOpacity: 0.45,
+                    weight: 3,
+                    color: '#ffffff',
+                    opacity: 1
+                });
+            }
+        });
+    }
+
+    /**
+     * Called by renderBuildings() when a polygon is clicked in cal mode.
+     * Places a draggable orange handle at the building center.
+     * Dragging it shifts GPS_BIAS live and re-renders all polygons.
+     */
+    window.startCalDrag = function(poly, building) {
+        // Remove any previous drag marker
+        if (calDragMarker) { map.removeLayer(calDragMarker); calDragMarker = null; }
+        calRefBuilding = building;
+
+        // Compute the building's stored GPS centroid (from buildings.json, bias-free)
+        const pts = building.polygon;
+        calRefStoredGps = [
+            pts.reduce((s, p) => s + p[0], 0) / pts.length,
+            pts.reduce((s, p) => s + p[1], 0) / pts.length
+        ];
+
+        // Place the handle at the current rendered center (includes any existing bias)
+        calDragMarker = L.marker(poly.getBounds().getCenter(), {
+            draggable: true,
+            autoPan:   true,
+            icon:      calDragIcon,
+            zIndexOffset: 2000
+        }).addTo(map);
+
+        // Live drag: recalculate GPS_BIAS and re-render all buildings
+        calDragMarker.on('drag', function() {
+            const coords      = rc.project(calDragMarker.getLatLng());
+            const [tLat, tLng] = pixelsToGps(coords.x, coords.y);
+
+            GPS_BIAS.lat = parseFloat((tLat - calRefStoredGps[0]).toFixed(8));
+            GPS_BIAS.lng = parseFloat((tLng - calRefStoredGps[1]).toFixed(8));
+
+            renderBuildings();   // shifts all polygons in real time
+            _highlightCalPoly(); // keep the reference polygon highlighted after re-render
+            _updateCalDisplay();
+        });
+
+        // Immediately highlight the selected polygon (before any drag)
+        _highlightCalPoly();
+
+        document.getElementById('cal-status').innerHTML =
+            `<strong style="color:#10b981;">✓ Building selected!</strong><br>Drag the 🟡 handle to align the polygon with the satellite image.`;
+        document.getElementById('cal-result').style.display = 'none';
+        document.getElementById('cal-live').style.display = 'none';
+    };
+
+    function _updateCalDisplay() {
+        const resultEl = document.getElementById('cal-result');
+        resultEl.innerHTML = `
+            <div style="color:#f59e0b;margin-bottom:4px;">Live GPS Bias:</div>
+            <div>lat: <strong style="color:#f1f5f9;">${GPS_BIAS.lat.toFixed(8)}</strong></div>
+            <div>lng: <strong style="color:#f1f5f9;">${GPS_BIAS.lng.toFixed(8)}</strong></div>
+            <div style="margin-top:6px;font-size:10px;color:#64748b;">📋 Copy when satisfied — then paste into CONFIG.</div>
+        `;
+        resultEl.style.display = 'block';
+        document.getElementById('cal-bias-lat').value = GPS_BIAS.lat.toFixed(8);
+        document.getElementById('cal-bias-lng').value = GPS_BIAS.lng.toFixed(8);
+        document.getElementById('cal-live').style.display = 'block';
+    }
+
+    // Manual fine-tune: apply whatever is in the number inputs
+    window.previewBias = function() {
+        GPS_BIAS.lat = parseFloat(document.getElementById('cal-bias-lat').value) || 0;
+        GPS_BIAS.lng = parseFloat(document.getElementById('cal-bias-lng').value) || 0;
+        renderBuildings();
+        _updateCalDisplay();
+    };
+
+    window.copyBias = function() {
+        const bLat = parseFloat(document.getElementById('cal-bias-lat').value) || 0;
+        const bLng = parseFloat(document.getElementById('cal-bias-lng').value) || 0;
+        const snippet = `let GPS_BIAS = {\n    lat: ${bLat.toFixed(8)},\n    lng: ${bLng.toFixed(8)}\n};`;
+        navigator.clipboard.writeText(snippet).then(() => {
+            alert('GPS_BIAS snippet copied!\n\nPaste it into the CONFIG block in index.html to make it permanent.');
         });
     };
 

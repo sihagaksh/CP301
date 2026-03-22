@@ -12,8 +12,8 @@ import math
 from PIL import Image
 
 # ── CONFIG ──
-INPUT_IMAGE = "IIT_Ropar.jpg"
-OUTPUT_DIR = "tiles"
+INPUT_IMAGE = "IIT_Ropar2.jpg"
+OUTPUT_DIR = "tiles2"
 TILE_SIZE = 256
 MIN_ZOOM = 0
 MAX_ZOOM = 5  # Adjust if needed; higher = more zoom detail

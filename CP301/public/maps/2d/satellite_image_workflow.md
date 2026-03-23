@@ -14,19 +14,19 @@ This is the desktop version — not the browser/app version. It is required for 
 ## Part 2 — Capture the Satellite Image
 
 ### Step 1 — Open the reference KML
-
+![MyRect KML loaded in Google Earth Pro](Screenshots/1MyRect.png)<br>
 In Google Earth Pro: **File → Open** → select [`MyRect.kml`](2d/MyRect.kml)
 
-The KML draws a **yellow rectangle** that marks the exact boundary of the campus map area. It lives under "My Places" in the left panel.
-
+The KML draws a **white rectangle** that marks the exact boundary of the campus map area. It lives under "My Places" in the left panel.
+![Opening the Save Image dialog](Screenshots/2OpeningBox.png)
 ### Step 2 — Enter Save Image mode
-
+![Save Image icon highlighted in toolbar](Screenshots/4HighlightedIcon.png)
 **File → Save → Save Image…**
 
 A capture frame appears around the viewport. Everything inside this frame will be exported.
 
 ### Step 3 — Orient the view
-
+![View after pressing U then R — top-down, north up](Screenshots/3AfterPressingR.png)
 While in Save Image mode, press these two keys **in order**:
 
 | Key | Action | Verify |
@@ -38,7 +38,10 @@ While in Save Image mode, press these two keys **in order**:
 > Both `U` then `R` must be applied **every capture session**. Without them the image will be tilted or rotated and the GPS corner coordinates will be wrong.
 
 ### Step 4 — Fit the KML rectangle inside the capture frame
+Also ensure that you have deselected the Map Options <br>
+![Deselect Map Options](Screenshots/8DeselectMapOptions.png)
 
+![KML rectangle aligned within the capture frame](Screenshots/6AfterAligning.png)
 Use keyboard shortcuts to zoom until the yellow KML rectangle exactly fills the capture frame:
 
 | Shortcut | Action |
@@ -53,7 +56,7 @@ Use keyboard shortcuts to zoom until the yellow KML rectangle exactly fills the 
 **Goal:** The yellow rectangle should be just inside the capture frame edges — no campus area cropped out, minimal empty border.
 
 ### Step 5 — Deselect the KML shape
-
+![Unchecking MyRect in the Places panel to deselect and hide the overlay](Screenshots/7NowDeselect.png)
 In the **left panel (Places)**, **uncheck** `MyRect.kml` / `MyRect`.
 
 This hides the yellow rectangle so it does not appear in the exported image. The satellite imagery underneath is now clean.
@@ -97,16 +100,29 @@ Open [`MyRect.kml`](2d/MyRect.kml) in any text editor. The `<coordinates>` block
 
 ## Part 4 — Process the Image (Generate Tiles)
 
-```bash
-# 1. Get pixel dimensions
-python -c "from PIL import Image; print(Image.open('IIT_Ropar.jpg').size)"
-# e.g. (8192, 4320)  →  IMAGE_WIDTH=8192, IMAGE_HEIGHT=4320
+Open [`generate_tiles.py`](2d/generate_tiles.py) and edit the **CONFIG block** at the top to match your image:
 
-# 2. Generate tile pyramid  (or run: python generate_tiles.py)
-gdal2tiles.py --xyz -p raster -z 0-7 IIT_Ropar.jpg tiles/
+```python
+# ── CONFIG ──
+INPUT_IMAGE = "IIT_Ropar.jpg"   # ← your saved image filename
+OUTPUT_DIR  = "tiles"           # ← output folder
+TILE_SIZE   = 256
+MIN_ZOOM    = 0
+MAX_ZOOM    = 7                 # ← adjust zoom depth as needed
 ```
 
-> `-z 0-7` must match `MAX_ZOOM = 7` in the config. Change both together if needed.
+Then run it:
+
+```bash
+python generate_tiles.py
+```
+
+The script will:
+1. Print the pixel dimensions (`IMAGE_WIDTH` / `IMAGE_HEIGHT`) — copy these into `index.html`.
+2. Generate the full tile pyramid under `tiles/`.
+
+> [!IMPORTANT]
+> `MAX_ZOOM` in the script and `MAX_ZOOM` in `index.html` must always match.
 
 ---
 

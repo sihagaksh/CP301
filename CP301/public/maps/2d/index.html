@@ -281,6 +281,10 @@
             color: white;
             font-size: 13px;
         }
+        .creator-input option {
+            background-color: #1e293b; /* dark slate to fix invisible white text */
+            color: #f1f5f9;
+        }
         .creator-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .btn {
             padding: 8px;
@@ -350,6 +354,222 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         #cal-toggle.active { color: #f59e0b; border-color: #f59e0b; }
+
+        /* ── Road-layer Toggle ── */
+        #road-toggle {
+            position: absolute;
+            top: 192px;
+            right: 16px;
+            z-index: 1000;
+            width: 48px;
+            height: 48px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        #road-toggle.active { color: #38bdf8; border-color: #38bdf8; }
+
+        /* ── Navigation Toggle ── */
+        #nav-toggle {
+            position: absolute;
+            top: 248px;
+            right: 16px;
+            z-index: 1000;
+            width: 48px;
+            height: 48px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        #nav-toggle.active { color: #34d399; border-color: #34d399; }
+
+        /* ── Navigation Panel ── */
+        #nav-panel {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 1001;
+            width: 300px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(52,211,153,0.3);
+            border-radius: 16px;
+            padding: 16px;
+            color: #f1f5f9;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        #nav-panel h4 { font-size: 14px; color: #34d399; margin-bottom: 2px; }
+        #nav-panel label { font-size: 11px; color: #64748b; margin-bottom: 2px; display: block; }
+        #nav-panel select { font-family: inherit; }
+        #nav-result {
+            font-size: 12px;
+            background: rgba(52,211,153,0.08);
+            border: 1px solid rgba(52,211,153,0.2);
+            border-radius: 6px;
+            padding: 8px 10px;
+            display: none;
+            line-height: 1.7;
+        }
+        #nav-error {
+            font-size: 12px;
+            color: #f87171;
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 6px;
+            padding: 8px 10px;
+            display: none;
+        }
+
+        /* ── Road Calibration Toggle ── */
+        #road-cal-toggle {
+            position: absolute;
+            top: 304px;
+            right: 16px;
+            z-index: 1000;
+            width: 48px;
+            height: 48px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        #road-cal-toggle.active { color: #fb923c; border-color: #fb923c; }
+
+        /* ── Road Calibration Panel ── */
+        #road-cal-panel {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 1001;
+            width: 300px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(251,146,60,0.3);
+            border-radius: 16px;
+            padding: 16px;
+            color: #f1f5f9;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        #road-cal-panel h4 { font-size: 14px; color: #fb923c; margin-bottom: 2px; }
+        #road-cal-panel .sub { font-size: 11px; color: #64748b; }
+        #road-cal-status {
+            font-size: 12px;
+            color: #94a3b8;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 10px;
+            border-radius: 6px;
+            line-height: 1.6;
+        }
+        #road-cal-result {
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(251,146,60,0.08);
+            border: 1px solid rgba(251,146,60,0.2);
+            padding: 8px 10px;
+            border-radius: 6px;
+            display: none;
+            line-height: 1.8;
+        }
+        #road-cal-bias-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* ── Road Editor Toggle ── */
+        #road-editor-toggle {
+            position: absolute;
+            top: 360px;
+            right: 16px;
+            z-index: 1000;
+            width: 48px;
+            height: 48px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        #road-editor-toggle.active { color: #a78bfa; border-color: #a78bfa; }
+
+        /* ── Road Editor Panel ── */
+        #road-editor-panel {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 1001;
+            width: 300px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(167,139,250,0.3);
+            border-radius: 16px;
+            padding: 16px;
+            color: #f1f5f9;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        #road-editor-panel h4 { font-size: 14px; color: #a78bfa; margin-bottom: 2px; }
+        #road-editor-panel .sub { font-size: 11px; color: #64748b; }
+        #re-status {
+            font-size: 12px;
+            color: #94a3b8;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 10px;
+            border-radius: 6px;
+            line-height: 1.6;
+        }
+        #re-stats {
+            font-size: 11px;
+            color: #64748b;
+            background: rgba(167,139,250,0.05);
+            border: 1px solid rgba(167,139,250,0.15);
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+        .re-mode-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .re-mode-add { background: rgba(167,139,250,0.2); color: #a78bfa; }
+        .re-mode-edge { background: rgba(52,211,153,0.2); color: #34d399; }
 
         /* ── Calibration Panel ── */
         #cal-panel {
@@ -423,6 +643,98 @@
     
     <!-- Building Creator Toggle -->
     <button id="creator-toggle" title="Building Creator Mode">🏗️</button>
+
+    <!-- Road Layer Toggle -->
+    <button id="road-toggle" title="Toggle Road Overlay">🛣️</button>
+
+    <!-- Navigation Toggle -->
+    <button id="nav-toggle" title="Navigate">🧭</button>
+
+    <!-- Navigation Panel -->
+    <div id="nav-panel">
+        <h4>🧭 Navigation</h4>
+        <div>
+            <label>From</label>
+            <select id="nav-from" class="creator-input"></select>
+        </div>
+        <div>
+            <label>To</label>
+            <select id="nav-to" class="creator-input"></select>
+        </div>
+        <div>
+            <label>Mode</label>
+            <select id="nav-mode" class="creator-input" style="background:#1e293b;margin-bottom:8px;">
+                <option value="walk">🚶 Walk</option>
+                <option value="drive">🚗 Drive</option>
+            </select>
+        </div>
+        <div class="creator-btns">
+            <button class="btn btn-success" onclick="doNavigate()" style="grid-column:span 2;">▶ Go</button>
+            <button class="btn btn-secondary" onclick="clearRoute()">✕ Clear</button>
+            <button class="btn" style="background:#475569;color:white;" onclick="exitNav()">❌ Exit</button>
+        </div>
+        <div id="nav-error"></div>
+        <div id="nav-result"></div>
+    </div>
+
+    <!-- Road Calibration Toggle -->
+    <button id="road-cal-toggle" title="Road Bias Calibration">🔧</button>
+
+    <!-- Road Calibration Panel -->
+    <div id="road-cal-panel">
+        <h4>🔧 Road Alignment</h4>
+        <div class="sub">Drag the orange handle to shift the entire road network. All roads move together.</div>
+        <div id="road-cal-status">Enable the 🛣️ road overlay first, then click <strong>Place Anchor</strong> to begin.</div>
+        <div id="road-cal-result"></div>
+        <div id="road-cal-live" style="display:none;">
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">Fine-tune manually:</div>
+            <div id="road-cal-bias-row">
+                <input type="number" id="road-cal-lat" class="creator-input" placeholder="Bias Lat" step="0.000001" value="0">
+                <input type="number" id="road-cal-lng" class="creator-input" placeholder="Bias Lng" step="0.000001" value="0">
+            </div>
+        </div>
+        <div class="creator-btns">
+            <button class="btn" style="background:#fb923c;color:#1a1a1a;grid-column:span 2;" onclick="placeRoadAnchor()">📍 Place Anchor</button>
+            <button class="btn btn-secondary" onclick="resetRoadCal()">Reset</button>
+            <button class="btn" style="background:#fb923c;color:#1a1a1a;" onclick="applyManualRoadBias()">👁 Apply</button>
+            <button class="btn btn-success" onclick="copyRoadBias()">📋 Copy ROAD_BIAS</button>
+            <button class="btn" style="background:#475569;color:white;grid-column:span 2;" onclick="exitRoadCal()">❌ Exit</button>
+        </div>
+    </div>
+
+    <!-- Road Editor Toggle -->
+    <button id="road-editor-toggle" title="Edit Road Network">✏️</button>
+
+    <!-- Road Editor Panel -->
+    <div id="road-editor-panel">
+        <h4>✏️ Road Graph Editor</h4>
+        <div class="sub">Build or refine the campus road network that powers navigation.</div>
+
+        <div id="re-status">
+            <span id="re-mode-pill" class="re-mode-pill re-mode-add">Add Node</span>
+            <span id="re-hint"> Click map to add a node. Click a node to select it for edge drawing. Right-click a node/edge to delete.</span>
+        </div>
+
+        <div id="re-stats">
+            Nodes: <strong id="re-node-count">0</strong> &nbsp;|
+            Edges: <strong id="re-edge-count">0</strong>
+        </div>
+
+        <div id="re-opts" style="margin-bottom:10px; font-size:12px;">
+            <strong style="color:#a78bfa">Draw As:</strong>
+            <label style="margin-left:8px; cursor:pointer;"><input type="radio" name="re_edge_type" value="general" checked> General</label>
+            <label style="margin-left:8px; cursor:pointer;"><input type="radio" name="re_edge_type" value="footpath"> Footpath</label>
+        </div>
+
+        <div class="creator-btns">
+            <button class="btn" style="background:#a78bfa;color:white;" onclick="reLoadFromPaths()">Load paths.json</button>
+            <button class="btn btn-secondary" onclick="reDeleteSelected()">Delete Selected</button>
+            <button class="btn" style="background:#ef4444;color:white;" onclick="reClearAll()">Clear All</button>
+            <button class="btn btn-success" onclick="reExport()">💾 Export paths.json</button>
+            <button class="btn btn-success" onclick="reCopyJSON()" style="background:#0ea5e9; border-color:#0ea5e9;">📋 Copy JSON</button>
+            <button class="btn" style="background:#475569;color:white;grid-column:span 2;" onclick="exitRoadEditor()">❌ Exit Editor</button>
+        </div>
+    </div>
 
     <!-- Calibration Toggle -->
     <button id="cal-toggle" title="Bias Calibration Mode">🎯</button>
@@ -530,6 +842,20 @@
     lng: 0.00001335
 };
 
+    // ═══════════════════════════════════════════════════════
+    // ROAD BIAS — Compensates for OSM road overlay alignment drift.
+    //
+    // Use the 🔧 Road Calibration button to set this.
+    // After calibrating, paste the result here to persist it.
+    //
+    // lat: positive = shift roads NORTH
+    // lng: positive = shift roads EAST
+    // ═══════════════════════════════════════════════════════
+   let ROAD_BIAS = {
+    lat: -0.00005368,
+    lng: 0.00004852
+};
+
     /**
      * Converts real-world GPS [lat, lng] to Map Pixels [x, y]
      */
@@ -546,8 +872,8 @@
      * Converts Map Pixels [x, y] to real-world GPS [lat, lng]
      */
     function pixelsToGps(x, y) {
-        const lng = GPS_BOUNDS.west + (x / IMAGE_WIDTH) * (GPS_BOUNDS.east - GPS_BOUNDS.west);
-        const lat = GPS_BOUNDS.north - (y / IMAGE_HEIGHT) * (GPS_BOUNDS.north - GPS_BOUNDS.south);
+        const lng = GPS_BOUNDS.west + (x / IMAGE_WIDTH) * (GPS_BOUNDS.east - GPS_BOUNDS.west) - GPS_BIAS.lng;
+        const lat = GPS_BOUNDS.north - (y / IMAGE_HEIGHT) * (GPS_BOUNDS.north - GPS_BOUNDS.south) - GPS_BIAS.lat;
         return [lat, lng];
     }
 
@@ -1041,13 +1367,12 @@
             description: document.getElementById('cr-desc').value || "",
             departments: [],
             // Export GPS coordinates instead of image pixels
-            // Subtract active bias so stored GPS is the true real-world coordinate.
-            // When rendered with the same bias, the polygon aligns perfectly.
+            // pixelsToGps now natively returns raw coordinates free of bias, so they are ready to save.
             polygon: creatorPoints.map(([px, py]) => {
                 const [rawLat, rawLng] = pixelsToGps(px, py);
                 return [
-                    parseFloat((rawLat - GPS_BIAS.lat).toFixed(8)),
-                    parseFloat((rawLng - GPS_BIAS.lng).toFixed(8))
+                    parseFloat(rawLat.toFixed(8)),
+                    parseFloat(rawLng.toFixed(8))
                 ];
             })
         };
@@ -1160,8 +1485,13 @@
             const coords      = rc.project(calDragMarker.getLatLng());
             const [tLat, tLng] = pixelsToGps(coords.x, coords.y);
 
-            GPS_BIAS.lat = parseFloat((tLat - calRefStoredGps[0]).toFixed(8));
-            GPS_BIAS.lng = parseFloat((tLng - calRefStoredGps[1]).toFixed(8));
+            // tLat/tLng are true world coordinates. To get the screen (canvas) absolute lat/lng,
+            // we must add the current GPS_BIAS back. The new bias is simply screen - original.
+            const screenLat = tLat + GPS_BIAS.lat;
+            const screenLng = tLng + GPS_BIAS.lng;
+
+            GPS_BIAS.lat = parseFloat((screenLat - calRefStoredGps[0]).toFixed(8));
+            GPS_BIAS.lng = parseFloat((screenLng - calRefStoredGps[1]).toFixed(8));
 
             renderBuildings();   // shifts all polygons in real time
             _highlightCalPoly(); // keep the reference polygon highlighted after re-render
@@ -1210,6 +1540,756 @@
 
     // Initialize everything
     initMap();
+
+    // ═══════════════════════════════════════════════════════
+    // ROAD OVERLAY — line mode only, uniform 2px
+    // ═══════════════════════════════════════════════════════
+    let roadVisible = false;
+    let lineLayer   = null;
+
+    function renderLineLayer() {
+        if (!pathGraph) return;
+        if (lineLayer) map.removeLayer(lineLayer);
+        lineLayer = L.layerGroup();
+
+        pathGraph.edges.forEach(e => {
+            const a = pathGraph.nodes[e.from];
+            const b = pathGraph.nodes[e.to];
+            if (!a || !b) return;
+
+            const [apx, apy] = gpsToPixels(a.lat + ROAD_BIAS.lat, a.lng + ROAD_BIAS.lng);
+            const [bpx, bpy] = gpsToPixels(b.lat + ROAD_BIAS.lat, b.lng + ROAD_BIAS.lng);
+            
+            const isFootpath = e.type === 'footpath';
+            const pl = L.polyline([rc.unproject([apx, apy]), rc.unproject([bpx, bpy])], {
+                color: isFootpath ? '#94a3b8' : '#38bdf8',
+                weight: isFootpath ? 1.5 : 2,
+                opacity: 0.85,
+                dashArray: isFootpath ? '4,4' : null
+            });
+            pl.addTo(lineLayer);
+        });
+
+        if (roadVisible) lineLayer.addTo(map);
+    }
+
+    async function loadLineOverlay() {
+        if (!pathGraph) {
+            await loadPathGraph(); // Ensure pathGraph is loaded
+        }
+        renderLineLayer();
+    }
+
+    // Called by road-cal to redraw when ROAD_BIAS changes
+    function renderRoadLayer() { renderLineLayer(); }
+
+    const roadToggle = document.getElementById('road-toggle');
+    roadToggle.addEventListener('click', async () => {
+        roadVisible = !roadVisible;
+        roadToggle.classList.toggle('active', roadVisible);
+        if (roadVisible) {
+            await loadLineOverlay();
+            if (lineLayer) lineLayer.addTo(map);
+        } else {
+            if (lineLayer) map.removeLayer(lineLayer);
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════
+    // NAVIGATION — Dijkstra on paths.json
+    // ═══════════════════════════════════════════════════════
+    let pathGraph  = null;   // { nodes: [...], edges: [...] }
+    let routeLayer = null;
+    let isNavMode  = false;
+
+    async function loadPathGraph() {
+        if (pathGraph) return true;
+        try {
+            const res = await fetch('Roads/paths.json');
+            pathGraph = await res.json();
+            return true;
+        } catch (e) { console.warn('paths.json not found:', e.message); return false; }
+    }
+
+    function haversineMeters(lat1, lng1, lat2, lng2) {
+        const R = 6371000, r = Math.PI / 180;
+        const dLat = (lat2 - lat1) * r, dLng = (lng2 - lng1) * r;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLng/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function getClosestNode(lat, lng) {
+        let best = null, bestDist = Infinity;
+        for (const n of pathGraph.nodes) {
+            const d = haversineMeters(lat, lng, n.lat, n.lng);
+            if (d < bestDist) { bestDist = d; best = n.id; }
+        }
+        return best;
+    }
+
+    function dijkstra(startId, endId, mode) {
+        const dist = {}, prev = {};
+        const queue = new Set();
+        for (const n of pathGraph.nodes) { dist[n.id] = Infinity; queue.add(n.id); }
+        dist[startId] = 0;
+        const adj = {};
+        for (const n of pathGraph.nodes) adj[n.id] = [];
+        for (const e of pathGraph.edges) {
+            // Block cars from footpaths
+            if (mode === 'drive' && e.type === 'footpath') continue;
+
+            const a = pathGraph.nodes[e.from], b = pathGraph.nodes[e.to];
+            if (!a || !b) continue;
+            const w = haversineMeters(a.lat, a.lng, b.lat, b.lng);
+            adj[e.from].push({ id: e.to, w });
+            adj[e.to].push({ id: e.from, w });
+        }
+        while (queue.size) {
+            let u = null;
+            for (const id of queue) if (u === null || dist[id] < dist[u]) u = id;
+            if (u === endId || dist[u] === Infinity) break;
+            queue.delete(u);
+            for (const { id: v, w } of adj[u]) {
+                const alt = dist[u] + w;
+                if (alt < dist[v]) { dist[v] = alt; prev[v] = u; }
+            }
+        }
+        if (dist[endId] === Infinity) return null;
+        const path = []; let cur = endId;
+        while (cur !== undefined) { path.unshift(cur); cur = prev[cur]; }
+        return path;
+    }
+
+    function buildingCentroid(b) {
+        const pts = b.polygon;
+        return [pts.reduce((s,p)=>s+p[0],0)/pts.length, pts.reduce((s,p)=>s+p[1],0)/pts.length];
+    }
+
+    function initNavDropdowns() {
+        const fromSel = document.getElementById('nav-from');
+        const toSel   = document.getElementById('nav-to');
+        fromSel.innerHTML = '<option value="__location__">📍 My Location</option>';
+        toSel.innerHTML   = '';
+        buildings.forEach((b, i) => {
+            fromSel.innerHTML += `<option value="${i}">${b.name}</option>`;
+            toSel.innerHTML   += `<option value="${i}">${b.name}</option>`;
+        });
+    }
+
+
+
+    const navToggle = document.getElementById('nav-toggle');
+    const navPanel  = document.getElementById('nav-panel');
+
+    navToggle.addEventListener('click', async () => {
+        isNavMode = !isNavMode;
+        navToggle.classList.toggle('active', isNavMode);
+        navPanel.style.display = isNavMode ? 'flex' : 'none';
+        if (isNavMode) {
+            if (isCreatorMode) exitCreator();
+            if (isCalMode) exitCal();
+            initNavDropdowns();
+            await loadPathGraph();
+        }
+    });
+
+    window.exitNav = function() {
+        isNavMode = false;
+        navToggle.classList.remove('active');
+        navPanel.style.display = 'none';
+        clearRoute();
+    };
+
+    window.clearRoute = function() {
+        if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+        document.getElementById('nav-result').style.display = 'none';
+        document.getElementById('nav-error').style.display = 'none';
+    };
+
+    window.doNavigate = async function() {
+        clearRoute();
+        const fromVal = document.getElementById('nav-from').value;
+        const toIdx   = parseInt(document.getElementById('nav-to').value);
+        const mode    = document.getElementById('nav-mode').value;
+        const errEl   = document.getElementById('nav-error');
+        const resEl   = document.getElementById('nav-result');
+
+        if (!pathGraph || !pathGraph.nodes.length) {
+            errEl.textContent = 'Road graph not loaded. Ensure Roads/paths.json exists.';
+            errEl.style.display = 'block'; return;
+        }
+
+        const toBldg = buildings[toIdx];
+        const [toLat, toLng] = buildingCentroid(toBldg);
+        let fromLat, fromLng, fromLabel;
+
+        if (fromVal === '__location__') {
+            try {
+                const pos = await new Promise((res, rej) =>
+                    navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true })
+                );
+                fromLat = pos.coords.latitude; fromLng = pos.coords.longitude;
+                fromLabel = '📍 My Location';
+            } catch {
+                errEl.textContent = 'Could not get your location.';
+                errEl.style.display = 'block'; return;
+            }
+        } else {
+            const fromBldg = buildings[parseInt(fromVal)];
+            [fromLat, fromLng] = buildingCentroid(fromBldg);
+            fromLabel = fromBldg.name;
+        }
+
+        const startNode = getClosestNode(fromLat, fromLng);
+        const endNode   = getClosestNode(toLat, toLng);
+        const pathIds   = dijkstra(startNode, endNode, mode);
+
+        if (!pathIds) {
+            errEl.textContent = 'No route found — road graph may not be connected.';
+            errEl.style.display = 'block'; return;
+        }
+
+        const pathNodes = pathIds.map(id => pathGraph.nodes[id]);
+        const latLngs   = pathNodes.map(n => {
+            const [px, py] = gpsToPixels(n.lat + ROAD_BIAS.lat, n.lng + ROAD_BIAS.lng);
+            return rc.unproject([px, py]);
+        });
+        const fromPx = gpsToPixels(fromLat, fromLng);
+        const toPx   = gpsToPixels(toLat, toLng);
+        latLngs.unshift(rc.unproject(fromPx));
+        latLngs.push(rc.unproject(toPx));
+
+        routeLayer = L.layerGroup().addTo(map);
+        L.polyline(latLngs, { color: '#34d399', weight: 4, opacity: 0.9, dashArray: '10, 6' }).addTo(routeLayer);
+        L.circleMarker(latLngs[0], { radius: 8, color: '#34d399', fillColor: '#34d399', fillOpacity: 1 })
+            .bindTooltip('Start', { permanent: false }).addTo(routeLayer);
+        L.circleMarker(latLngs[latLngs.length - 1], { radius: 8, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 1 })
+            .bindTooltip(toBldg.name, { permanent: false }).addTo(routeLayer);
+
+        let totalM = 0;
+        for (let i = 1; i < pathNodes.length; i++)
+            totalM += haversineMeters(pathNodes[i-1].lat, pathNodes[i-1].lng, pathNodes[i].lat, pathNodes[i].lng);
+        
+        const speedMps = mode === 'drive' ? (20 * 1000 / 3600) : 1.2; // 20km/h vs 1.2m/s
+        const mins = Math.round(totalM / speedMps / 60);
+
+        resEl.innerHTML =
+            `<div style="color:#34d399;margin-bottom:4px;">✅ Route found</div>` +
+            `<div><strong>${fromLabel}</strong> → <strong>${toBldg.name}</strong></div>` +
+            `<div>📏 ~${Math.round(totalM)} m along ${mode === 'drive' ? 'roads' : 'paths'}</div>` +
+            `<div>${mode === 'drive' ? '🚗' : '🚶'} ~${mins < 1 ? '< 1' : mins} min ${mode === 'drive' ? 'drive' : 'walk'}</div>`;
+        resEl.style.display = 'block';
+        map.fitBounds(L.polyline(latLngs).getBounds(), { padding: [40, 40] });
+    };
+
+    // ═══════════════════════════════════════════════════════
+    // ROAD BIAS CALIBRATION — Drag anchor to align road network
+    // ═══════════════════════════════════════════════════════
+    let roadCalMarker   = null;   // draggable orange anchor
+    let roadCalAnchorGps = null;  // [lat, lng] where the anchor was placed
+    let isRoadCalMode   = false;
+
+    const roadCalDragIcon = L.divIcon({
+        className: '',
+        html: `<div style="
+            width:36px;height:36px;
+            background:rgba(251,146,60,0.95);
+            border:2.5px solid #fff;
+            border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            font-size:18px;cursor:move;
+            box-shadow:0 3px 12px rgba(0,0,0,0.5);
+            user-select:none;">⤡</div>`,
+        iconSize:   [36, 36],
+        iconAnchor: [18, 18]
+    });
+
+    const roadCalToggle = document.getElementById('road-cal-toggle');
+    const roadCalPanel  = document.getElementById('road-cal-panel');
+
+    roadCalToggle.addEventListener('click', async () => {
+        isRoadCalMode = !isRoadCalMode;
+        roadCalToggle.classList.toggle('active', isRoadCalMode);
+        roadCalPanel.style.display = isRoadCalMode ? 'flex' : 'none';
+        if (isRoadCalMode) {
+            if (isCreatorMode) exitCreator();
+            if (isCalMode) exitCal();
+            if (isNavMode) exitNav();
+            // Auto-enable road overlay if not already showing
+            if (!rawRoadData) await loadRoadOverlay();
+            if (!roadVisible) {
+                roadVisible = true;
+                roadToggle.classList.add('active');
+                roadLayer.addTo(map);
+            }
+        } else {
+            resetRoadCal();
+        }
+    });
+
+    window.exitRoadCal = function() {
+        isRoadCalMode = false;
+        roadCalToggle.classList.remove('active');
+        roadCalPanel.style.display = 'none';
+        resetRoadCal();
+    };
+
+    window.resetRoadCal = function() {
+        if (roadCalMarker) { map.removeLayer(roadCalMarker); roadCalMarker = null; }
+        roadCalAnchorGps = null;
+        ROAD_BIAS.lat = 0; ROAD_BIAS.lng = 0;
+        renderRoadLayer();
+        document.getElementById('road-cal-status').textContent =
+            'Enable the 🛣️ road overlay first, then click Place Anchor to begin.';
+        document.getElementById('road-cal-result').style.display = 'none';
+        document.getElementById('road-cal-live').style.display = 'none';
+        document.getElementById('road-cal-lat').value = '0';
+        document.getElementById('road-cal-lng').value = '0';
+    };
+
+    // Place the draggable anchor at the map centre
+    window.placeRoadAnchor = function() {
+        if (roadCalMarker) { map.removeLayer(roadCalMarker); roadCalMarker = null; }
+
+        const centre     = map.getCenter();
+        const coords     = rc.project(centre);
+        const [ancLat, ancLng] = pixelsToGps(coords.x, coords.y);
+
+        // Remember the GPS point where the anchor is placed (bias-free)
+        roadCalAnchorGps = [ancLat - ROAD_BIAS.lat, ancLng - ROAD_BIAS.lng];
+
+        roadCalMarker = L.marker(centre, {
+            draggable:    true,
+            autoPan:      true,
+            icon:         roadCalDragIcon,
+            zIndexOffset: 2000
+        }).addTo(map);
+
+        roadCalMarker.on('drag', function() {
+            const c = rc.project(roadCalMarker.getLatLng());
+            const [dLat, dLng] = pixelsToGps(c.x, c.y);
+            ROAD_BIAS.lat = parseFloat((dLat - roadCalAnchorGps[0]).toFixed(8));
+            ROAD_BIAS.lng = parseFloat((dLng - roadCalAnchorGps[1]).toFixed(8));
+            renderRoadLayer();        // re-draw roads with new bias
+            _updateRoadCalDisplay();
+        });
+
+        document.getElementById('road-cal-status').innerHTML =
+            `<strong style="color:#fb923c;">✓ Anchor placed!</strong><br>` +
+            `Drag the 🟠 handle to shift all roads until they align with the satellite image.`;
+        _updateRoadCalDisplay();
+    };
+
+    window.applyManualRoadBias = function() {
+        ROAD_BIAS.lat = parseFloat(document.getElementById('road-cal-lat').value) || 0;
+        ROAD_BIAS.lng = parseFloat(document.getElementById('road-cal-lng').value) || 0;
+        renderRoadLayer();
+        _updateRoadCalDisplay();
+    };
+
+    function _updateRoadCalDisplay() {
+        const el = document.getElementById('road-cal-result');
+        el.innerHTML =
+            `<div style="color:#fb923c;margin-bottom:4px;">Live Road Bias:</div>` +
+            `<div>lat: <strong>${ROAD_BIAS.lat.toFixed(8)}</strong></div>` +
+            `<div>lng: <strong>${ROAD_BIAS.lng.toFixed(8)}</strong></div>` +
+            `<div style="margin-top:6px;font-size:10px;color:#64748b;">📋 Copy when satisfied — paste into CONFIG.</div>`;
+        el.style.display = 'block';
+        document.getElementById('road-cal-lat').value = ROAD_BIAS.lat.toFixed(8);
+        document.getElementById('road-cal-lng').value = ROAD_BIAS.lng.toFixed(8);
+        document.getElementById('road-cal-live').style.display = 'block';
+    }
+
+    window.copyRoadBias = function() {
+        const snippet = `let ROAD_BIAS = {\n    lat: ${ROAD_BIAS.lat.toFixed(8)},\n    lng: ${ROAD_BIAS.lng.toFixed(8)}\n};`;
+        navigator.clipboard.writeText(snippet).then(() => {
+            alert('ROAD_BIAS snippet copied!\n\nPaste it into the CONFIG block in index.html to make it permanent.');
+        });
+    };
+
+
+
+
+    async function loadPathGraph() {
+        if (pathGraph) return true;
+        try {
+            const res = await fetch('Roads/paths.json');
+            pathGraph = await res.json();
+            return true;
+        } catch (e) {
+            console.warn('paths.json not found:', e.message);
+            return false;
+        }
+    }
+
+    function haversineMeters(lat1, lng1, lat2, lng2) {
+        const R = 6371000, r = Math.PI / 180;
+        const dLat = (lat2 - lat1) * r, dLng = (lng2 - lng1) * r;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLng/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function getClosestNode(lat, lng) {
+        let best = null, bestDist = Infinity;
+        for (const n of pathGraph.nodes) {
+            const d = haversineMeters(lat, lng, n.lat, n.lng);
+            if (d < bestDist) { bestDist = d; best = n.id; }
+        }
+        return best;
+    }
+
+    // Dijkstra — returns array of node IDs or null if no path
+    function dijkstra(startId, endId) {
+        const dist  = {}, prev  = {};
+        const queue = new Set();
+        for (const n of pathGraph.nodes) { dist[n.id] = Infinity; queue.add(n.id); }
+        dist[startId] = 0;
+
+        // Build adjacency list
+        const adj = {};
+        for (const n of pathGraph.nodes) adj[n.id] = [];
+        for (const e of pathGraph.edges) {
+            const a = pathGraph.nodes[e.from], b = pathGraph.nodes[e.to];
+            const w = haversineMeters(a.lat, a.lng, b.lat, b.lng);
+            adj[e.from].push({ id: e.to, w });
+            adj[e.to].push({ id: e.from, w });
+        }
+
+        while (queue.size) {
+            let u = null;
+            for (const id of queue) if (u === null || dist[id] < dist[u]) u = id;
+            if (u === endId || dist[u] === Infinity) break;
+            queue.delete(u);
+            for (const { id: v, w } of adj[u]) {
+                const alt = dist[u] + w;
+                if (alt < dist[v]) { dist[v] = alt; prev[v] = u; }
+            }
+        }
+
+        if (dist[endId] === Infinity) return null;
+        const path = [];
+        let cur = endId;
+        while (cur !== undefined) { path.unshift(cur); cur = prev[cur]; }
+        return path;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // ═══════════════════════════════════════════════════════
+    // ROAD GRAPH EDITOR
+    // Interactions:
+    //   Click empty map  → add node
+    //   Click node       → select (1st) then click another → add edge
+    //   Drag node        → move it
+    //   Right-click node → delete node + its edges
+    //   Right-click edge → delete edge
+    // ═══════════════════════════════════════════════════════
+    let isRoadEditorMode = false;
+    let reNodes  = [];   // { id, lat, lng, marker }
+    let reEdges  = [];   // { id, from, to, polyline }
+    let reNextNodeId = 0;
+    let reNextEdgeId = 0;
+    let reSelected   = null;   // selected node id for edge creation
+
+    const roadEditorToggle = document.getElementById('road-editor-toggle');
+    const roadEditorPanel  = document.getElementById('road-editor-panel');
+
+    // ── Node marker style helper ──
+    function reNodeIcon(selected) {
+        return L.divIcon({
+            className: '',
+            html: `<div style="
+                width:12px;height:12px;
+                background:${selected ? '#34d399' : '#a78bfa'};
+                border:2px solid white;
+                border-radius:50%;
+                box-shadow:0 0 4px rgba(0,0,0,0.5);
+                cursor:pointer;"></div>`,
+            iconSize:   [12, 12],
+            iconAnchor: [6, 6]
+        });
+    }
+
+    function reUpdateStats() {
+        document.getElementById('re-node-count').textContent = reNodes.length;
+        document.getElementById('re-edge-count').textContent = reEdges.length;
+    }
+
+    function reSetMode(isEdge) {
+        const pill = document.getElementById('re-mode-pill');
+        const hint = document.getElementById('re-hint');
+        if (isEdge) {
+            pill.textContent = 'Draw Edge';
+            pill.className   = 're-mode-pill re-mode-edge';
+            hint.textContent = ' Click a second node to connect, or click empty map to cancel.';
+        } else {
+            pill.textContent = 'Add Node';
+            pill.className   = 're-mode-pill re-mode-add';
+            hint.textContent = ' Click map to add a node. Click a node to select it for edge drawing.';
+        }
+    }
+
+    function reSelectNode(id) {
+        reSelected = id;
+        reNodes.forEach(n => n.marker.setIcon(reNodeIcon(n.id === id)));
+        reSetMode(true);
+    }
+
+    function reDeselectNode() {
+        reSelected = null;
+        reNodes.forEach(n => n.marker.setIcon(reNodeIcon(false)));
+        reSetMode(false);
+    }
+
+    // ── Add a node at GPS ──
+    function reAddNode(lat, lng) {
+        const id  = reNextNodeId++;
+        const [px, py] = gpsToPixels(lat + ROAD_BIAS.lat, lng + ROAD_BIAS.lng);
+        const latlng   = rc.unproject([px, py]);
+
+        const marker = L.marker(latlng, {
+            icon:      reNodeIcon(false),
+            draggable: true,
+            zIndexOffset: 500
+        }).addTo(map);
+
+        // Click → select for edge OR create edge
+        marker.on('click', (e) => {
+            L.DomEvent.stopPropagation(e);
+            if (reSelected === null) {
+                reSelectNode(id);
+            } else if (reSelected === id) {
+                reDeselectNode();           // deselect same node
+            } else {
+                reAddEdge(reSelected, id);  // draw edge between selected and this
+                reDeselectNode();
+            }
+        });
+
+        // Right-click → delete node
+        marker.on('contextmenu', (e) => {
+            L.DomEvent.stopPropagation(e);
+            reRemoveNode(id);
+        });
+
+        // Drag → update GPS coords and redraw edges
+        marker.on('drag', () => {
+            const c = rc.project(marker.getLatLng());
+            const [nLat, nLng] = pixelsToGps(c.x, c.y);
+            const node = reNodes.find(n => n.id === id);
+            if (node) { node.lat = nLat - ROAD_BIAS.lat; node.lng = nLng - ROAD_BIAS.lng; }
+            reRedrawEdgesForNode(id);
+        });
+
+        reNodes.push({ id, lat, lng, marker });
+        reUpdateStats();
+        return id;
+    }
+
+    // ── Add an edge between two node ids ──
+    function reAddEdge(fromId, toId, presetType = null) {
+        if (fromId === toId) return;
+        // Prevent duplicate edges
+        if (reEdges.some(e => (e.from === fromId && e.to === toId) ||
+                               (e.from === toId   && e.to === fromId))) return;
+
+        const a = reNodes.find(n => n.id === fromId);
+        const b = reNodes.find(n => n.id === toId);
+        if (!a || !b) return;
+
+        const edgeType = presetType || document.querySelector('input[name="re_edge_type"]:checked').value;
+
+        const [apx, apy] = gpsToPixels(a.lat + ROAD_BIAS.lat, a.lng + ROAD_BIAS.lng);
+        const [bpx, bpy] = gpsToPixels(b.lat + ROAD_BIAS.lat, b.lng + ROAD_BIAS.lng);
+        const latlngs = [rc.unproject([apx, apy]), rc.unproject([bpx, bpy])];
+
+        const polyline = L.polyline(latlngs, {
+            color: '#a78bfa',
+            weight: edgeType === 'footpath' ? 2 : 2.5,
+            opacity: 0.9,
+            dashArray: edgeType === 'footpath' ? '5,5' : null
+        }).addTo(map);
+
+        const id = reNextEdgeId++;
+
+        // Right-click edge → delete
+        polyline.on('contextmenu', (e) => {
+            L.DomEvent.stopPropagation(e);
+            reRemoveEdge(id);
+        });
+
+        reEdges.push({ id, from: fromId, to: toId, type: edgeType, polyline });
+        reUpdateStats();
+    }
+
+    function reRedrawEdgesForNode(nodeId) {
+        const node = reNodes.find(n => n.id === nodeId);
+        if (!node) return;
+        const [px, py] = gpsToPixels(node.lat + ROAD_BIAS.lat, node.lng + ROAD_BIAS.lng);
+        const latlng   = rc.unproject([px, py]);
+
+        reEdges.forEach(e => {
+            if (e.from === nodeId || e.to === nodeId) {
+                const other = reNodes.find(n => n.id === (e.from === nodeId ? e.to : e.from));
+                if (!other) return;
+                const [opx, opy] = gpsToPixels(other.lat + ROAD_BIAS.lat, other.lng + ROAD_BIAS.lng);
+                e.polyline.setLatLngs([latlng, rc.unproject([opx, opy])]);
+            }
+        });
+    }
+
+    function reRemoveNode(id) {
+        if (reSelected === id) reDeselectNode();
+        // Remove all edges connected to this node
+        [...reEdges.filter(e => e.from === id || e.to === id)].forEach(e => reRemoveEdge(e.id));
+        const node = reNodes.find(n => n.id === id);
+        if (node) { map.removeLayer(node.marker); }
+        reNodes = reNodes.filter(n => n.id !== id);
+        reUpdateStats();
+    }
+
+    function reRemoveEdge(id) {
+        const edge = reEdges.find(e => e.id === id);
+        if (edge) { map.removeLayer(edge.polyline); }
+        reEdges = reEdges.filter(e => e.id !== id);
+        reUpdateStats();
+    }
+
+    window.reDeleteSelected = function() {
+        if (reSelected !== null) {
+            reRemoveNode(reSelected);
+        } else {
+            alert('No node selected. Click a node first, then press Delete Selected.');
+        }
+    };
+
+    window.reClearAll = function() {
+        if (!confirm('Clear all nodes and edges?')) return;
+        [...reEdges].forEach(e => map.removeLayer(e.polyline));
+        [...reNodes].forEach(n => map.removeLayer(n.marker));
+        reEdges = []; reNodes = [];
+        reNextNodeId = 0; reNextEdgeId = 0;
+        reDeselectNode();
+        reUpdateStats();
+    };
+
+    // ── Load existing paths.json into the editor ──
+    window.reLoadFromPaths = async function(silent = false) {
+        if (!silent) {
+            const confirmed = reNodes.length === 0 || confirm('Replace current edits with saved paths.json?');
+            if (!confirmed) return;
+        }
+
+        const ok = await loadPathGraph();
+        if (!ok || !pathGraph) {
+            if (!silent) alert('Could not load Roads/paths.json');
+            return;
+        }
+
+        // Clear current editor state
+        [...reEdges].forEach(e => map.removeLayer(e.polyline));
+        [...reNodes].forEach(n => map.removeLayer(n.marker));
+        reEdges = []; reNodes = [];
+        reNextNodeId = 0; reNextEdgeId = 0;
+
+        // Build a map from old id → new editor id
+        const idMap = {};
+        pathGraph.nodes.forEach(n => {
+            const newId = reAddNode(n.lat, n.lng);
+            idMap[n.id] = newId;
+        });
+        pathGraph.edges.forEach(e => {
+            const a = idMap[e.from], b = idMap[e.to];
+            if (a !== undefined && b !== undefined) reAddEdge(a, b, e.type || 'general');
+        });
+        if (!silent) alert(`Loaded ${reNodes.length} nodes and ${reEdges.length} edges.`);
+    };
+
+    function reGetJSONString() {
+        const idMap = {};
+        const outNodes = reNodes.map((n, i) => {
+            idMap[n.id] = i;
+            return { id: i, lat: parseFloat(n.lat.toFixed(8)), lng: parseFloat(n.lng.toFixed(8)) };
+        });
+        const seen = new Set();
+        const outEdges = [];
+        reEdges.forEach(e => {
+            const a = idMap[e.from], b = idMap[e.to];
+            if (a === undefined || b === undefined) return;
+            const key = `${Math.min(a,b)}-${Math.max(a,b)}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            outEdges.push({ from: a, to: b, type: e.type });
+        });
+        
+        // Also update the in-memory pathGraph so navigation works immediately
+        pathGraph = { nodes: outNodes, edges: outEdges };
+        
+        return JSON.stringify(pathGraph, null, 2);
+    }
+
+    window.reCopyJSON = function() {
+        const json = reGetJSONString();
+        navigator.clipboard.writeText(json).then(() => alert('Copied paths.json to clipboard!'));
+    };
+
+    // ── Export as downloadable paths.json ──
+    window.reExport = function() {
+        const json = reGetJSONString();
+        const blob = new Blob([json], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = 'paths.json'; a.click();
+        URL.revokeObjectURL(url);
+
+        URL.revokeObjectURL(url);
+    };
+
+    // ── Toggle ──
+    roadEditorToggle.addEventListener('click', async () => {
+        isRoadEditorMode = !isRoadEditorMode;
+        roadEditorToggle.classList.toggle('active', isRoadEditorMode);
+        roadEditorPanel.style.display = isRoadEditorMode ? 'flex' : 'none';
+        if (isRoadEditorMode) {
+            if (isCreatorMode) exitCreator();
+            if (isCalMode)     exitCal();
+            if (isNavMode)     exitNav();
+            if (isRoadCalMode) exitRoadCal();
+            reDeselectNode();
+            // Auto-load paths.json if editor is empty
+            if (reNodes.length === 0) await reLoadFromPaths(true);
+        }
+    });
+
+    window.exitRoadEditor = function() {
+        isRoadEditorMode = false;
+        roadEditorToggle.classList.remove('active');
+        roadEditorPanel.style.display = 'none';
+        reDeselectNode();
+    };
+
+    // ── Map click in editor mode → add node (or deselect) ──
+    map.on('click', (e) => {
+        if (!isRoadEditorMode) return;
+        if (reSelected !== null) {
+            reDeselectNode();    // click empty map while node selected = cancel edge
+            return;
+        }
+        const coords = rc.project(e.latlng);
+        const [lat, lng] = pixelsToGps(coords.x, coords.y);
+        reAddNode(lat - ROAD_BIAS.lat, lng - ROAD_BIAS.lng);
+    });
 
     // ═══════════════════════════════════════════════════════
     // DEVELOPER TOOL — Calibration

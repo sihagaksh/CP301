@@ -286,6 +286,16 @@ export interface LostFoundItem {
   claimer?: User;
 }
 
+export interface MessMenu {
+  id: string;
+  month: number;
+  year: number;
+  markdownContent: string;
+  documentUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Conversation {
   id: string;
   participant1Id: string;

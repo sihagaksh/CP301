@@ -15,6 +15,7 @@ import {
   Activity,
   BookOpen,
   Megaphone,
+  Coffee,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ const MAIN_LINKS = [
   { href: '/notices', icon: Megaphone, label: 'Notices' },
   { href: '/blogs', icon: BookOpen, label: 'Blogs' },
   { href: '/events', icon: Calendar, label: 'Events' },
+  { href: '/mess-menu', icon: Coffee, label: 'Mess Menu' },
   { href: '/marketplace', icon: ShoppingBag, label: 'Marketplace' },
   { href: '/clubs', icon: Activity, label: 'Clubs' },
   { href: '/communities', icon: Users, label: 'Communities' },
@@ -46,6 +48,7 @@ const MAIN_LINKS = [
 const GUEST_LINKS = [
   { href: '/notices', icon: Megaphone, label: 'Notices' },
   { href: '/events', icon: Calendar, label: 'Events' },
+  { href: '/mess-menu', icon: Coffee, label: 'Mess Menu' },
   { href: '/map', icon: Search, label: 'Campus Map' },
 ];
 

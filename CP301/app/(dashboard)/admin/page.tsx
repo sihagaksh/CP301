@@ -4,9 +4,10 @@ import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
 import { AdminUserManagement } from '@/components/features/admin/AdminUserManagement';
 import { AdminOrgManagement } from '@/components/features/admin/AdminOrgManagement';
+import { AdminMessMenu } from '@/components/features/admin/AdminMessMenu';
 
 export default function AdminDashboardPage() {
-    const [activeTab, setActiveTab] = useState<'users' | 'organizations' | 'settings'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'organizations' | 'settings' | 'mess-menu'>('users');
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 animate-fade-in relative">
@@ -45,6 +46,15 @@ export default function AdminDashboardPage() {
                     College Structure
                 </button>
                 <button
+                    onClick={() => setActiveTab('mess-menu')}
+                    className={`shrink-0 text-sm font-medium px-6 py-2.5 rounded-lg transition-all ${activeTab === 'mess-menu'
+                            ? 'bg-white text-rose-600 shadow-sm dark:bg-zinc-800 dark:text-rose-400'
+                            : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                        }`}
+                >
+                    Mess Menu
+                </button>
+                <button
                     onClick={() => setActiveTab('settings')}
                     className={`shrink-0 text-sm font-medium px-6 py-2.5 rounded-lg transition-all ${activeTab === 'settings'
                             ? 'bg-white text-rose-600 shadow-sm dark:bg-zinc-800 dark:text-rose-400'
@@ -59,6 +69,7 @@ export default function AdminDashboardPage() {
             <div className="pt-2">
                 {activeTab === 'users' && <AdminUserManagement />}
                 {activeTab === 'organizations' && <AdminOrgManagement />}
+                {activeTab === 'mess-menu' && <AdminMessMenu />}
                 {activeTab === 'settings' && (
                     <div className="p-12 text-center border rounded-xl bg-white/50 dark:bg-zinc-900/50">
                         <h3 className="text-lg font-medium">System Settings</h3>

@@ -10,16 +10,17 @@ import { toast } from 'sonner';
 const SAMPLE_MARKDOWN = [
   '# Mess Menu',
   '',
-  '| Day | Breakfast (7:30 - 9:30 AM) | Lunch (12:30 - 2:30 PM) | Snacks (5:30 - 6:30 PM) | Dinner (7:30 - 9:30 PM) |',
-  '|---|---|---|---|---|',
-  '| Monday | Poha, Jalebi, Tea/Coffee/Milk | Rajma, Rice, Roti, Salad | Samosa, Tea | Dal Tadka, Paneer, Roti, Rice |',
-  '| Tuesday | Idli, Sambar, Chutney | Chole Bhature, Rice | Patties, Tea | Kadhi Pakora, Roti, Rice |',
-  '| Wednesday | Paratha, Curd, Pickle | Dal Makhani, Mix Veg, Roti | Maggi, Tea | Egg Curry/Paneer, Roti, Rice |',
-  '| Thursday | Dosa, Sambar | Kadhi, Chawal | Poha, Tea | Dal Fry, Aloo Gobi, Roti |',
-  '| Friday | Uttapam, Coconut Chutney | Rajma, Rice, Roti | Bread Pakora, Tea | Dal Tadka, Matar Paneer, Roti |',
-  '| Saturday | Puri Sabji, Tea | Dal, Rice, Roti, Salad | Biscuits, Tea | Khichdi, Papad, Pickle |',
-  '| Sunday | Chole Kulche, Tea | Special Veg Thali | Pasta, Tea | Biryani, Raita |',
+  '| Day | Breakfast (7:30 - 9:30 AM) | Lunch (12:30 - 2:30 PM) | Dinner (7:30 - 9:30 PM) |',
+  '|---|---|---|---|',
+  '| Monday | Poha, Jalebi, Tea/Coffee/Milk | Rajma, Rice, Roti, Salad | Dal Tadka, Paneer, Roti, Rice |',
+  '| Tuesday | Idli, Sambar, Chutney | Chole Bhature, Rice | Kadhi Pakora, Roti, Rice |',
+  '| Wednesday | Paratha, Curd, Pickle | Dal Makhani, Mix Veg, Roti | Egg Curry/Paneer, Roti, Rice |',
+  '| Thursday | Dosa, Sambar | Kadhi, Chawal | Dal Fry, Aloo Gobi, Roti |',
+  '| Friday | Uttapam, Coconut Chutney | Rajma, Rice, Roti | Dal Tadka, Matar Paneer, Roti |',
+  '| Saturday | Puri Sabji, Tea | Dal, Rice, Roti, Salad | Khichdi, Papad, Pickle |',
+  '| Sunday | Chole Kulche, Tea | Special Veg Thali | Biryani, Raita |',
 ].join('\n');
+
 
 export function AdminMessMenu() {
     const [month, setMonth] = useState(new Date().getMonth() + 1);

@@ -9,7 +9,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password'];
 
 // Routes accessible to guest users (no Supabase account needed)
-const GUEST_PATHS = ['/notices', '/events', '/map'];
+const GUEST_PATHS = ['/notices', '/events', '/map', '/mess-menu'];
 
 // File extensions that should never be intercepted by the proxy
 const STATIC_EXTENSIONS = [

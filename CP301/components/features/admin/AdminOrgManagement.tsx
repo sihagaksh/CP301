@@ -130,10 +130,10 @@ export function AdminOrgManagement() {
 
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('bucket', 'org-icons');
-        formData.append('path', path);
+        formData.append('kind', 'org-icon');
+        formData.append('context', JSON.stringify({ orgId: slug })); // Currently logic maps orgSlug to org-icons/slug anyway
 
-        const response = await fetch('/api/admin/upload', {
+        const response = await fetch('/api/media/upload', {
             method: 'POST',
             headers: { Authorization: `Bearer ${accessToken}` },
             body: formData,

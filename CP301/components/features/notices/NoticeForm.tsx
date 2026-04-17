@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { GlassSurface } from '@/components/ui/GlassSurface';
-import { Send, Target, ShieldCheck, Tag, Save } from 'lucide-react';
+import { Send, Target, ShieldCheck, Tag, Save, Paperclip, X, UploadCloud, Loader2 } from 'lucide-react';
 import type { Notice, NoticeCategory, NoticePriority, NoticeStatus } from '@/lib/types';
 import {
     Select,
@@ -41,6 +41,57 @@ export function NoticeForm({ initialData, onSubmit, isEdit = false }: NoticeForm
 
     const canPostPersonal = user?.role === 'faculty' || user?.role === 'staff';
 
+    // Attachments State
+    const [existingAttachments, setExistingAttachments] = useState<string[]>(initialData?.attachments || []);
+    const [newAttachments, setNewAttachments] = useState<File[]>([]);
+    
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
+        const incoming = Array.from(e.target.files);
+        const totalCount = existingAttachments.length + newAttachments.length + incoming.length;
+        if (totalCount > 5) {
+            alert('A notice can have a maximum of 5 attachments total.');
+            const diff = 5 - (existingAttachments.length + newAttachments.length);
+            if (diff > 0) {
+               setNewAttachments([...newAttachments, ...incoming.slice(0, diff)]);
+            }
+            return;
+        }
+        setNewAttachments(prev => [...prev, ...incoming]);
+        // Reset input so picking the same file again works
+        e.target.value = '';
+    };
+
+    const removeNewAttachment = (indexToRemove: number) => {
+        setNewAttachments(prev => prev.filter((_, i) => i !== indexToRemove));
+    };
+
+    const removeExistingAttachment = (indexToRemove: number) => {
+        setExistingAttachments(prev => prev.filter((_, i) => i !== indexToRemove));
+    };
+    
+    const uploadAttachment = async (file: File): Promise<string> => {
+        const { data: sessionData } = await (await import('@/lib/db/client')).db.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) throw new Error('Not authenticated properly.');
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('kind', 'notice-attachment');
+        // Notice ID might not exist yet if it's a draft
+        formData.append('context', JSON.stringify({ noticeId: initialData?.id }));
+
+        const res = await fetch('/api/media/upload', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: formData
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Failed to upload attachment');
+        return json.publicUrl;
+    };
+
     useEffect(() => {
         if (!user) return;
         if (!canPostPersonal && selectedIdentityId === null && !isEdit) {
@@ -60,6 +111,18 @@ export function NoticeForm({ initialData, onSubmit, isEdit = false }: NoticeForm
         setLoading(true);
         const parseCommaList = (str: string) => str.split(',').map(s => s.trim()).filter(Boolean);
 
+        let finalAttachments = [...existingAttachments];
+        if (newAttachments.length > 0) {
+            try {
+                 const uploadedUrls = await Promise.all(newAttachments.map(uploadAttachment));
+                 finalAttachments = [...finalAttachments, ...uploadedUrls];
+            } catch (err: any) {
+                 alert(err.message || 'Failed to upload attachments. Please verify your connection and try again.');
+                 setLoading(false);
+                 return;
+            }
+        }
+
         const success = await onSubmit({
             title,
             content,
@@ -70,6 +133,7 @@ export function NoticeForm({ initialData, onSubmit, isEdit = false }: NoticeForm
             targetRoles: parseCommaList(targetRoles),
             targetDepartments: parseCommaList(targetDepartments),
             targetBatches: parseCommaList(targetBatches),
+            attachments: finalAttachments,
             isActive: initialData?.isActive ?? true,
             isPinned: initialData?.isPinned ?? false,
             status,
@@ -163,15 +227,61 @@ export function NoticeForm({ initialData, onSubmit, isEdit = false }: NoticeForm
                                 {canPostPersonal && (
                                     <SelectItem value="base_role">Personal Identity ({user?.role})</SelectItem>
                                 )}
-                                {activePositions && activePositions.map(pos => (
-                                    <SelectItem key={pos.id} value={pos.id}>
-                                        <span className="font-semibold text-accent-gold">{pos.title}</span>
-                                        <span className="text-muted-foreground ml-2">({pos.org?.name})</span>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground mt-1">If you have an official organization position, you can post this notice under that authoritative identity.</p>
+                                    {activePositions && activePositions.map(pos => (
+                                        <SelectItem key={pos.id} value={pos.id}>
+                                            <span className="font-semibold text-accent-gold">{pos.title}</span>
+                                            <span className="text-muted-foreground ml-2">({pos.org?.name})</span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-1">If you have an official organization position, you can post this notice under that authoritative identity.</p>
+                        </div>
+                    </div>
+
+                    {/* Attachments Section */}
+                    <div className="pt-4 border-t border-border/50 space-y-4">
+                        <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                            <Paperclip className="w-4 h-4" /> Attachments (Max 5)
+                        </Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {/* Existing ones */}
+                            {existingAttachments.map((url, i) => {
+                                const filename = url.split('/').pop()?.split('?')[0] || `attachment-${i + 1}`;
+                                return (
+                                    <div key={url} className="px-3 py-2 bg-black/5 dark:bg-white/5 border border-border rounded-lg flex items-center justify-between gap-3">
+                                        <span className="text-xs font-medium truncate flex-1" title={filename}>{filename}</span>
+                                        <button type="button" onClick={() => removeExistingAttachment(i)} className="text-red-500 hover:text-red-600 transition-colors">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )
+                            })}
+                            {/* New pending ones */}
+                            {newAttachments.map((file, i) => (
+                                <div key={i} className="px-3 py-2 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-lg flex items-center justify-between gap-3">
+                                    <span className="text-xs font-medium truncate flex-1 text-emerald-800 dark:text-emerald-300" title={file.name}>{file.name}</span>
+                                    <button type="button" onClick={() => removeNewAttachment(i)} className="text-red-500 hover:text-red-600 transition-colors">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                            
+                            {/* Upload button */}
+                            {existingAttachments.length + newAttachments.length < 5 && (
+                                <div className="relative border border-dashed border-border rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-center p-2 min-h-[42px] cursor-pointer">
+                                    <UploadCloud className="w-4 h-4 mr-2 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground font-medium">Add File</span>
+                                    <Input
+                                        type="file"
+                                        multiple
+                                        accept="image/*,application/pdf,.doc,.docx"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        onChange={handleFileSelect}
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </GlassSurface>
@@ -231,7 +341,8 @@ export function NoticeForm({ initialData, onSubmit, isEdit = false }: NoticeForm
                     onClick={() => submitAction('draft')}
                     className="px-6 py-6 rounded-xl font-bold text-lg flex items-center gap-2 hover:bg-amber-500/10 hover:text-amber-600 hover:border-amber-500/50 transition-colors"
                 >
-                    <Save className="w-5 h-5" /> Save Draft
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    Save Draft
                 </Button>
                 <Button
                     type="button"

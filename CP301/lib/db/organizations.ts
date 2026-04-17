@@ -60,7 +60,35 @@ export async function getOrganizations(type?: OrgType): Promise<Organization[]> 
 
     const { data, error } = await query;
     if (error) throw new Error(`[getOrganizations] ${error.message}`);
-    return (data ?? []).map(mapOrganization);
+    
+    // Fetch base organizations
+    const organizations = (data ?? []).map(mapOrganization);
+
+    // Fetch aggregate metric data to augment organizations
+    const [
+        { data: allMembers },
+        { data: allPositions },
+        { data: allOrgsWithParent }
+    ] = await Promise.all([
+        db.from('org_members').select('org_id, user_id').eq('status', 'approved'),
+        db.from('user_positions').select('org_id, user_id').eq('is_active', true),
+        db.from('organizations').select('id, parent_id').eq('is_active', true)
+    ]);
+
+    // Fast mapping processing
+    organizations.forEach(org => {
+        // Compute unique verified members (por holders + members)
+        const orgMembers = (allMembers ?? []).filter(m => m.org_id === org.id).map(m => m.user_id);
+        const orgPors = (allPositions ?? []).filter(p => p.org_id === org.id).map(p => p.user_id);
+        const uniqueUsers = new Set([...orgMembers, ...orgPors]);
+        org.memberCount = uniqueUsers.size;
+
+        // Compute children active organizations
+        const orgChildren = (allOrgsWithParent ?? []).filter(o => o.parent_id === org.id);
+        org.childCount = orgChildren.length;
+    });
+
+    return organizations;
 }
 
 /**

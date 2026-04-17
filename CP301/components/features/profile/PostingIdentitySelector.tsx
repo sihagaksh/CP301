@@ -16,9 +16,10 @@ import { useAuth } from '@/contexts/AuthContext';
 interface PostingIdentitySelectorProps {
     className?: string;
     triggerClassName?: string;
+    allowPersonal?: boolean;
 }
 
-export function PostingIdentitySelector({ className, triggerClassName }: PostingIdentitySelectorProps) {
+export function PostingIdentitySelector({ className, triggerClassName, allowPersonal = true }: PostingIdentitySelectorProps) {
     const { user } = useAuth();
     const { positions, selectedIdentityId, setSelectedIdentityId } = useIdentities();
 
@@ -27,8 +28,23 @@ export function PostingIdentitySelector({ className, triggerClassName }: Posting
     // Filter out inactive positions for posting
     const activePositions = positions.filter((p) => p.isActive);
 
-    // If no PORs, show a static "Personal" badge so users know who they're posting as
+    // If no PORs, show a static "Personal" badge (if allowed) or "No Official Identity"
     if (activePositions.length === 0) {
+        if (!allowPersonal) {
+            return (
+                <div className={cn('flex items-center gap-2', className)}>
+                    <span className="text-xs font-medium text-red-500 whitespace-nowrap hidden sm:inline-block">
+                        Posting Error:
+                    </span>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 h-8">
+                        <span className="text-xs font-medium text-red-700 dark:text-red-400">
+                            No Official Identity available
+                        </span>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className={cn('flex items-center gap-2', className)}>
                 <span className="text-xs font-medium text-muted-foreground whitespace-nowrap hidden sm:inline-block">
@@ -74,16 +90,18 @@ export function PostingIdentitySelector({ className, triggerClassName }: Posting
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-[260px] max-h-[300px] overflow-y-auto">
                     {/* Base Role Option */}
-                    <DropdownMenuItem
-                        className="flex flex-col items-start gap-1 py-2 cursor-pointer"
-                        onClick={() => setSelectedIdentityId(null)}
-                    >
-                        <div className="flex items-center w-full justify-between">
-                            <span className="font-medium text-sm">Personal Identity</span>
-                            {selectedIdentityId === null && <Check className="h-4 w-4 text-accent-gold" />}
-                        </div>
-                        <span className="text-xs text-muted-foreground">Post as a regular {user.role}</span>
-                    </DropdownMenuItem>
+                    {allowPersonal && (
+                        <DropdownMenuItem
+                            className="flex flex-col items-start gap-1 py-2 cursor-pointer"
+                            onClick={() => setSelectedIdentityId(null)}
+                        >
+                            <div className="flex items-center w-full justify-between">
+                                <span className="font-medium text-sm">Personal Identity</span>
+                                {selectedIdentityId === null && <Check className="h-4 w-4 text-accent-gold" />}
+                            </div>
+                            <span className="text-xs text-muted-foreground">Post as a regular {user.role}</span>
+                        </DropdownMenuItem>
+                    )}
 
                     {activePositions.length > 0 && (
                         <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground border-t mt-1">

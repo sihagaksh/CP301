@@ -66,6 +66,8 @@ export interface Organization {
   socialLinks?: Record<string, string>;
   isActive: boolean;
   foundedYear?: number;
+  memberCount?: number;
+  childCount?: number;
   createdAt: string;
   updatedAt: string;
 }

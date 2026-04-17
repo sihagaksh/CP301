@@ -1,17 +1,29 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { EventList } from '@/components/features/events/EventList';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-
-export const metadata = {
-    title: 'Campus Events | IIT Ropar Community',
-    description: 'Discover upcoming fests, club events, and seminars on campus',
-};
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EventsPage() {
+    const { user, activePositions, selectedIdentityId } = useAuth();
+    const [isMounted, setIsMounted] = useState(false);
+
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    // Only faculty/staff OR students posting as an official POR identity can see the create button
+    const canPostEvent = !!user && (
+        user.role === 'faculty' ||
+        user.role === 'staff' ||
+        (selectedIdentityId !== null && activePositions !== null && activePositions.some(p => p.id === selectedIdentityId))
+    );
+
     return (
-        <div className="max-w-7xl mx-auto py-6 md:py-8 animate-fade-in space-y-6">
+        <div className="max-w-7xl mx-auto py-6 md:py-8 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div className="space-y-1 text-center md:text-left">
                     <h1 className="text-3xl font-bold font-serif tracking-tight">Campus Events</h1>
@@ -20,12 +32,14 @@ export default function EventsPage() {
                     </p>
                 </div>
 
-                <Button asChild className="bg-accent-gold hover:bg-accent-gold/90 text-black shrink-0 shadow-sm">
-                    <Link href="/events/create" className='text-black'>
-                        <PlusCircle className="mr-2 h-4 w-4 text-black" />
-                        Create Event
-                    </Link>
-                </Button>
+                {isMounted && canPostEvent && (
+                    <Button asChild className="shrink-0 font-semibold px-6 rounded-full animate-fade-in">
+                        <Link href="/events/create">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Create Event
+                        </Link>
+                    </Button>
+                )}
             </div>
 
             <EventList />

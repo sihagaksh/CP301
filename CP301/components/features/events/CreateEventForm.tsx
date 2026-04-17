@@ -8,19 +8,38 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { useEvents } from '@/lib/hooks/useEvents';
-import { PostingIdentitySelector } from '@/components/features/profile/PostingIdentitySelector';
-import { useIdentities } from '@/lib/hooks/useIdentities';
-import { Loader2, ArrowLeft, AlertCircle, MapPin, Link as LinkIcon, Calendar } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2, ArrowLeft, AlertCircle, MapPin, Link as LinkIcon, Calendar, UploadCloud, X, FileText, Image as ImageIcon, ShieldCheck } from 'lucide-react';
 import type { EventType } from '@/lib/types';
 import Link from 'next/link';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export function CreateEventForm() {
     const router = useRouter();
     const { addEvent } = useEvents();
-    const { selectedIdentityId, selectedIdentity } = useIdentities();
+    const { user, activePositions, selectedIdentityId, setSelectedIdentityId } = useAuth();
+
+    const canPostPersonal = user?.role === 'faculty' || user?.role === 'staff';
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+
+    React.useEffect(() => {
+        if (!user) return;
+        const canPostEvent = user.role === 'faculty' || 
+                             user.role === 'staff' || 
+                             (selectedIdentityId !== null && activePositions !== null && activePositions.some(p => p.id === selectedIdentityId));
+                             
+        if (!canPostEvent) {
+            router.replace('/events');
+        }
+    }, [user, selectedIdentityId, activePositions, router]);
 
     // Form payload
     const [title, setTitle] = useState('');
@@ -31,6 +50,34 @@ export function CreateEventForm() {
     const [venueName, setVenueName] = useState('');
     const [registrationUrl, setRegistrationUrl] = useState('');
     const [tagsStr, setTagsStr] = useState('');
+
+    // Media
+    const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+    const [posterFile, setPosterFile] = useState<File | null>(null);
+    const [venueMapFile, setVenueMapFile] = useState<File | null>(null);
+
+    const uploadMedia = async (file: File, kind: 'event-cover' | 'event-poster' | 'event-venue-map', eventIdOrUndefined?: string): Promise<string> => {
+         const { data: sessionData } = await (await import('@/lib/db/client')).db.auth.getSession();
+         const accessToken = sessionData.session?.access_token;
+         if (!accessToken) throw new Error('Not authenticated properly.');
+
+         const formData = new FormData();
+         formData.append('file', file);
+         formData.append('kind', kind);
+         // If creating a new event, we don't have the event ID yet, leave it empty to trigger 'draft' prefixing
+         formData.append('context', JSON.stringify({ eventId: eventIdOrUndefined })); 
+
+         const res = await fetch('/api/media/upload', {
+             method: 'POST',
+             headers: { Authorization: `Bearer ${accessToken}` },
+             body: formData
+         });
+
+         const json = await res.json();
+         if (!res.ok) throw new Error(json.error || `Failed to upload ${kind}`);
+         return json.publicUrl;
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -55,10 +102,30 @@ export function CreateEventForm() {
 
         const tags = tagsStr.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
 
-        // If a POR is selected, use that org ID as the organizer
-        const organizerId = selectedIdentity?.orgId;
+        // The event must be linked to the currently selected official organization
+        // For events, a selected POR org is mandatory for students.
+        const organizerId = activePositions?.find(p => p.id === selectedIdentityId)?.orgId;
+
+        if (!canPostPersonal && !organizerId) {
+            setError('You must select an official organization position to publish an event.');
+            return;
+        }
 
         try {
+            let coverImageUrl: string | undefined = undefined;
+            let posterUrl: string | undefined = undefined;
+            let venueMapUrl: string | undefined = undefined;
+
+            if (coverImageFile) {
+                coverImageUrl = await uploadMedia(coverImageFile, 'event-cover');
+            }
+            if (posterFile) {
+                posterUrl = await uploadMedia(posterFile, 'event-poster');
+            }
+            if (venueMapFile) {
+                venueMapUrl = await uploadMedia(venueMapFile, 'event-venue-map');
+            }
+
             const success = await addEvent({
                 title,
                 description,
@@ -68,6 +135,9 @@ export function CreateEventForm() {
                 registrationUrl: registrationUrl || undefined,
                 tags,
                 organizerId, // Will be null if posting as personal
+                coverImageUrl,
+                posterUrl,
+                venueMapUrl
             });
 
             if (success) {
@@ -104,14 +174,34 @@ export function CreateEventForm() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-black/5 dark:border-white/5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Organizing Identity</Label>
-                            <p className="text-xs text-muted-foreground mt-0.5 max-w-sm">
-                                Only students with a specific Club/Board position can officially list an event under that organization.
+                    <div className="space-y-4 pt-4 border-t border-border/50">
+                        <div className="flex flex-col gap-1">
+                            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4 text-accent-gold" /> Organizing Identity <span className="text-red-500">*</span>
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                                Select the official Club/Board position you are organizing this event for.
                             </p>
                         </div>
-                        <PostingIdentitySelector className="w-full sm:w-auto" triggerClassName="w-full sm:w-[250px]" />
+                        <Select
+                            value={selectedIdentityId || 'base_role'}
+                            onValueChange={(val) => setSelectedIdentityId(val === 'base_role' ? null : val)}
+                        >
+                            <SelectTrigger className="bg-black/5 dark:bg-white/5 border-border">
+                                <SelectValue placeholder="Select Identity" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {canPostPersonal && (
+                                    <SelectItem value="base_role">Personal Identity ({user?.role})</SelectItem>
+                                )}
+                                {activePositions && activePositions.map(pos => (
+                                    <SelectItem key={pos.id} value={pos.id}>
+                                        <span className="font-semibold text-accent-gold">{pos.title}</span>
+                                        <span className="text-muted-foreground ml-2">({pos.org?.name})</span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="space-y-2">
@@ -224,6 +314,95 @@ export function CreateEventForm() {
                             onChange={e => setTagsStr(e.target.value)}
                             placeholder="e.g. coding, pizza, ai (comma separated)"
                         />
+                    </div>
+
+                    <div className="pt-4 border-t border-border/50">
+                        <h3 className="text-base font-bold font-serif mb-4 flex items-center gap-2">
+                             <ImageIcon className="w-5 h-5 text-muted-foreground" /> Media & Attachments
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             {/* Cover Image */}
+                             <div className="space-y-2">
+                                <Label className="text-sm">Cover Image</Label>
+                                <div className="border border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors relative h-32">
+                                    {coverImagePreview ? (
+                                        <>
+                                            <img src={coverImagePreview} alt="Cover preview" className="absolute inset-0 w-full h-full object-cover rounded-xl" />
+                                            <button type="button" onClick={() => { setCoverImageFile(null); setCoverImagePreview(null); }} className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-red-500">
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                           <UploadCloud className="w-6 h-6 text-muted-foreground" />
+                                           <span className="text-xs text-muted-foreground">Main banner (Image)</span>
+                                           <Input 
+                                               type="file" 
+                                               accept="image/*" 
+                                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                               onChange={e => {
+                                                   if (e.target.files?.[0]) {
+                                                       setCoverImageFile(e.target.files[0]);
+                                                       setCoverImagePreview(URL.createObjectURL(e.target.files[0]));
+                                                   }
+                                               }}
+                                            />
+                                        </>
+                                    )}
+                                </div>
+                             </div>
+
+                             {/* Event Poster */}
+                             <div className="space-y-2">
+                                <Label className="text-sm">Event Poster</Label>
+                                <div className="border border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors relative h-32">
+                                    {posterFile ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <FileText className="w-6 h-6 text-blue-500" />
+                                            <span className="text-xs font-medium truncate max-w-[150px]">{posterFile.name}</span>
+                                            <button type="button" onClick={() => setPosterFile(null)} className="text-xs text-red-500 hover:underline">Remove</button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                           <UploadCloud className="w-6 h-6 text-muted-foreground" />
+                                           <span className="text-xs text-muted-foreground">Brochure/Poster (PDF or Image)</span>
+                                           <Input 
+                                               type="file" 
+                                               accept="image/*,application/pdf" 
+                                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                               onChange={e => e.target.files?.[0] && setPosterFile(e.target.files[0])}
+                                            />
+                                        </>
+                                    )}
+                                </div>
+                             </div>
+
+                             {/* Venue Map */}
+                             <div className="space-y-2">
+                                <Label className="text-sm">Venue Map</Label>
+                                <div className="border border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors relative h-32">
+                                    {venueMapFile ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <FileText className="w-6 h-6 text-emerald-500" />
+                                            <span className="text-xs font-medium truncate max-w-[150px]">{venueMapFile.name}</span>
+                                            <button type="button" onClick={() => setVenueMapFile(null)} className="text-xs text-red-500 hover:underline">Remove</button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                           <UploadCloud className="w-6 h-6 text-muted-foreground" />
+                                           <span className="text-xs text-muted-foreground">Directions map (PDF or Image)</span>
+                                           <Input 
+                                               type="file" 
+                                               accept="image/*,application/pdf" 
+                                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                               onChange={e => e.target.files?.[0] && setVenueMapFile(e.target.files[0])}
+                                            />
+                                        </>
+                                    )}
+                                </div>
+                             </div>
+                        </div>
                     </div>
 
                     <div className="pt-6 border-t border-border flex justify-end gap-4">

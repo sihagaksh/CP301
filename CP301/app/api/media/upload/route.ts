@@ -1,27 +1,44 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-type UploadKind = 'mess-menu-document';
+type UploadKind = 'mess-menu-document' | 'org-icon' | 'event-cover' | 'event-poster' | 'event-venue-map' | 'notice-attachment';
 
-type MessMenuUploadContext = {
+type BaseUploadContext = Record<string, unknown>;
+
+type MessMenuUploadContext = BaseUploadContext & {
     month?: number;
     year?: number;
 };
 
-const MAX_MESS_MENU_DOCUMENT_BYTES = 10 * 1024 * 1024;
-const MESS_MENU_BUCKET = 'mess-menus';
-const ALLOWED_MESS_MENU_MIME_TYPES = new Set([
-    'application/pdf',
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-]);
+type OrgIconUploadContext = BaseUploadContext & {
+    orgId?: string;
+};
+
+type EventUploadContext = BaseUploadContext & {
+    eventId?: string;
+};
+
+type NoticeUploadContext = BaseUploadContext & {
+    noticeId?: string;
+};
+
+type UploadContextUnion = MessMenuUploadContext | OrgIconUploadContext | EventUploadContext | NoticeUploadContext;
 
 const EXTENSION_BY_MIME_TYPE: Record<string, string> = {
     'application/pdf': 'pdf',
     'image/jpeg': 'jpg',
     'image/png': 'png',
     'image/webp': 'webp',
+    'application/msword': 'doc',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+};
+
+type UploadConfig = {
+    bucket: string;
+    maxSizeBytes: number;
+    allowedMimeTypes: Set<string>;
+    buildPath: (context: UploadContextUnion, ext: string, userId: string) => string;
+    authorize: (serviceClient: ReturnType<typeof createClient>, authUser: any, context: UploadContextUnion) => Promise<boolean>;
 };
 
 function getServiceClient() {
@@ -49,7 +66,7 @@ function isValidYear(value: unknown): value is number {
     return Number.isInteger(value) && Number(value) >= 2000 && Number(value) <= 2100;
 }
 
-function parseContext(value: FormDataEntryValue | null): MessMenuUploadContext {
+function parseContext(value: FormDataEntryValue | null): UploadContextUnion {
     if (typeof value !== 'string' || !value.trim()) return {};
 
     try {
@@ -59,6 +76,93 @@ function parseContext(value: FormDataEntryValue | null): MessMenuUploadContext {
         return {};
     }
 }
+
+async function isAdminUser(serviceClient: ReturnType<typeof createClient>, userId: string) {
+    const { data: profile } = await serviceClient
+        .from('users')
+        .select('is_admin')
+        .eq('id', userId)
+        .single();
+    return !!profile?.is_admin;
+}
+
+const UPLOAD_CONFIGS: Record<UploadKind, UploadConfig> = {
+    'mess-menu-document': {
+        bucket: 'mess-menus',
+        maxSizeBytes: 10 * 1024 * 1024, // 10 MB
+        allowedMimeTypes: new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+        authorize: async (serviceClient, authUser) => isAdminUser(serviceClient, authUser.id),
+        buildPath: (ctx: UploadContextUnion, ext: string) => {
+            const context = ctx as MessMenuUploadContext;
+            if (!isValidMonth(context.month) || !isValidYear(context.year)) {
+               throw new Error('Invalid mess menu month or year.');
+            }
+            return `${context.year}/${context.month}/original-${Date.now()}.${ext}`;
+        }
+    },
+    'org-icon': {
+        bucket: 'org-icons',
+        maxSizeBytes: 2 * 1024 * 1024, // 2 MB
+        allowedMimeTypes: new Set(['image/jpeg', 'image/png', 'image/webp']),
+        authorize: async (serviceClient, authUser, ctx) => {
+            const context = ctx as OrgIconUploadContext;
+            if (await isAdminUser(serviceClient, authUser.id)) return true;
+            if (!context.orgId) return false;
+            const { count } = await serviceClient
+                .from('user_positions')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', authUser.id)
+                .eq('org_id', context.orgId)
+                .eq('is_active', true);
+            return (count ?? 0) > 0;
+        },
+        buildPath: (ctx: UploadContextUnion, ext: string) => {
+            const context = ctx as OrgIconUploadContext;
+            return `${context.orgId || 'unknown'}/icon-${Date.now()}.${ext}`;
+        }
+    },
+    'event-cover': {
+        bucket: 'events-media',
+        maxSizeBytes: 10 * 1024 * 1024,
+        allowedMimeTypes: new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+        authorize: async (serviceClient, authUser, ctx) => true, // Allowed for authenticated, checking on insert
+        buildPath: (ctx: UploadContextUnion, ext: string, userId: string) => {
+            const context = ctx as EventUploadContext;
+            return `${userId}/${context.eventId || `draft-${Date.now()}`}/cover-${Date.now()}.${ext}`;
+        }
+    },
+    'event-poster': {
+        bucket: 'events-media',
+        maxSizeBytes: 10 * 1024 * 1024,
+        allowedMimeTypes: new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+        authorize: async (serviceClient, authUser, ctx) => true,
+        buildPath: (ctx: UploadContextUnion, ext: string, userId: string) => {
+            const context = ctx as EventUploadContext;
+            return `${userId}/${context.eventId || `draft-${Date.now()}`}/poster-${Date.now()}.${ext}`;
+        }
+    },
+    'event-venue-map': {
+        bucket: 'events-media',
+        maxSizeBytes: 10 * 1024 * 1024,
+        allowedMimeTypes: new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+        authorize: async (serviceClient, authUser, ctx) => true,
+        buildPath: (ctx: UploadContextUnion, ext: string, userId: string) => {
+            const context = ctx as EventUploadContext;
+            return `${userId}/${context.eventId || `draft-${Date.now()}`}/venue-map-${Date.now()}.${ext}`;
+        }
+    },
+    'notice-attachment': {
+        bucket: 'notices-media',
+        maxSizeBytes: 10 * 1024 * 1024,
+        allowedMimeTypes: new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']),
+        authorize: async (serviceClient, authUser, ctx) => true,
+        buildPath: (ctx: UploadContextUnion, ext: string, userId: string) => {
+            const context = ctx as NoticeUploadContext;
+            const index = Math.floor(Math.random() * 1000);
+            return `${userId}/${context.noticeId || `draft-${Date.now()}`}/${index}-${Date.now()}.${ext}`;
+        }
+    }
+};
 
 async function ensurePublicBucket(serviceClient: ReturnType<typeof getServiceClient>, bucket: string) {
     const { error: getError } = await serviceClient.storage.getBucket(bucket);
@@ -89,48 +193,48 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid or expired session.' }, { status: 401 });
         }
 
-        const { data: profile, error: profileError } = await serviceClient
-            .from('users')
-            .select('is_admin')
-            .eq('id', authUser.id)
-            .single();
-
-        if (profileError || !profile?.is_admin) {
-            return NextResponse.json({ error: 'Forbidden: admin access required.' }, { status: 403 });
-        }
-
         const formData = await request.formData();
         const kind = formData.get('kind') as UploadKind | null;
         const file = formData.get('file') as File | null;
         const context = parseContext(formData.get('context'));
 
-        if (kind !== 'mess-menu-document') {
+        if (!kind || !UPLOAD_CONFIGS[kind]) {
             return NextResponse.json({ error: 'Unsupported upload kind.' }, { status: 400 });
         }
+
+        const config = UPLOAD_CONFIGS[kind];
 
         if (!file) {
             return NextResponse.json({ error: 'Missing upload file.' }, { status: 400 });
         }
 
-        if (!isValidMonth(context.month) || !isValidYear(context.year)) {
-            return NextResponse.json({ error: 'Invalid mess menu month or year.' }, { status: 400 });
+        const isAuthorized = await config.authorize(serviceClient, authUser, context);
+        if (!isAuthorized) {
+             return NextResponse.json({ error: 'Forbidden: you do not have permission to upload this file type.' }, { status: 403 });
         }
 
-        if (!ALLOWED_MESS_MENU_MIME_TYPES.has(file.type)) {
-            return NextResponse.json({ error: 'Only PDF, PNG, JPEG, or WebP files are allowed.' }, { status: 400 });
+        if (!config.allowedMimeTypes.has(file.type)) {
+            return NextResponse.json({ error: 'Unsupported file type for this upload.' }, { status: 400 });
         }
 
-        if (file.size > MAX_MESS_MENU_DOCUMENT_BYTES) {
-            return NextResponse.json({ error: 'Mess menu document must be 10 MB or smaller.' }, { status: 400 });
+        if (file.size > config.maxSizeBytes) {
+            return NextResponse.json({ error: `File must be smaller than ${Math.floor(config.maxSizeBytes / 1024 / 1024)} MB.` }, { status: 400 });
         }
 
-        await ensurePublicBucket(serviceClient, MESS_MENU_BUCKET);
+        await ensurePublicBucket(serviceClient, config.bucket);
 
         const extension = EXTENSION_BY_MIME_TYPE[file.type] ?? 'bin';
-        const path = `${context.year}/${context.month}/original-${Date.now()}.${extension}`;
+        
+        let path: string;
+        try {
+            path = config.buildPath(context, extension, authUser.id);
+        } catch (e: any) {
+            return NextResponse.json({ error: e.message || 'Invalid context for upload' }, { status: 400 });
+        }
+
         const arrayBuffer = await file.arrayBuffer();
         const { error: uploadError } = await serviceClient.storage
-            .from(MESS_MENU_BUCKET)
+            .from(config.bucket)
             .upload(path, arrayBuffer, {
                 contentType: file.type,
                 cacheControl: '3600',
@@ -141,10 +245,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: uploadError.message }, { status: 500 });
         }
 
-        const { data: urlData } = serviceClient.storage.from(MESS_MENU_BUCKET).getPublicUrl(path);
+        const { data: urlData } = serviceClient.storage.from(config.bucket).getPublicUrl(path);
 
         return NextResponse.json({
-            bucket: MESS_MENU_BUCKET,
+            bucket: config.bucket,
             path,
             publicUrl: urlData.publicUrl,
             kind,

@@ -47,7 +47,7 @@ export function ClubDetail() {
             {/* Header */}
             <GlassSurface className="p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
                 <Avatar className="h-24 w-24 border-2 border-border shrink-0">
-                    <AvatarImage src={org.logoUrl} />
+                    <AvatarImage src={org.logoUrl} className="object-cover" />
                     <AvatarFallback className="bg-zinc-200 dark:bg-zinc-800 text-3xl font-bold">{getInitials(org.name)}</AvatarFallback>
                 </Avatar>
                 <div className="text-center sm:text-left">
@@ -112,7 +112,7 @@ export function ClubDetail() {
                             <Link key={child.id} href={`/clubs/${child.slug}`}>
                                 <GlassSurface className="p-4 flex items-center gap-3 hover:border-accent-cyan/50 transition-colors cursor-pointer h-full">
                                     <Avatar className="h-12 w-12 border-2 border-border shrink-0">
-                                        <AvatarImage src={child.logoUrl} />
+                                        <AvatarImage src={child.logoUrl} className="object-cover" />
                                         <AvatarFallback className="bg-zinc-200 dark:bg-zinc-800 font-bold">{getInitials(child.name)}</AvatarFallback>
                                     </Avatar>
                                     <div className="min-w-0">

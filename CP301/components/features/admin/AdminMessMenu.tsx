@@ -38,7 +38,7 @@ export function AdminMessMenu() {
             const menu = await getMessMenu(month, year);
             if (menu) {
                 setMarkdownContent(menu.markdownContent);
-                setDocumentUrl(menu.documentUrl || '');
+                setDocumentUrl(menu.documentUrl ?? '');
             } else {
                 setMarkdownContent(SAMPLE_MARKDOWN);
                 setDocumentUrl('');
@@ -65,6 +65,33 @@ export function AdminMessMenu() {
         setSelectedFile(e.target.files[0]);
     };
 
+    const uploadDocument = async (file: File) => {
+        const { data: sessionData } = await db.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+
+        if (!accessToken) {
+            throw new Error('Please sign in again before uploading the document.');
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('kind', 'mess-menu-document');
+        formData.append('context', JSON.stringify({ month, year }));
+
+        const response = await fetch('/api/media/upload', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: formData,
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Document upload failed.');
+        }
+
+        return result.publicUrl as string;
+    };
+
     const handleSave = async () => {
         if (!markdownContent.trim()) {
             toast.error('Markdown content cannot be empty.');
@@ -73,28 +100,12 @@ export function AdminMessMenu() {
 
         setIsSaving(true);
         try {
-            let finalDocumentUrl = documentUrl;
+            let finalDocumentUrl: string | undefined = documentUrl || undefined;
 
-            // Upload new Image/PDF if admin selected one
+            // Upload via the server media endpoint. The server verifies admin
+            // access, validates the file, and owns the storage path.
             if (selectedFile) {
-                const fileExt = selectedFile.name.split('.').pop() ?? 'bin';
-                const fileName = 'mess_menus/' + year + '_' + month + '_' + Date.now() + '.' + fileExt;
-
-                const { error: uploadError } = await db.storage
-                    .from('mess-menus')
-                    .upload(fileName, selectedFile, { cacheControl: '3600', upsert: true });
-
-                if (uploadError) {
-                    toast.error('Failed to upload document: ' + uploadError.message);
-                    setIsSaving(false);
-                    return;
-                }
-
-                const { data: urlData } = db.storage
-                    .from('mess-menus')
-                    .getPublicUrl(fileName);
-
-                finalDocumentUrl = urlData.publicUrl;
+                finalDocumentUrl = await uploadDocument(selectedFile);
                 setDocumentUrl(finalDocumentUrl);
                 setSelectedFile(null);
             }
@@ -103,7 +114,7 @@ export function AdminMessMenu() {
                 month,
                 year,
                 markdownContent,
-                documentUrl: finalDocumentUrl || undefined,
+                documentUrl: finalDocumentUrl,
             });
 
             toast.success('Mess menu saved successfully!');
@@ -126,10 +137,10 @@ export function AdminMessMenu() {
                     <select
                         value={month}
                         onChange={(e) => setMonth(Number(e.target.value))}
-                        className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
+                        className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2"
                     >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                            <option key={m} value={m}>
+                            <option key={m} value={m} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
                                 {new Date(2000, m - 1, 1).toLocaleString('default', { month: 'long' })}
                             </option>
                         ))}
@@ -140,10 +151,10 @@ export function AdminMessMenu() {
                     <select
                         value={year}
                         onChange={(e) => setYear(Number(e.target.value))}
-                        className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
+                        className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2"
                     >
                         {[year - 1, year, year + 1].map(y => (
-                            <option key={y} value={y}>{y}</option>
+                            <option key={y} value={y} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">{y}</option>
                         ))}
                     </select>
                 </div>

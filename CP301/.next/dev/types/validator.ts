@@ -344,6 +344,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../../app/api/admin/upload/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/admin/upload">> = Specific
+  const handler = {} as typeof import("../../../app/api/admin/upload/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../app/api/auth/clear-cookie/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/clear-cookie">> = Specific
@@ -375,6 +384,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/signup">> = Specific
   const handler = {} as typeof import("../../../app/api/auth/signup/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/api/media/upload/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/media/upload">> = Specific
+  const handler = {} as typeof import("../../../app/api/media/upload/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

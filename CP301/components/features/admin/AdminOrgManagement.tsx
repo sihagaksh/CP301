@@ -2,12 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAdmin } from '@/lib/hooks/useAdmin';
+import { db } from '@/lib/db/client';
 import { Organization } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
-    Activity,
-    Building2,
-    CalendarCheck,
     ChevronDown,
     ChevronRight,
     Loader2,
@@ -17,8 +15,10 @@ import {
     Download,
     CheckCircle2,
     XCircle,
+    Pencil,
 } from 'lucide-react';
 import { AdminOrgRoster } from './AdminOrgRoster';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Dialog,
     DialogContent,
@@ -31,9 +31,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { getInitials } from '@/lib/utils';
 
 export function AdminOrgManagement() {
-    const { fetchAllOrganizations, createNewOrg, bulkUpsertOrgs, bulkUpsertMembers, bulkUpsertPORs, fetchAllMembers, fetchAllPositions, error: adminError } = useAdmin();
+    const { fetchAllOrganizations, createNewOrg, updateOrg, bulkUpsertOrgs, bulkUpsertMembers, bulkUpsertPORs, fetchAllMembers, fetchAllPositions, error: adminError } = useAdmin();
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [expandedBoards, setExpandedBoards] = useState<Set<string>>(new Set());
@@ -47,6 +48,22 @@ export function AdminOrgManagement() {
     const [newOrgType, setNewOrgType] = useState<string>('board');
     const [newOrgParentId, setNewOrgParentId] = useState<string>('none');
     const [newOrgDescription, setNewOrgDescription] = useState('');
+    const [newOrgInstagram, setNewOrgInstagram] = useState('');
+    const [newOrgLogoFile, setNewOrgLogoFile] = useState<File | null>(null);
+    const [newOrgLogoPreview, setNewOrgLogoPreview] = useState('');
+    const [orgFormError, setOrgFormError] = useState<string | null>(null);
+
+    // Edit Org State
+    const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [editOrgName, setEditOrgName] = useState('');
+    const [editOrgSlug, setEditOrgSlug] = useState('');
+    const [editOrgType, setEditOrgType] = useState<string>('board');
+    const [editOrgParentId, setEditOrgParentId] = useState<string>('none');
+    const [editOrgDescription, setEditOrgDescription] = useState('');
+    const [editOrgInstagram, setEditOrgInstagram] = useState('');
+    const [editOrgLogoFile, setEditOrgLogoFile] = useState<File | null>(null);
+    const [editOrgLogoPreview, setEditOrgLogoPreview] = useState('');
 
     // CSV Upload State
     type CsvResult = { succeeded: number; failed: { row: string; reason: string }[] };
@@ -76,9 +93,115 @@ export function AdminOrgManagement() {
         setExpandedBoards(next);
     };
 
+    const normalizeInstagramUrl = (value: string) => {
+        const trimmed = value.trim();
+        if (!trimmed) return '';
+        if (/^https?:\/\//i.test(trimmed)) return trimmed;
+        const handle = trimmed
+            .replace(/^@/, '')
+            .replace(/^instagram\.com\//i, '')
+            .replace(/^www\.instagram\.com\//i, '')
+            .split(/[/?#]/)[0];
+        return handle ? `https://www.instagram.com/${handle}` : '';
+    };
+
+    const buildSocialLinks = (current: Organization['socialLinks'], instagramValue: string) => {
+        const next = { ...(current ?? {}) };
+        const instagram = normalizeInstagramUrl(instagramValue);
+        if (instagram) next.instagram = instagram;
+        else delete next.instagram;
+        return next;
+    };
+
+    const uploadOrgLogo = async (file: File, slug: string) => {
+        if (!file.type.startsWith('image/')) {
+            throw new Error('Please upload an image file.');
+        }
+
+        const extension = file.name.split('.').pop()?.toLowerCase() || 'png';
+        const safeSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        const path = `organizations/${safeSlug}/icon-${Date.now()}.${extension}`;
+        const { data: sessionData } = await db.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+
+        if (!accessToken) {
+            throw new Error('Please sign in again before uploading an organization icon.');
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('bucket', 'org-icons');
+        formData.append('path', path);
+
+        const response = await fetch('/api/admin/upload', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: formData,
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to upload organization icon.');
+        }
+
+        return result.publicUrl as string;
+    };
+
+    const resetCreateForm = () => {
+        setNewOrgName('');
+        setNewOrgSlug('');
+        setNewOrgType('board');
+        setNewOrgParentId('none');
+        setNewOrgDescription('');
+        setNewOrgInstagram('');
+        setNewOrgLogoFile(null);
+        setNewOrgLogoPreview('');
+        setOrgFormError(null);
+    };
+
+    const openEditOrg = (org: Organization) => {
+        setEditingOrg(org);
+        setEditOrgName(org.name);
+        setEditOrgSlug(org.slug);
+        setEditOrgType(org.type);
+        setEditOrgParentId(org.parentId ?? 'none');
+        setEditOrgDescription(org.description ?? '');
+        setEditOrgInstagram(org.socialLinks?.instagram ?? '');
+        setEditOrgLogoFile(null);
+        setEditOrgLogoPreview(org.logoUrl ?? '');
+        setOrgFormError(null);
+    };
+
+    const handleLogoSelect = (
+        file: File | undefined,
+        setFile: React.Dispatch<React.SetStateAction<File | null>>,
+        setPreview: React.Dispatch<React.SetStateAction<string>>
+    ) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            setOrgFormError('Please upload an image file.');
+            return;
+        }
+        setOrgFormError(null);
+        setFile(file);
+        setPreview(URL.createObjectURL(file));
+    };
+
     const handleCreateOrg = async () => {
         if (!newOrgName || !newOrgSlug || !newOrgType) return;
         setIsCreating(true);
+        setOrgFormError(null);
+
+        let logoUrl: string | undefined;
+        try {
+            if (newOrgLogoFile) {
+                logoUrl = await uploadOrgLogo(newOrgLogoFile, newOrgSlug);
+            }
+        } catch (err) {
+            setOrgFormError(err instanceof Error ? err.message : 'Failed to upload organization icon.');
+            setIsCreating(false);
+            return;
+        }
 
         const newOrg = await createNewOrg({
             name: newOrgName,
@@ -86,20 +209,55 @@ export function AdminOrgManagement() {
             type: newOrgType as any,
             parentId: newOrgParentId === 'none' ? undefined : newOrgParentId,
             description: newOrgDescription,
+            logoUrl,
+            socialLinks: buildSocialLinks(undefined, newOrgInstagram),
             isActive: true
         });
 
         if (newOrg) {
             setOrganizations(prev => [...prev, newOrg]);
             setIsCreateOpen(false);
-            // reset
-            setNewOrgName('');
-            setNewOrgSlug('');
-            setNewOrgType('board');
-            setNewOrgParentId('none');
-            setNewOrgDescription('');
+            resetCreateForm();
         }
         setIsCreating(false);
+    };
+
+    const handleUpdateOrg = async () => {
+        if (!editingOrg || !editOrgName || !editOrgSlug || !editOrgType) return;
+        setIsSavingEdit(true);
+        setOrgFormError(null);
+
+        let logoUrl = editingOrg.logoUrl;
+        try {
+            if (editOrgLogoFile) {
+                logoUrl = await uploadOrgLogo(editOrgLogoFile, editOrgSlug);
+            }
+        } catch (err) {
+            setOrgFormError(err instanceof Error ? err.message : 'Failed to upload organization icon.');
+            setIsSavingEdit(false);
+            return;
+        }
+
+        const updated = await updateOrg(editingOrg.id, {
+            name: editOrgName,
+            slug: editOrgSlug,
+            type: editOrgType as any,
+            parentId: editOrgParentId === 'none' ? undefined : editOrgParentId,
+            description: editOrgDescription,
+            logoUrl,
+            socialLinks: buildSocialLinks(editingOrg.socialLinks, editOrgInstagram),
+            isActive: editingOrg.isActive,
+        });
+
+        if (updated) {
+            setOrganizations(prev => prev.map(org => org.id === updated.id ? updated : org));
+            setManagingOrg(current => current?.id === updated.id ? updated : current);
+            setEditingOrg(null);
+            setEditOrgLogoFile(null);
+            setOrgFormError(null);
+        }
+
+        setIsSavingEdit(false);
     };
 
     // ------------------------------------
@@ -459,14 +617,14 @@ export function AdminOrgManagement() {
                             </Dialog>
 
                             {/* ── New Organization Dialog ─────────────────── */}
-                            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                            <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetCreateForm(); }}>
                                 <DialogTrigger asChild>
                                     <Button className="bg-primary text-primary-foreground">
                                         <Plus className="mr-2 h-4 w-4" />
                                         New Organization
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="sm:max-w-[425px]">
+                                <DialogContent className="sm:max-w-[500px]">
                                     <DialogHeader>
                                         <DialogTitle>Create Organization</DialogTitle>
                                         <DialogDescription>
@@ -515,9 +673,27 @@ export function AdminOrgManagement() {
                                             <Label htmlFor="description">Description</Label>
                                             <Textarea id="description" value={newOrgDescription} onChange={e => setNewOrgDescription(e.target.value)} placeholder="Brief description of the organization..." />
                                         </div>
-                                        {adminError && (
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="instagram">Instagram URL</Label>
+                                            <Input id="instagram" value={newOrgInstagram} onChange={e => setNewOrgInstagram(e.target.value)} placeholder="https://www.instagram.com/club_handle" />
+                                            <p className="text-xs text-muted-foreground">Used as a public link only. The profile picture is not fetched from Instagram.</p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="logo">Organization icon</Label>
+                                            <div className="flex items-center gap-4">
+                                                <Avatar className="h-16 w-16 border border-border">
+                                                    <AvatarImage src={newOrgLogoPreview} className="object-cover" />
+                                                    <AvatarFallback className="font-bold">{getInitials(newOrgName || 'Org')}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 space-y-1.5">
+                                                    <Input id="logo" type="file" accept="image/*" onChange={e => handleLogoSelect(e.target.files?.[0], setNewOrgLogoFile, setNewOrgLogoPreview)} />
+                                                    <p className="text-xs text-muted-foreground">Upload a square image. It will be shown as a circle in the app.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {(orgFormError || adminError) && (
                                             <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-md">
-                                                {adminError}
+                                                {orgFormError || adminError}
                                             </div>
                                         )}
                                     </div>
@@ -526,6 +702,90 @@ export function AdminOrgManagement() {
                                         <Button onClick={handleCreateOrg} disabled={!newOrgName || !newOrgSlug || isCreating}>
                                             {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                                             Create
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog open={!!editingOrg} onOpenChange={(open) => { if (!open) { setEditingOrg(null); setEditOrgLogoFile(null); setOrgFormError(null); } }}>
+                                <DialogContent className="sm:max-w-[500px]">
+                                    <DialogHeader>
+                                        <DialogTitle>Edit Organization</DialogTitle>
+                                        <DialogDescription>
+                                            Update the public profile, Instagram link, and circular icon for this organization.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-name">Name</Label>
+                                            <Input id="edit-name" value={editOrgName} onChange={e => setEditOrgName(e.target.value)} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-slug">Slug (URL friendly)</Label>
+                                            <Input id="edit-slug" value={editOrgSlug} onChange={e => setEditOrgSlug(e.target.value)} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-type">Type</Label>
+                                            <Select value={editOrgType} onValueChange={setEditOrgType}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="governance_body">Governance Body</SelectItem>
+                                                    <SelectItem value="board">Board</SelectItem>
+                                                    <SelectItem value="club">Club</SelectItem>
+                                                    <SelectItem value="society">Society</SelectItem>
+                                                    <SelectItem value="fest_committee">Fest Committee</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-parent">Parent Organization</Label>
+                                            <Select value={editOrgParentId} onValueChange={setEditOrgParentId}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="None (Top Level)" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="none">None (Top Level)</SelectItem>
+                                                    {organizations.filter(o => (o.type === 'board' || o.type === 'governance_body') && o.id !== editingOrg?.id).map(b => (
+                                                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-description">Description</Label>
+                                            <Textarea id="edit-description" value={editOrgDescription} onChange={e => setEditOrgDescription(e.target.value)} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-instagram">Instagram URL</Label>
+                                            <Input id="edit-instagram" value={editOrgInstagram} onChange={e => setEditOrgInstagram(e.target.value)} placeholder="https://www.instagram.com/club_handle" />
+                                            <p className="text-xs text-muted-foreground">Used as a public link only. The profile picture is not fetched from Instagram.</p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-logo">Organization icon</Label>
+                                            <div className="flex items-center gap-4">
+                                                <Avatar className="h-16 w-16 border border-border">
+                                                    <AvatarImage src={editOrgLogoPreview} className="object-cover" />
+                                                    <AvatarFallback className="font-bold">{getInitials(editOrgName || 'Org')}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 space-y-1.5">
+                                                    <Input id="edit-logo" type="file" accept="image/*" onChange={e => handleLogoSelect(e.target.files?.[0], setEditOrgLogoFile, setEditOrgLogoPreview)} />
+                                                    <p className="text-xs text-muted-foreground">Upload a square image. It will be shown as a circle in the app.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {(orgFormError || adminError) && (
+                                            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-md">
+                                                {orgFormError || adminError}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex justify-end gap-3 mt-4">
+                                        <Button variant="outline" onClick={() => setEditingOrg(null)}>Cancel</Button>
+                                        <Button onClick={handleUpdateOrg} disabled={!editOrgName || !editOrgSlug || isSavingEdit}>
+                                            {isSavingEdit ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                            Save
                                         </Button>
                                     </div>
                                 </DialogContent>
@@ -550,20 +810,27 @@ export function AdminOrgManagement() {
                             {/* Root Organization Header (e.g., Students' Gymkhana) */}
                             <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/10">
                                 <div className="flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                        <Building2 size={24} />
-                                    </div>
+                                    <Avatar className="h-12 w-12 border border-primary/10">
+                                        <AvatarImage src={rootOrg.logoUrl} className="object-cover" />
+                                        <AvatarFallback className="bg-primary/10 text-primary font-bold">{getInitials(rootOrg.name)}</AvatarFallback>
+                                    </Avatar>
                                     <div>
                                         <h3 className="font-bold text-lg text-primary">{rootOrg.name}</h3>
                                         <p className="text-sm text-muted-foreground">{rootOrg.description}</p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setManagingOrg(rootOrg)}
-                                >
-                                    Manage Core
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" onClick={() => openEditOrg(rootOrg)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setManagingOrg(rootOrg)}
+                                    >
+                                        Manage Core
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="grid gap-6 md:grid-cols-2">
@@ -589,21 +856,31 @@ export function AdminOrgManagement() {
                                                             ) : (
                                                                 <div className="w-[26px]" />
                                                             )}
-                                                            <div className="h-8 w-8 rounded bg-blue-500/10 flex items-center justify-center text-blue-600">
-                                                                <Building2 size={16} />
-                                                            </div>
+                                                            <Avatar className="h-8 w-8 border border-blue-500/10">
+                                                                <AvatarImage src={board.logoUrl} className="object-cover" />
+                                                                <AvatarFallback className="bg-blue-500/10 text-blue-600 text-xs font-bold">{getInitials(board.name)}</AvatarFallback>
+                                                            </Avatar>
                                                             <div>
                                                                 <h3 className="font-semibold text-sm">{board.name}</h3>
                                                                 <p className="text-xs text-muted-foreground">{children.length} Clubs/Societies</p>
                                                             </div>
                                                         </div>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={(e) => { e.stopPropagation(); setManagingOrg(board); }}
-                                                        >
-                                                            Manage
-                                                        </Button>
+                                                        <div className="flex gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={(e) => { e.stopPropagation(); openEditOrg(board); }}
+                                                            >
+                                                                Edit
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={(e) => { e.stopPropagation(); setManagingOrg(board); }}
+                                                            >
+                                                                Manage
+                                                            </Button>
+                                                        </div>
                                                     </div>
 
                                                     {/* Board's Clubs */}
@@ -615,19 +892,30 @@ export function AdminOrgManagement() {
                                                                     className="flex items-center justify-between p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 group border border-transparent hover:border-black/10 dark:hover:border-white/10 transition-colors"
                                                                 >
                                                                     <div className="flex items-center gap-3">
-                                                                        <div className="h-6 w-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500">
-                                                                            <Activity size={12} />
-                                                                        </div>
+                                                                        <Avatar className="h-6 w-6 border">
+                                                                            <AvatarImage src={child.logoUrl} className="object-cover" />
+                                                                            <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold">{getInitials(child.name)}</AvatarFallback>
+                                                                        </Avatar>
                                                                         <h4 className="font-medium text-sm">{child.name}</h4>
                                                                     </div>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="sm"
-                                                                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 text-xs"
-                                                                        onClick={() => setManagingOrg(child)}
-                                                                    >
-                                                                        Manage
-                                                                    </Button>
+                                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-8 text-xs"
+                                                                            onClick={() => openEditOrg(child)}
+                                                                        >
+                                                                            Edit
+                                                                        </Button>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-8 text-xs"
+                                                                            onClick={() => setManagingOrg(child)}
+                                                                        >
+                                                                            Manage
+                                                                        </Button>
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -649,21 +937,30 @@ export function AdminOrgManagement() {
                                                 className="flex items-center justify-between p-2.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 group transition-colors"
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-                                                        <Activity size={16} />
-                                                    </div>
+                                                    <Avatar className="h-8 w-8 border border-emerald-500/10">
+                                                        <AvatarImage src={society.logoUrl} className="object-cover" />
+                                                        <AvatarFallback className="bg-emerald-500/10 text-emerald-600 text-xs font-bold">{getInitials(society.name)}</AvatarFallback>
+                                                    </Avatar>
                                                     <div>
                                                         <h3 className="font-semibold text-sm">{society.name}</h3>
                                                     </div>
                                                 </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={() => setManagingOrg(society)}
-                                                >
-                                                    Manage
-                                                </Button>
+                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => openEditOrg(society)}
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setManagingOrg(society)}
+                                                    >
+                                                        Manage
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))}
                                         {independentSocieties.length === 0 && <div className="p-3 text-sm text-muted-foreground text-center">No independent societies found.</div>}

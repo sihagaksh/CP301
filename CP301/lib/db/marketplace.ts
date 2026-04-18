@@ -24,6 +24,12 @@ export async function getMarketplaceItems(filters: GetMarketplaceFilters = {}): 
   const { page = 1, limit = 20 } = filters;
 
   // Offset-based pagination is deprecated in favor of cursor-based APIs.
+  /**
+   * Deprecated offset-wrapper. Use `getMarketplaceItemsCursor(filters, limit, cursorCreatedAt, cursorId)`
+   * directly for cursor-based pagination.
+   * @deprecated This wrapper is provided for backward compatibility only and may be removed.
+   */
+  console.warn('[getMarketplaceItems] DEPRECATED: use getMarketplaceItemsCursor() directly for cursor-based pagination.');
   // Implement a safe, backward-compatible wrapper that iteratively uses the
   // cursor API to reach the requested page. This avoids calling `.range()`.
   try {

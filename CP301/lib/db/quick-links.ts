@@ -13,7 +13,7 @@ export async function getQuickLinks(): Promise<QuickLink[]> {
     console.log('[getQuickLinks] Starting fetch from Supabase...');
     const { data, error } = await db
         .from('quick_links')
-        .select('*')
+        .select('id, created_by, title, description, url, section, sub_section, target_roles, display_order, is_featured, is_active, click_count, created_at, updated_at')
         .eq('is_active', true)
         .order('section', { ascending: true })
         .order('sub_section', { ascending: true, nullsFirst: true })
@@ -34,7 +34,7 @@ export async function getQuickLinks(): Promise<QuickLink[]> {
 export async function getQuickLinkById(id: string): Promise<QuickLink | null> {
     const { data, error } = await db
         .from('quick_links')
-        .select('*')
+        .select('id, created_by, title, description, url, section, sub_section, target_roles, display_order, is_featured, is_active, click_count, created_at, updated_at')
         .eq('id', id)
         .single();
         
@@ -62,7 +62,7 @@ export async function addQuickLink(
     const { data, error } = await db
         .from('quick_links')
         .insert([insertData])
-        .select('*')
+        .select('id, created_by, title, description, url, section, sub_section, target_roles, display_order, is_featured, is_active, click_count, created_at, updated_at')
         .single();
 
     if (error) throw new Error(`[addQuickLink] ${error.message}`);
@@ -91,7 +91,7 @@ export async function updateQuickLink(
         .from('quick_links')
         .update(updateData)
         .eq('id', id)
-        .select('*')
+        .select('id, created_by, title, description, url, section, sub_section, target_roles, display_order, is_featured, is_active, click_count, created_at, updated_at')
         .single();
 
     if (error) throw new Error(`[updateQuickLink] ${error.message}`);

@@ -17,6 +17,8 @@ Summary of recent work applied to improve scalability and reduce overfetch:
 - Hooks updated to reset cursor state on filter changes (e.g., marketplace, lost & found, events) to avoid stale pagination state.
 - Fixed TypeScript mismatches caused by nested join arrays in dashboard pages (e.g., communities/feed pages) so `tsc --noEmit` passes.
 
+- Deprecated offset-wrapper helpers in `lib/db/*` (e.g., `getFeedPosts`, `getPublishedBlogs`, `getMarketplaceItems`, `getLFItems`, `getCommunities`, `getEvents`) — callers should migrate to the corresponding `*Cursor` functions for efficient cursor-based pagination. Wrappers now emit runtime warnings to surface remaining callsites.
+
 Outstanding / next steps:
 
 - Verify and apply migrations (`024`, `027`, `028`) to staging and production (create indexes CONCURRENTLY where appropriate).

@@ -21,6 +21,13 @@ export async function getUpcomingEvents(
   limit: number = 20,
   page: number = 1
 ): Promise<Event[]> {
+  /**
+   * Deprecated offset-wrapper. Prefer `getUpcomingEventsCursor(type, limit, cursorStartTime, cursorId)`
+   * for cursor-based pagination.
+   * @deprecated Use the cursor API directly; this wrapper is only for backward compatibility.
+   */
+  console.warn('[getUpcomingEvents] DEPRECATED: use getUpcomingEventsCursor() directly for cursor-based pagination.');
+
   // Use cursor-based API to avoid offset `.range()` calls. If a caller
   // requests page > 1, iteratively fetch pages via the cursor API.
   const now = new Date().toISOString();
@@ -145,6 +152,12 @@ export async function getEvents(filters: GetEventsFilters = {}): Promise<Paginat
 
   // Replace offset-based `.range()` with cursor-based retrieval. This will
   // iteratively page through the cursor API to reach the requested page.
+  /**
+   * Deprecated offset-wrapper. Prefer `getEventsCursor(filters, limit, cursorStartTime, cursorId)`
+   * for cursor-based pagination.
+   * @deprecated Use cursor APIs directly where possible.
+   */
+  console.warn('[getEvents] DEPRECATED: use getEventsCursor() directly for cursor-based pagination.');
   try {
     let cursorStartTime: string | null | undefined = undefined;
     let cursorId: string | null | undefined = undefined;

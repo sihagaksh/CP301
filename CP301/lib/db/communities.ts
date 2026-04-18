@@ -17,6 +17,12 @@ export interface GetCommunityFilters extends PaginationParams {
  */
 export async function getCommunities(filters: GetCommunityFilters = {}): Promise<PaginatedResponse<Community>> {
     const { page = 1, limit = 20 } = filters;
+    /**
+     * Deprecated offset-wrapper. Prefer `getCommunitiesCursor(filters, limit, cursorMemberCount, cursorId)`
+     * for efficient cursor-based pagination.
+     * @deprecated Use the cursor API directly; this wrapper is maintained for backward compatibility.
+     */
+    console.warn('[getCommunities] DEPRECATED: use getCommunitiesCursor() directly for cursor-based pagination.');
 
     // Use cursor-based retrieval to avoid offset .range(). Iterate over
     // pages using the cursor API to return the requested page.
@@ -195,6 +201,7 @@ export async function getCommunityMembers(communityId: string): Promise<Communit
  */
 export async function getCommunityPosts(communityId: string, page = 1, limit = 20): Promise<PaginatedResponse<CommunityPost>> {
     try {
+        console.warn('[getCommunityPosts] DEPRECATED: use getCommunityPostsCursor() directly for cursor-based pagination.');
         let cursorCreatedAt: string | null | undefined = undefined;
         let cursorId: string | null | undefined = undefined;
         let pageData: CommunityPost[] = [];

@@ -20,6 +20,13 @@ export interface GetLFFilters extends PaginationParams {
 export async function getLFItems(filters: GetLFFilters = {}): Promise<PaginatedResponse<LostFoundItem>> {
     const { page = 1, limit = 20 } = filters;
 
+    /**
+     * Deprecated offset-wrapper. Prefer `getLFItemsCursor(filters, limit, cursorCreatedAt, cursorId)`
+     * for cursor-based pagination.
+     * @deprecated Use the cursor API directly; this wrapper exists only for compatibility.
+     */
+    console.warn('[getLFItems] DEPRECATED: use getLFItemsCursor() directly for cursor-based pagination.');
+
     // Deprecated offset-based pagination — use cursor API under the hood
     try {
         let cursorCreatedAt: string | null | undefined = undefined;

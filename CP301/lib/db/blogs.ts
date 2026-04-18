@@ -15,9 +15,12 @@ export async function getPublishedBlogs(
   limit = 20,
   offset = 0
 ): Promise<BlogPost[]> {
-  // Backwards-compatible wrapper that uses the cursor API to emulate offset
-  // pagination. Prefer calling `getPublishedBlogsCursor` directly for better
-  // performance on large tables.
+  /**
+   * Backwards-compatible wrapper that uses the cursor API to emulate offset
+   * pagination.
+   * @deprecated Prefer `getPublishedBlogsCursor` directly for efficient cursor-based pagination.
+   */
+  console.warn('[getPublishedBlogs] DEPRECATED: use getPublishedBlogsCursor() directly for cursor-based pagination. This wrapper will be removed in a future release.');
   try {
     const page = Math.floor(offset / limit) + 1;
     let cursorPublishedAt: string | null | undefined = undefined;

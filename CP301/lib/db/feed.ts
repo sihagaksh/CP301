@@ -11,6 +11,11 @@ import type { FeedPost } from '@/lib/types';
  * Get feed posts with pagination
  */
 export async function getFeedPosts(limit = 20, offset = 0): Promise<FeedPost[]> {
+    /**
+     * Backwards-compatible wrapper that uses cursor API to emulate offset.
+     * @deprecated Prefer `getFeedPostsCursor(limit, cursorCreatedAt, cursorId)` for efficient pagination.
+     */
+    console.warn('[getFeedPosts] DEPRECATED: use getFeedPostsCursor() directly for cursor-based pagination. This wrapper will be removed in a future release.');
     // Backwards-compatible wrapper that uses cursor API to emulate offset
     try {
         const page = Math.floor(offset / limit) + 1;

@@ -10,11 +10,15 @@ import { NoticeCategory, NoticeStatus } from '@/lib/types';
 interface NoticeListProps {
     category?: NoticeCategory | 'all';
     status?: NoticeStatus | 'all';
+    priority?: NoticePriority | 'all';
+    startDate?: string | null;
+    endDate?: string | null;
+    search?: string;
     compact?: boolean;
 }
 
-export function NoticeList({ category = 'all', status = 'published', compact = false }: NoticeListProps) {
-    const { notices, loading, error, hasMore, loadMore } = useNotices({ category, status });
+export function NoticeList({ category = 'all', status = 'published', priority = 'all', startDate = null, endDate = null, search = '', compact = false }: NoticeListProps) {
+    const { notices, loading, error, hasMore, loadMore } = useNotices({ category, status, priority, startDate, endDate, search });
 
     if (error) {
         return (
@@ -48,14 +52,13 @@ export function NoticeList({ category = 'all', status = 'published', compact = f
                 ))}
             </div>
 
-            {loading && (
-                <div className="flex justify-center p-6">
+            {/* Always reserve space at the bottom to prevent layout shift and scrollbar toggling */}
+            <div className="flex flex-col justify-center items-center min-h-[80px] mt-6">
+                {loading && (
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-            )}
+                )}
 
-            {!loading && hasMore && (
-                <div className="flex justify-center pt-4">
+                {!loading && hasMore && (
                     <Button
                         variant="outline"
                         onClick={loadMore}
@@ -63,8 +66,8 @@ export function NoticeList({ category = 'all', status = 'published', compact = f
                     >
                         Load More Notices
                     </Button>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

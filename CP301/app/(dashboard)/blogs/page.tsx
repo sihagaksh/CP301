@@ -14,10 +14,11 @@ import { useState, useEffect } from 'react';
 import type { BlogPost } from '@/lib/types';
 
 export default function BlogsPage() {
-    const { 
-        blogs, loading, hasMore, loadMore, category, setCategory, sort, setSort, 
+    const {
+        blogs, loading, hasMore, loadMore, category, setCategory, sort, setSort,
         tag, setTag, authorId, setAuthorId, keyword, setKeyword,
-        startDate, setStartDate, endDate, setEndDate 
+        startDate, setStartDate, endDate, setEndDate,
+        hiringType, setHiringType
     } = useBlogs();
     const { user } = useAuth();
 
@@ -114,6 +115,8 @@ export default function BlogsPage() {
                     setStartDate={setStartDate}
                     endDate={endDate}
                     setEndDate={setEndDate}
+                    hiringType={hiringType}
+                    setHiringType={setHiringType}
                 />
             </div>
         </PageContainer>

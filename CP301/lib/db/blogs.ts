@@ -63,12 +63,13 @@ export async function getPublishedBlogsCursor(
   cursorLikeCount?: number | null,
   cursorViewCount?: number | null,
   startDate?: string | null,
-  endDate?: string | null
+  endDate?: string | null,
+  hiringType?: string | null
 ): Promise<BlogPost[]> {
   let selectFields = `
       id, title, slug, content, excerpt, featured_image_url,
       category, tags,
-      company_name, role_applied, interview_round,
+      company_name, role_applied, interview_round, hiring_type,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
@@ -94,9 +95,14 @@ export async function getPublishedBlogsCursor(
 
   // filter by author
   if (authorId) query = query.eq('author_id', authorId);
-  // filter by search keyword in title/content
+  // filter by hiring type
+  if (hiringType && hiringType !== 'all') query = query.eq('hiring_type', hiringType);
+  
+  // filter by search keyword in title/content/company/role
   if (search) {
-    try { query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`); } catch (e) { /* ignore if driver unsupported */ }
+    try { 
+      query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,company_name.ilike.%${search}%,role_applied.ilike.%${search}%`); 
+    } catch (e) { /* ignore if driver unsupported */ }
   }
 
   // filter by date range
@@ -144,15 +150,12 @@ export async function getPublishedBlogsCursor(
   return (data ?? []).map(mapBlogPost);
 }
 
-/**
- * Get blog by slug
- */
 export async function getBlogBySlug(slug: string): Promise<BlogPost | null> {
   const { data, error } = await db
     .from('blog_posts')
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, tags, company_name, role_applied, interview_round,
+      category, tags, company_name, role_applied, interview_round, hiring_type,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
@@ -163,6 +166,7 @@ export async function getBlogBySlug(slug: string): Promise<BlogPost | null> {
     .single();
 
   if (error) {
+    console.error(`[getBlogBySlug] Error for slug "${slug}":`, error);
     if (error.code === 'PGRST116') return null;
     throw new Error(`[getBlogBySlug] ${error.message}`);
   }
@@ -211,6 +215,7 @@ export async function createBlogPost(
   companyName?: string,
   roleApplied?: string,
   interviewRound?: string,
+  hiringType?: string,
   publishNow = false
 ): Promise<BlogPost> {
   const { data, error } = await db
@@ -226,12 +231,13 @@ export async function createBlogPost(
       company_name: companyName,
       role_applied: roleApplied,
       interview_round: interviewRound,
+      hiring_type: hiringType,
       status: publishNow ? 'published' : 'draft',
       published_at: publishNow ? new Date().toISOString() : null,
     })
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, tags, company_name, role_applied, interview_round,
+      category, tags, company_name, role_applied, interview_round, hiring_type,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
@@ -257,7 +263,7 @@ export async function publishBlogPost(blogId: string): Promise<BlogPost> {
     .eq('id', blogId)
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, tags, company_name, role_applied, interview_round,
+      category, tags, company_name, role_applied, interview_round, hiring_type,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
@@ -285,6 +291,7 @@ export async function updateBlogPost(
     companyName?: string;
     roleApplied?: string;
     interviewRound?: string;
+    hiringType?: string;
     status?: ContentStatus;
   }
 ): Promise<BlogPost> {
@@ -300,13 +307,14 @@ export async function updateBlogPost(
       company_name: updates.companyName,
       role_applied: updates.roleApplied,
       interview_round: updates.interviewRound,
+      hiring_type: updates.hiringType,
       status: updates.status,
       updated_at: new Date().toISOString(),
     })
     .eq('id', blogId)
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, company_name, role_applied, interview_round,
+      category, company_name, role_applied, interview_round, hiring_type,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
@@ -336,6 +344,12 @@ export async function deleteBlogPost(blogId: string): Promise<void> {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapBlogPost(row: any): BlogPost {
+    const featuredImageUrl = row.featured_image_url;
+    // Resolve relative storage paths to full public URLs if necessary
+    const resolvedImageUrl = featuredImageUrl && !featuredImageUrl.startsWith('http')
+        ? db.storage.from('blogs-media').getPublicUrl(featuredImageUrl).data.publicUrl
+        : featuredImageUrl;
+
   return {
     id: row.id,
     authorId: row.author_id,
@@ -344,12 +358,13 @@ export function mapBlogPost(row: any): BlogPost {
     slug: row.slug,
     content: row.content,
     excerpt: row.excerpt,
-    featuredImageUrl: row.featured_image_url,
+    featuredImageUrl: resolvedImageUrl,
     category: row.category,
     tags: row.tags || [],
     companyName: row.company_name,
     roleApplied: row.role_applied,
     interviewRound: row.interview_round,
+    hiringType: row.hiring_type,
     status: row.status,
     isFeatured: row.is_featured,
     allowComments: row.allow_comments,
@@ -380,7 +395,7 @@ export async function getUserDrafts(userId: string): Promise<BlogPost[]> {
     .from('blog_posts')
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, tags, company_name, role_applied, interview_round,
+      category, tags, company_name, role_applied, interview_round, hiring_type,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,

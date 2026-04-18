@@ -1,13 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useEvents } from '@/lib/hooks/useEvents';
 import { EventCard } from './EventCard';
 import { Button } from '@/components/ui/button';
-import { Loader2, CalendarHeart } from 'lucide-react';
+import { Loader2, CalendarHeart, Search as SearchIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export function EventList() {
     const { events, loading, error, hasMore, loadMore, filters, updateFilters } = useEvents({ limit: 10 });
+    const [searchOpen, setSearchOpen] = React.useState(false);
 
     if (error) {
         return (
@@ -17,26 +22,87 @@ export function EventList() {
         );
     }
 
+    const categories = [
+        { label: 'All Types', value: 'all' },
+        { label: 'Workshop / Tech', value: 'workshop' },
+        { label: 'Cultural', value: 'cultural' },
+        { label: 'Seminar', value: 'seminar' },
+        { label: 'Club Event', value: 'club_event' },
+        { label: 'Sports', value: 'sports' },
+        { label: 'Fest', value: 'fest' },
+        { label: 'General / Official', value: 'general' }
+    ];
+
     return (
         <div className="space-y-6 animate-fade-in">
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap gap-2 items-center pb-2 border-b border-border">
-                <h2 className="text-sm font-medium text-muted-foreground opacity-70 flex items-center gap-2 mr-4 hidden sm:flex">
-                    <CalendarHeart className="w-4 h-4" /> Discover Events
-                </h2>
-                <div className="flex gap-2 flex-wrap">
-                    {(['all', 'seminar', 'workshop', 'club_event', 'fest', 'sports'] as const).map(cat => (
-                        <button
-                            key={cat}
-                            onClick={() => updateFilters({ type: cat })}
-                            className={`text-xs px-3 py-1.5 rounded-full transition-colors ${filters.type === cat || (!filters.type && cat === 'all')
-                                    ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
-                                }`}
-                        >
-                            {cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ')}
-                        </button>
-                    ))}
+            {/* Advanced Filter Row */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6 bg-black/5 dark:bg-white/5 p-4 rounded-2xl border border-border">
+                <div className="flex-1 w-full relative">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search events, organizers, venues..." 
+                        className="pl-9 bg-background w-full"
+                        value={filters.search || ''}
+                        onChange={(e) => updateFilters({ search: e.target.value })}
+                    />
+                </div>
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <Select
+                        value={(filters.type as string) || 'all'}
+                        onValueChange={(val) => updateFilters({ type: val as any })}
+                    >
+                        <SelectTrigger className="w-full sm:w-[180px] bg-background">
+                            <SelectValue placeholder="Event Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {categories.map((cat) => (
+                                <SelectItem key={cat.value} value={cat.value}>
+                                    {cat.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full sm:w-auto gap-2 text-muted-foreground bg-background">
+                                <CalendarHeart className="w-4 h-4" /> 
+                                {(filters.startDate || filters.endDate) ? 'Dates Active' : 'Advanced Dates'}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-4" align="end">
+                            <div className="space-y-4">
+                                <h4 className="font-medium text-sm leading-none flex items-center gap-2">
+                                    Filter by Event Date
+                                </h4>
+                                <p className="text-xs text-muted-foreground">Select a range to find events occurring between these inclusive dates.</p>
+                                
+                                <div className="grid gap-2">
+                                    <Label htmlFor="date-from-event" className="text-xs">From (Start Date)</Label>
+                                    <Input 
+                                        id="date-from-event" 
+                                        type="datetime-local"
+                                        value={filters.startDate ? filters.startDate.slice(0, 16) : ''}
+                                        onChange={(e) => updateFilters({ startDate: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="date-to-event" className="text-xs">To (End Date)</Label>
+                                    <Input 
+                                        id="date-to-event" 
+                                        type="datetime-local" 
+                                        value={filters.endDate ? filters.endDate.slice(0, 16) : ''}
+                                        onChange={(e) => updateFilters({ endDate: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                    />
+                                </div>
+                                <div className="pt-2 flex justify-end">
+                                    <Button size="sm" variant="ghost" onClick={() => updateFilters({ startDate: null, endDate: null })}>
+                                        Clear All
+                                    </Button>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </div>
             </div>
 

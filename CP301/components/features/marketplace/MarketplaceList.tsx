@@ -6,7 +6,10 @@ import { MarketplaceCard } from './MarketplaceCard';
 import { Button } from '@/components/ui/button';
 import { Loader2, SearchX, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import type { ItemCategory } from '@/lib/types';
+import type { ItemCondition } from '@/lib/types';
 
 const CATEGORIES: { value: ItemCategory | 'all', label: string }[] = [
     { value: 'all', label: 'All Items' },
@@ -58,60 +61,99 @@ export function MarketplaceList() {
                             className="pl-9 bg-white dark:bg-zinc-900 shadow-sm"
                         />
                     </div>
-
-                    <div>
                         <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                            <Filter className="w-4 h-4 hidden md:block" /> Categories
+                            Filters
                         </h3>
-                        <div className="flex flex-col gap-1">
-                            {CATEGORIES.map(cat => (
-                                <button
-                                    key={cat.value}
-                                    onClick={() => updateFilters({ category: cat.value })}
-                                    className={`text-left text-sm px-3 py-2 rounded-lg transition-colors ${(filters.category === cat.value) || (!filters.category && cat.value === 'all')
-                                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-medium'
-                                            : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900/50'
-                                        }`}
-                                >
-                                    {cat.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                        
+                        <div className="flex flex-col gap-5">
+                            {/* Category Filter */}
+                            <div>
+                                <div className="text-sm text-muted-foreground mb-2 flex items-center gap-1.5">
+                                    <Filter className="w-3.5 h-3.5" /> Category
+                                </div>
+                                <Select value={(filters.category as string) || 'all'} onValueChange={(val) => updateFilters({ category: val === 'all' ? undefined : val as any })}>
+                                    <SelectTrigger className="rounded-md bg-card h-10 w-full">
+                                        <SelectValue placeholder="All Categories" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {CATEGORIES.map(cat => (
+                                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                    {/* Price Filter (Simplified visual) */}
-                    <div className="pt-4 border-t border-border">
-                        <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3">Price Range</h3>
-                        <div className="flex gap-2">
-                            <Input
-                                type="number"
-                                placeholder="Min ₹"
-                                className="text-sm shadow-sm"
-                                onChange={(e) => {
-                                    const val = parseInt(e.target.value);
-                                    updateFilters({ minPrice: isNaN(val) ? undefined : val });
-                                }}
-                            />
-                            <Input
-                                type="number"
-                                placeholder="Max ₹"
-                                className="text-sm shadow-sm"
-                                onChange={(e) => {
-                                    const val = parseInt(e.target.value);
-                                    updateFilters({ maxPrice: isNaN(val) ? undefined : val });
-                                }}
-                            />
+                            {/* Condition Filter */}
+                            <div>
+                                <div className="text-sm text-muted-foreground mb-2">Condition</div>
+                                <Select value={(filters.condition as string) || 'all'} onValueChange={(val) => updateFilters({ condition: val === 'all' ? undefined : val as ItemCondition })}>
+                                    <SelectTrigger className="rounded-md bg-card h-10 w-full">
+                                        <SelectValue placeholder="All Conditions" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Conditions</SelectItem>
+                                        <SelectItem value="new">New</SelectItem>
+                                        <SelectItem value="like_new">Like New</SelectItem>
+                                        <SelectItem value="good">Good</SelectItem>
+                                        <SelectItem value="fair">Fair</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex items-center justify-between bg-black/5 dark:bg-white/5 p-2 rounded-lg">
+                                <div className="text-sm text-foreground font-medium">Negotiable only</div>
+                                <Switch checked={!!filters.isNegotiable} onCheckedChange={(v) => updateFilters({ isNegotiable: v ? true : undefined })} />
+                            </div>
+
+                            {/* Price Range Filter */}
+                            <div className="pt-2">
+                                <div className="text-sm text-muted-foreground mb-2">Price Range</div>
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="number"
+                                        placeholder="Min ₹"
+                                        className="text-sm shadow-sm h-10"
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            updateFilters({ minPrice: isNaN(val) ? undefined : val });
+                                        }}
+                                    />
+                                    <Input
+                                        type="number"
+                                        placeholder="Max ₹"
+                                        className="text-sm shadow-sm h-10"
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            updateFilters({ maxPrice: isNaN(val) ? undefined : val });
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Sort Filter */}
+                            <div className="pt-2 border-t border-border">
+                                <div className="text-sm text-muted-foreground mb-2">Sort</div>
+                                <Select value={(filters.sort as string) || 'newest'} onValueChange={(val) => updateFilters({ sort: val as any })}>
+                                    <SelectTrigger className="rounded-md bg-card h-10 w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="newest">Newest First</SelectItem>
+                                        <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                                        <SelectItem value="price_desc">Price: High to Low</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Item Grid */}
-            <div className="flex-1 min-w-0">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                    {items.map((item) => (
-                        <MarketplaceCard key={item.id} item={item} />
-                    ))}
+                <div className="flex-1 min-w-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                        {items.map((item) => (
+                            <MarketplaceCard key={item.id} item={item} />
+                        ))}
+                    </div>
                 </div>
 
                 {/* Loading & Empty States */}
@@ -143,6 +185,5 @@ export function MarketplaceList() {
                     </div>
                 )}
             </div>
-        </div>
-    );
-}
+        );
+    }

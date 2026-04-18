@@ -110,6 +110,7 @@ export interface BlogPost {
   companyName?: string;
   roleApplied?: string;
   interviewRound?: string;
+  hiringType?: string;
   status: ContentStatus;
   isFeatured: boolean;
   allowComments: boolean;

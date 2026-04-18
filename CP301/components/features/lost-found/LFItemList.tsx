@@ -4,8 +4,15 @@ import React from 'react';
 import { useLostFound } from '@/lib/hooks/useLostFound';
 import { LFItemCard } from './LFItemCard';
 import { Button } from '@/components/ui/button';
-import { Loader2, SearchX } from 'lucide-react';
+import { Loader2, SearchX, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export function LFItemList() {
     const { items, loading, error, hasMore, loadMore, filters, updateFilters } = useLostFound({ limit: 12 });
@@ -21,30 +28,64 @@ export function LFItemList() {
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Filters and Search Bar */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pb-4 border-b border-border">
-                <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-xl w-full sm:w-auto">
-                    {(['all', 'lost', 'found'] as const).map(status => (
-                        <button
-                            key={status}
-                            onClick={() => updateFilters({ status, category: 'all' })}
-                            className={`flex-1 sm:flex-none text-sm font-medium px-6 py-2 rounded-lg transition-all ${filters.status === status || (!filters.status && status === 'all')
-                                    ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100'
-                                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-                                }`}
-                        >
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </button>
-                    ))}
-                </div>
+            <div className="flex flex-col gap-4 pb-4 border-b border-border">
+                <div className="flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
+                    <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-xl w-full xl:w-auto">
+                        {(['all', 'lost', 'found'] as const).map(status => (
+                            <button
+                                key={status}
+                                onClick={() => updateFilters({ status })}
+                                className={`flex-1 xl:flex-none text-sm font-medium px-6 py-2 rounded-lg transition-all ${filters.status === status || (!filters.status && status === 'all')
+                                        ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100'
+                                        : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                                    }`}
+                            >
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </button>
+                        ))}
+                    </div>
 
-                <div className="relative w-full sm:w-64 shrink-0">
-                    <SearchX className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search items..."
-                        value={filters.search || ''}
-                        onChange={(e) => updateFilters({ search: e.target.value })}
-                        className="pl-9 bg-white dark:bg-zinc-900"
-                    />
+                    <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full xl:w-auto">
+                        <Select
+                            value={filters.category || 'all'}
+                            onValueChange={(val) => updateFilters({ category: val as any })}
+                        >
+                            <SelectTrigger className="w-full sm:w-[160px] bg-white dark:bg-zinc-900">
+                                <SelectValue placeholder="Category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Categories</SelectItem>
+                                <SelectItem value="electronics">Electronics</SelectItem>
+                                <SelectItem value="documents">Documents</SelectItem>
+                                <SelectItem value="accessories">Accessories</SelectItem>
+                                <SelectItem value="clothing">Clothing</SelectItem>
+                                <SelectItem value="keys">Keys</SelectItem>
+                                <SelectItem value="wallet">Wallet</SelectItem>
+                                <SelectItem value="bottle">Bottle</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <div className="relative w-full sm:w-[200px] shrink-0">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search by place..."
+                                value={filters.locationSearch || ''}
+                                onChange={(e) => updateFilters({ locationSearch: e.target.value })}
+                                className="pl-9 bg-white dark:bg-zinc-900"
+                            />
+                        </div>
+
+                        <div className="relative w-full sm:w-[220px] shrink-0">
+                            <SearchX className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search by item name..."
+                                value={filters.search || ''}
+                                onChange={(e) => updateFilters({ search: e.target.value })}
+                                className="pl-9 bg-white dark:bg-zinc-900"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 

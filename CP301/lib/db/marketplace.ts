@@ -15,6 +15,9 @@ export interface GetMarketplaceFilters extends PaginationParams {
   sellerId?: string;
   minPrice?: number;
   maxPrice?: number;
+  isNegotiable?: boolean;
+  /** 'newest' | 'price_asc' | 'price_desc' */
+  sort?: 'newest' | 'price_asc' | 'price_desc';
 }
 
 /**
@@ -74,7 +77,7 @@ export async function getMarketplaceItemsCursor(
   cursorCreatedAt?: string | null,
   cursorId?: string | null
 ): Promise<MarketplaceItem[]> {
-  const { category, condition, status = 'available', search, sellerId, minPrice, maxPrice } = filters;
+  const { category, condition, status = 'available', search, sellerId, minPrice, maxPrice, isNegotiable, sort } = filters;
 
   let query = db
     .from('marketplace_items')
@@ -93,15 +96,22 @@ export async function getMarketplaceItemsCursor(
   if (search) query = query.ilike('title', `%${search}%`);
   if (minPrice !== undefined) query = query.gte('price', minPrice);
   if (maxPrice !== undefined) query = query.lte('price', maxPrice);
+  if (isNegotiable === true) query = query.eq('is_negotiable', true);
 
   if (cursorCreatedAt && cursorId) {
     query = query.or(`created_at.lt.${cursorCreatedAt},and(created_at.eq.${cursorCreatedAt},id.lt.${cursorId})`);
   }
 
-  const { data, error } = await query
-    .order('created_at', { ascending: false })
-    .order('id', { ascending: false })
-    .limit(limit);
+  // Apply ordering: price sorts require ordering by price, otherwise newest-first by created_at
+  if (sort === 'price_asc') {
+    query = query.order('price', { ascending: true }).order('id', { ascending: true });
+  } else if (sort === 'price_desc') {
+    query = query.order('price', { ascending: false }).order('id', { ascending: false });
+  } else {
+    query = query.order('created_at', { ascending: false }).order('id', { ascending: false });
+  }
+
+  const { data, error } = await query.limit(limit);
 
   if (error) {
     console.warn(`[getMarketplaceItemsCursor] ${error.message}`);

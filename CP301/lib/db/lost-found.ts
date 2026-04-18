@@ -11,6 +11,7 @@ export interface GetLFFilters extends PaginationParams {
     status?: LFStatus | 'all';
     category?: LFCategory | 'all';
     search?: string;
+    locationSearch?: string;
     reporterId?: string;
 }
 
@@ -81,6 +82,7 @@ export async function getLFItemsCursor(filters: GetLFFilters = {}, limit = 20, c
     if (category && category !== 'all') query = query.eq('category', category);
     if (reporterId) query = query.eq('reporter_id', reporterId);
     if (search) query = query.ilike('item_name', `%${search}%`);
+    if (filters.locationSearch) query = query.ilike('location_lost_found', `%${filters.locationSearch}%`);
 
     if (cursorCreatedAt && cursorId) {
         query = query.or(`created_at.lt.${cursorCreatedAt},and(created_at.eq.${cursorCreatedAt},id.lt.${cursorId})`);

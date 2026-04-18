@@ -25,6 +25,7 @@ export function useBlogs(initialCategory?: BlogCategory) {
 
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
+  const [hiringType, setHiringType] = useState<string | null>(null);
 
 
   const fetchBlogs = useCallback(async (isLoadMore = false, cat?: BlogCategory) => {
@@ -37,16 +38,16 @@ export function useBlogs(initialCategory?: BlogCategory) {
       setError(null);
       let data: BlogPost[] = [];
       if (sort === 'popular') {
-        if (isLoadMore && cursorRef.current.likeCount != null && cursorRef.current.viewCount != null && cursorRef.current.id) {
-          data = await getPublishedBlogsCursor(cat, limit, undefined, cursorRef.current.id, tag, authorId, keyword, 'popular', cursorRef.current.likeCount, cursorRef.current.viewCount, startDate, endDate);
+        if (isLoadMore && cursorRef.current.likeCount != null && cursorRef.current.id) {
+          data = await getPublishedBlogsCursor(cat, limit, undefined, cursorRef.current.id, tag, authorId, keyword, 'popular', cursorRef.current.likeCount, cursorRef.current.viewCount, startDate, endDate, hiringType);
         } else {
-          data = await getPublishedBlogsCursor(cat, limit, undefined, undefined, tag, authorId, keyword, 'popular', undefined, undefined, startDate, endDate);
+          data = await getPublishedBlogsCursor(cat, limit, undefined, undefined, tag, authorId, keyword, 'popular', undefined, undefined, startDate, endDate, hiringType);
         }
       } else {
         if (isLoadMore && cursorRef.current.createdAt && cursorRef.current.id) {
-          data = await getPublishedBlogsCursor(cat, limit, cursorRef.current.createdAt, cursorRef.current.id, tag, authorId, keyword, 'newest', undefined, undefined, startDate, endDate);
+          data = await getPublishedBlogsCursor(cat, limit, cursorRef.current.createdAt, cursorRef.current.id, tag, authorId, keyword, 'newest', undefined, undefined, startDate, endDate, hiringType);
         } else {
-          data = await getPublishedBlogsCursor(cat, limit, undefined, undefined, tag, authorId, keyword, 'newest', undefined, undefined, startDate, endDate);
+          data = await getPublishedBlogsCursor(cat, limit, undefined, undefined, tag, authorId, keyword, 'newest', undefined, undefined, startDate, endDate, hiringType);
         }
       }
 
@@ -66,13 +67,13 @@ export function useBlogs(initialCategory?: BlogCategory) {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [sort, tag, authorId, keyword, startDate, endDate]);
+  }, [sort, tag, authorId, keyword, startDate, endDate, hiringType]);
 
   useEffect(() => {
     // reset cursor when filters/sort/category change
     cursorRef.current = {};
     fetchBlogs(false, category);
-  }, [category, sort, tag, authorId, keyword, startDate, endDate]); // Re-fetch when any filter changes
+  }, [category, sort, tag, authorId, keyword, startDate, endDate, hiringType]); // Re-fetch when any filter changes
 
   const loadMore = () => {
     if (!loading && hasMore) {
@@ -100,7 +101,9 @@ export function useBlogs(initialCategory?: BlogCategory) {
     startDate,
     setStartDate,
     endDate,
-    setEndDate
+    setEndDate,
+    hiringType,
+    setHiringType
   };
 }
 

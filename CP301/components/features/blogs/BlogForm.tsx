@@ -29,6 +29,11 @@ const CATEGORIES: { label: string; value: BlogCategory }[] = [
     { label: 'General', value: 'general' },
 ];
 
+const HIRING_TYPES = [
+    { label: 'On-Campus', value: 'on_campus' },
+    { label: 'Off-Campus', value: 'off_campus' },
+];
+
 interface BlogFormProps {
     initialData?: BlogPost;
 }
@@ -44,7 +49,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
     const [category, setCategory] = useState<BlogCategory>(initialData?.category || 'general');
     const [content, setContent] = useState(initialData?.content || '');
     const [excerpt, setExcerpt] = useState(initialData?.excerpt || '');
-    
+
     // Image Upload State
     const [featuredImageUrl, setFeaturedImageUrl] = useState(initialData?.featuredImageUrl || '');
     const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -54,6 +59,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
     const [companyName, setCompanyName] = useState(initialData?.companyName || '');
     const [roleApplied, setRoleApplied] = useState(initialData?.roleApplied || '');
     const [interviewRound, setInterviewRound] = useState(initialData?.interviewRound || '');
+    const [hiringType, setHiringType] = useState(initialData?.hiringType || 'on_campus');
 
     const isPlacement = category === 'placement' || category === 'internship';
 
@@ -77,19 +83,19 @@ export function BlogForm({ initialData }: BlogFormProps) {
 
     const uploadImage = async (): Promise<string | null> => {
         if (!selectedImageFile || !user) return featuredImageUrl || null;
-        
+
         const ext = selectedImageFile.name.split('.').pop();
         const path = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        
+
         const { data, error } = await db.storage
             .from('blogs-media')
             .upload(path, selectedImageFile, { cacheControl: '3600', upsert: false });
-            
+
         if (error) {
             console.error('Upload Error:', error);
             throw new Error('Failed to upload image. Make sure the blogs-media bucket exists.');
         }
-        
+
         const { data: { publicUrl } } = db.storage.from('blogs-media').getPublicUrl(path);
         return publicUrl;
     };
@@ -126,6 +132,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
                         companyName: isPlacement ? companyName || undefined : undefined,
                         roleApplied: isPlacement ? roleApplied || undefined : undefined,
                         interviewRound: isPlacement ? interviewRound || undefined : undefined,
+                        hiringType: isPlacement ? hiringType || undefined : undefined,
                         status: publishNow ? 'published' : initialData.status,
                     }
                 );
@@ -143,6 +150,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
                     isPlacement ? companyName || undefined : undefined,
                     isPlacement ? roleApplied || undefined : undefined,
                     isPlacement ? interviewRound || undefined : undefined,
+                    isPlacement ? hiringType || undefined : undefined,
                     publishNow
                 );
             }
@@ -230,12 +238,27 @@ export function BlogForm({ initialData }: BlogFormProps) {
                                 />
                             </div>
                             <div className="space-y-2">
+                                <Label htmlFor="hiringType">Hiring Context</Label>
+                                <Select value={hiringType} onValueChange={setHiringType}>
+                                    <SelectTrigger id="hiringType">
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {HIRING_TYPES.map((type) => (
+                                            <SelectItem key={type.value} value={type.value}>
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2 col-span-1 md:col-span-3">
                                 <Label htmlFor="interviewRound">Details/Round</Label>
                                 <Input
                                     id="interviewRound"
                                     value={interviewRound}
                                     onChange={(e) => setInterviewRound(e.target.value)}
-                                    placeholder="e.g., On-Campus 2024"
+                                    placeholder="e.g., Technical Interview 2, HR Round..."
                                 />
                             </div>
                         </div>
@@ -243,7 +266,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
 
                     <div className="space-y-4">
                         <Label>Cover Image</Label>
-                        
+
                         {imagePreviewUrl ? (
                             <div className="relative w-full aspect-[21/9] rounded-xl overflow-hidden border border-border group">
                                 <img src={imagePreviewUrl} alt="Cover Preview" className="w-full h-full object-cover" />
@@ -255,8 +278,8 @@ export function BlogForm({ initialData }: BlogFormProps) {
                             </div>
                         ) : (
                             <div className="relative">
-                                <Label 
-                                    htmlFor="featuredImageUpload" 
+                                <Label
+                                    htmlFor="featuredImageUpload"
                                     className="flex w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30 hover:bg-muted/60 transition-colors py-10"
                                 >
                                     <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
@@ -264,11 +287,11 @@ export function BlogForm({ initialData }: BlogFormProps) {
                                         <div className="text-center font-medium">Click to upload a cover image</div>
                                         <div className="text-xs">PNG, JPG or WEBP (max. 5MB)</div>
                                     </div>
-                                    <input 
-                                        id="featuredImageUpload" 
-                                        type="file" 
-                                        accept="image/png, image/jpeg, image/webp" 
-                                        className="hidden" 
+                                    <input
+                                        id="featuredImageUpload"
+                                        type="file"
+                                        accept="image/png, image/jpeg, image/webp"
+                                        className="hidden"
                                         onChange={handleImageChange}
                                     />
                                 </Label>

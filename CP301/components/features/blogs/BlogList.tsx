@@ -37,6 +37,8 @@ interface BlogListProps {
     setStartDate?: (d: string | null) => void;
     endDate?: string | null;
     setEndDate?: (d: string | null) => void;
+    hiringType?: string | null;
+    setHiringType?: (t: string | null) => void;
 }
 
 const CATEGORIES: { label: string; value: BlogCategory | undefined }[] = [
@@ -49,15 +51,16 @@ const CATEGORIES: { label: string; value: BlogCategory | undefined }[] = [
     { label: 'General', value: 'general' },
 ];
 
-export function BlogList({ 
-    blogs, loading, hasMore, loadMore, 
-    category, setCategory, 
-    sort = 'newest', setSort, 
-    tag, setTag, 
+export function BlogList({
+    blogs, loading, hasMore, loadMore,
+    category, setCategory,
+    sort = 'newest', setSort,
+    tag, setTag,
     authorId, setAuthorId,
     keyword, setKeyword,
     startDate, setStartDate,
-    endDate, setEndDate
+    endDate, setEndDate,
+    hiringType, setHiringType
 }: BlogListProps) {
     const [localKeyword, setLocalKeyword] = useState(keyword || '');
     const [authorQuery, setAuthorQuery] = useState('');
@@ -108,6 +111,7 @@ export function BlogList({
         if (setSort) setSort('newest');
         if (setStartDate) setStartDate(null);
         if (setEndDate) setEndDate(null);
+        if (setHiringType) setHiringType(null);
         setAuthorQuery('');
         setLocalKeyword('');
         setIsCustomDate(false);
@@ -136,7 +140,10 @@ export function BlogList({
         <div className="space-y-10 min-h-[800px]">
             {/* Filter Section - Stable Layout */}
             <div className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+                <div className={cn(
+                    "grid grid-cols-1 sm:grid-cols-2 gap-4 items-start transition-all duration-300",
+                    (category === 'placement' || category === 'internship') ? "lg:grid-cols-5" : "lg:grid-cols-4"
+                )}>
                     {/* 1. Category Selection */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-muted-foreground ml-1 uppercase tracking-widest opacity-70">Category</label>
@@ -153,13 +160,30 @@ export function BlogList({
                             </SelectContent>
                         </Select>
                     </div>
+                    
+                    {/* 1.5 Hiring Context (Conditional) */}
+                    {(category === 'placement' || category === 'internship') && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                           <label className="text-[10px] font-bold text-amber-600 dark:text-amber-400 ml-1 uppercase tracking-widest opacity-70">Hiring Context</label>
+                           <Select value={hiringType || 'all'} onValueChange={(val) => setHiringType?.(val === 'all' ? null : val)}>
+                               <SelectTrigger className="rounded-xl border-amber-200 dark:border-amber-900/30 bg-amber-500/5 h-12 focus:ring-amber-500/20 transition-all hover:border-amber-500/50">
+                                   <SelectValue placeholder="All Contexts" />
+                               </SelectTrigger>
+                               <SelectContent className="rounded-xl border-zinc-200 dark:border-zinc-800">
+                                   <SelectItem value="all">All Contexts</SelectItem>
+                                   <SelectItem value="on_campus">On-Campus</SelectItem>
+                                   <SelectItem value="off_campus">Off-Campus</SelectItem>
+                               </SelectContent>
+                           </Select>
+                        </div>
+                    )}
 
                     {/* 2. Sort Selection + Advanced Date Option */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-muted-foreground ml-1 uppercase tracking-widest opacity-70">Sort & Time</label>
                         <div className="space-y-3">
-                            <Select 
-                                value={isCustomDate ? 'custom' : sort} 
+                            <Select
+                                value={isCustomDate ? 'custom' : sort}
                                 onValueChange={(val) => {
                                     if (val === 'custom') {
                                         setIsCustomDate(true);
@@ -212,7 +236,7 @@ export function BlogList({
                                 className="rounded-xl border-zinc-200 dark:border-zinc-800 bg-card h-12 pr-10 focus-visible:ring-amber-500/20 transition-all hover:border-amber-500/30"
                             />
                             {localKeyword && (
-                                <button 
+                                <button
                                     onClick={() => setLocalKeyword('')}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
                                 >
@@ -275,7 +299,7 @@ export function BlogList({
                 {blogs.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in duration-700">
                         {blogs.map((blog) => (
-                            <BlogCard key={blog.id} blog={blog} />
+                            <BlogCard key={blog.id || blog.slug} blog={blog} />
                         ))}
                         {loading && renderSkeletons()}
                     </div>

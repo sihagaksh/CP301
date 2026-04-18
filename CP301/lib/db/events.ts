@@ -11,6 +11,8 @@ import type { Event, EventType, PaginatedResponse, PaginationParams } from '@/li
 export interface GetEventsFilters extends PaginationParams {
   type?: EventType | 'all';
   search?: string;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 /**
@@ -112,39 +114,37 @@ export async function getEventsCursor(
   cursorStartTime?: string | null,
   cursorId?: string | null
 ): Promise<Event[]> {
-  const { type, search } = filters;
+  const { type, search, startDate, endDate } = filters;
   const now = new Date().toISOString();
+  
+  // Default search should only look forward from 'now' unless they explicitly select past dates
+  const baseStartDate = startDate ? startDate : now;
 
-  let query = db
-    .from('events')
-    .select(`
-      id, title, slug, type, start_time, end_time,
-      venue_name, is_online, cover_image_url,
-      registration_url, max_attendees, tags,
-      is_published, created_at,
-      organizer:organizations!events_organizer_id_fkey(id, name, slug, type, logo_url),
-      postedBy:users!events_posted_by_fkey(id, full_name, role, profile_picture_url)
-    `)
-    .eq('is_published', true)
-    .gte('start_time', now);
+  try {
+    const rpcParams = {
+      p_type: type === 'all' ? null : (type ?? null),
+      p_search: search || null,
+      p_start_date: baseStartDate,
+      p_end_date: endDate || null,
+      p_limit: limit,
+      p_cursor_start_time: cursorStartTime || null,
+      p_cursor_id: cursorId || null
+    };
 
-  if (type && type !== 'all') query = query.eq('type', type);
-  if (search) query = query.ilike('title', `%${search}%`);
+    const { data: rpcResult, error } = await db.rpc('get_visible_events_json', rpcParams as any) as any;
 
-  if (cursorStartTime && cursorId) {
-    query = query.or(`start_time.gt.${cursorStartTime},and(start_time.eq.${cursorStartTime},id.gt.${cursorId})`);
-  }
-
-  const { data, error } = await query
-    .order('start_time', { ascending: true })
-    .order('id', { ascending: true })
-    .limit(limit);
-
-  if (error) {
-    console.warn(`[getEventsCursor] ${error.message}`);
+    if (error) {
+      console.warn(`[getEventsCursor] RPC Error: ${error.message}`);
+      return [];
+    }
+    
+    // rpc payload: { data: [...], has_more: true/false }
+    const rows = (rpcResult?.data ?? []) as any[];
+    return rows.map(mapEvent);
+  } catch (err: any) {
+    console.warn(`[getEventsCursor] Exception: ${err.message}`);
     return [];
   }
-  return (data ?? []).map(mapEvent);
 }
 
 export async function getEvents(filters: GetEventsFilters = {}): Promise<PaginatedResponse<Event>> {

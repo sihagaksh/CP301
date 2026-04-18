@@ -10,9 +10,12 @@ import type { Notice, NoticeCategory, NoticePriority, NoticeStatus, PaginationPa
 
 export interface GetNoticesFilters extends PaginationParams {
     category?: NoticeCategory | 'all';
-    priority?: NoticePriority;
+    priority?: NoticePriority | 'all';
     status?: NoticeStatus | 'all';
     isActive?: boolean;
+    startDate?: string | null;
+    endDate?: string | null;
+    search?: string;
     // Optional cursor pagination support (createdAt + id)
     cursorCreatedAt?: string | null;
     cursorId?: string | null;
@@ -27,7 +30,7 @@ export interface GetNoticesFilters extends PaginationParams {
  * Fetch notices with pagination and user visibility logic
  */
 export async function getNotices(filters: GetNoticesFilters = {}): Promise<PaginatedResponse<Notice>> {
-    const { page = 1, limit = 20, category, priority, status = 'published', isActive = true, userContext, cursorCreatedAt, cursorId } = filters;
+    const { page = 1, limit = 20, category, priority, status = 'published', isActive = true, userContext, cursorCreatedAt, cursorId, startDate, endDate, search } = filters;
 
     try {
         const rpcParams: Record<string, any> = {
@@ -35,13 +38,16 @@ export async function getNotices(filters: GetNoticesFilters = {}): Promise<Pagin
             p_user_department: userContext?.department ?? null,
             p_user_batch: userContext?.batch ?? null,
             p_category: category === 'all' ? null : (category ?? null),
-            p_priority: priority ?? null,
+            p_priority: priority === 'all' ? null : (priority ?? null),
             p_status: status === 'all' ? null : (status ?? null),
             p_is_active: isActive,
             p_limit: limit,
             p_cursor_created_at: cursorCreatedAt ?? null,
             p_cursor_id: cursorId ?? null,
-            p_page: page
+            p_page: page,
+            p_start_date: startDate ?? null,
+            p_end_date: endDate ?? null,
+            p_search: search ?? null
         };
 
         const { data: rpcResult, error } = await db.rpc('get_visible_notices_json', rpcParams as any) as any;

@@ -68,6 +68,12 @@ export function BlogCard({ blog, className, isDraft }: BlogCardProps) {
               </Badge>
             )}
 
+            {blog.hiringType && (
+              <Badge variant="outline" className="bg-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-500/20 capitalize">
+                {blog.hiringType.replace('_', '-')}
+              </Badge>
+            )}
+
             {blog.isFeatured && (
               <Badge className="bg-amber-500 text-white border-transparent hover:bg-amber-600">Featured</Badge>
             )}

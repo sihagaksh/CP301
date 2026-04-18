@@ -50,7 +50,10 @@ export async function getPositionById(positionId: string): Promise<UserPosition 
 export async function getOrganizations(type?: OrgType): Promise<Organization[]> {
     let query = db
         .from('organizations')
-        .select('*')
+        .select(`
+            id, name, slug, type, parent_id, description, logo_url,
+            email, social_links, is_active, founded_year, created_at, updated_at
+        `)
         .eq('is_active', true)
         .order('name');
 
@@ -97,7 +100,10 @@ export async function getOrganizations(type?: OrgType): Promise<Organization[]> 
 export async function getOrganizationBySlug(slug: string): Promise<Organization | null> {
     const { data, error } = await db
         .from('organizations')
-        .select('*')
+        .select(`
+            id, name, slug, type, parent_id, description, logo_url,
+            email, social_links, is_active, founded_year, created_at, updated_at
+        `)
         .eq('slug', slug)
         .single();
 
@@ -114,7 +120,10 @@ export async function getOrganizationBySlug(slug: string): Promise<Organization 
 export async function getChildOrganizations(parentId: string): Promise<Organization[]> {
     const { data, error } = await db
         .from('organizations')
-        .select('*')
+        .select(`
+            id, name, slug, type, parent_id, description, logo_url,
+            email, social_links, is_active, founded_year, created_at, updated_at
+        `)
         .eq('parent_id', parentId)
         .eq('is_active', true)
         .order('name');

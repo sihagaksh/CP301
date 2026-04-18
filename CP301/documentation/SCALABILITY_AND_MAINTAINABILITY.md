@@ -7,6 +7,24 @@
 
 ---
 
+## Status Update — April 18, 2026
+
+Summary of recent work applied to improve scalability and reduce overfetch:
+
+- Moved filtering and pagination into the DB for notices and other growing lists; core lists now expose cursor-based RPCs (feed, blogs, events, marketplace, lost & found, communities) and most offset `.range()` call sites have been replaced or wrapped to use cursors.
+- Reduced overfetch by eliminating wildcard `select('*')` in hot paths — the media upload route authorization check now uses `select('id', { count: 'exact', head: true })` and documentation examples were updated to advocate explicit projections. A repo-wide sweep found only documentation and deliberate SQL `COUNT(*)` uses remaining.
+- Added migration `db/migrations/028_add_cursor_indexes.sql` to create compound indexes that support efficient cursor seeks.
+- Hooks updated to reset cursor state on filter changes (e.g., marketplace, lost & found, events) to avoid stale pagination state.
+- Fixed TypeScript mismatches caused by nested join arrays in dashboard pages (e.g., communities/feed pages) so `tsc --noEmit` passes.
+
+Outstanding / next steps:
+
+- Verify and apply migrations (`024`, `027`, `028`) to staging and production (create indexes CONCURRENTLY where appropriate).
+- Finish any remaining explicit-projection conversions in lower-traffic UI pages or legacy server routes.
+- Replace remaining offset-wrapper callsites with direct cursor calls where practical to avoid iterative traversal overhead.
+- Add CI enforcement for preventing `select('*')` in hot paths and add smoke/load tests for critical endpoints.
+
+
 ## 1. Architecture Overview
 
 ```

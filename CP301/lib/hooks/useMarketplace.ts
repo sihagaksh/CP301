@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { getMarketplaceItems, createMarketplaceItem, getMarketplaceItemById, updateMarketplaceItemStatus, type GetMarketplaceFilters } from '@/lib/db/marketplace';
+import { getMarketplaceItemsCursor, createMarketplaceItem, getMarketplaceItemById, updateMarketplaceItemStatus, type GetMarketplaceFilters } from '@/lib/db/marketplace';
 import type { MarketplaceItem, ListingStatus, ItemCategory, ItemCondition } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,7 @@ export function useMarketplace(initialFilters?: GetMarketplaceFilters) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
-  const pageRef = useRef(1);
+  const cursorRef = useRef<{ createdAt?: string | null; id?: string | null }>({});
   const fetchingRef = useRef(false);
   const [filters, setFilters] = useState<GetMarketplaceFilters>(initialFilters || { limit: 12 });
 
@@ -32,12 +32,19 @@ export function useMarketplace(initialFilters?: GetMarketplaceFilters) {
       setError(null);
 
       const f = currentFilters || filters;
-      const currentPage = isLoadMore ? pageRef.current + 1 : 1;
-      const response = await getMarketplaceItems({ ...f, page: currentPage });
+      let data = [] as any[];
+      if (isLoadMore && cursorRef.current.createdAt && cursorRef.current.id) {
+        data = await getMarketplaceItemsCursor(f, f.limit ?? 12, cursorRef.current.createdAt, cursorRef.current.id);
+      } else {
+        data = await getMarketplaceItemsCursor(f, f.limit ?? 12);
+      }
 
-      setItems(prev => isLoadMore ? [...prev, ...response.data] : response.data);
-      setHasMore(response.hasMore);
-      pageRef.current = currentPage;
+      setItems(prev => isLoadMore ? [...prev, ...data] : data);
+      setHasMore(data.length === (f.limit ?? 12));
+      if (data.length > 0) {
+        const last = data[data.length - 1];
+        cursorRef.current = { createdAt: last.createdAt, id: last.id };
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load marketplace items');
     } finally {
@@ -57,6 +64,9 @@ export function useMarketplace(initialFilters?: GetMarketplaceFilters) {
   }, [loading, hasMore, fetchItems]);
 
   const updateFilters = useCallback((newFilters: Partial<GetMarketplaceFilters>) => {
+    // Reset cursor state when filters change to start a fresh query
+    cursorRef.current = {};
+    setItems([]);
     setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 

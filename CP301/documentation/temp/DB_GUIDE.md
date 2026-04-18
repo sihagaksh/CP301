@@ -121,14 +121,15 @@ export async function getPublishedBlogs(category?: string, limit = 20) {
 }
 
 export async function getBlogBySlug(slug: string) {
-  const { data, error } = await db
-    .from('blog_posts')
-    .select(`
-      *, author:users (id, full_name, role, profile_picture_url, department)
-    `)
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single()
+    const { data, error } = await db
+        .from('blog_posts')
+        .select(`
+            id, title, slug, content, excerpt, featured_image_url, category, view_count, like_count, comment_count, published_at, created_at,
+            author:users (id, full_name, role, profile_picture_url, department)
+        `)
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .single()
 
   if (error) throw new Error(`getBlogBySlug: ${error.message}`)
   return data as BlogPost

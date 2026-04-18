@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { getCommunities, createCommunity, getCommunityBySlug, getCommunityMembers, getCommunityPosts, type GetCommunityFilters } from '@/lib/db/communities';
+import { getCommunitiesCursor, createCommunity, getCommunityBySlug, getCommunityMembers, getCommunityPostsCursor, type GetCommunityFilters } from '@/lib/db/communities';
 import type { Community, CommunityMember, CommunityPost } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,7 @@ export function useCommunities(initialFilters?: GetCommunityFilters) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
-    const pageRef = useRef(1);
+    const cursorRef = useRef<{ memberCount?: number | null; id?: string | null }>({});
     const [filters, setFilters] = useState<GetCommunityFilters>(initialFilters || { limit: 12 });
 
     const fetchCommunities = useCallback(async (isLoadMore = false, currentFilters?: GetCommunityFilters) => {
@@ -22,11 +22,18 @@ export function useCommunities(initialFilters?: GetCommunityFilters) {
             setLoading(true);
             setError(null);
             const f = currentFilters || filters;
-            const currentPage = isLoadMore ? pageRef.current + 1 : 1;
-            const response = await getCommunities({ ...f, page: currentPage });
-            setCommunities(prev => isLoadMore ? [...prev, ...response.data] : response.data);
-            setHasMore(response.hasMore);
-            pageRef.current = currentPage;
+            let data: any[] = [];
+            if (isLoadMore && cursorRef.current.memberCount !== undefined && cursorRef.current.id) {
+                data = await getCommunitiesCursor(f, f.limit ?? 12, cursorRef.current.memberCount ?? null, cursorRef.current.id);
+            } else {
+                data = await getCommunitiesCursor(f, f.limit ?? 12);
+            }
+            setCommunities(prev => isLoadMore ? [...prev, ...data] : data);
+            setHasMore(data.length === (f.limit ?? 12));
+            if (data.length > 0) {
+                const last = data[data.length - 1];
+                cursorRef.current = { memberCount: last.memberCount, id: last.id };
+            }
         } catch (err: any) {
             setError(err.message || 'Failed to load communities');
         } finally {
@@ -71,14 +78,14 @@ export function useCommunityDetail(slug: string | null) {
                 setCommunity(communityData);
 
                 if (communityData) {
-                    const [membersResult, postsResult] = await Promise.allSettled([
-                        getCommunityMembers(communityData.id),
-                        getCommunityPosts(communityData.id),
-                    ]);
-                    if (isMounted) {
-                        setMembers(membersResult.status === 'fulfilled' ? membersResult.value : []);
-                        setPosts(postsResult.status === 'fulfilled' ? postsResult.value.data : []);
-                    }
+                        const [membersResult, postsResult] = await Promise.allSettled([
+                            getCommunityMembers(communityData.id),
+                            getCommunityPostsCursor(communityData.id),
+                        ]);
+                        if (isMounted) {
+                            setMembers(membersResult.status === 'fulfilled' ? membersResult.value : []);
+                            setPosts(postsResult.status === 'fulfilled' ? postsResult.value : []);
+                        }
                 }
             } catch (err: any) {
                 if (isMounted) setError(err.message);

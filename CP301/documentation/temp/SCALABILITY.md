@@ -51,9 +51,10 @@ Every page hits the database fresh on every load. There is no caching, no smart 
 **Example from the current code (Blogs page):**
 ```js
 // This runs every time any user visits /blogs
-let query = supabase.from('blog_posts').select('*')  // ← grabs ALL columns
-    .order('published_at', { ascending: false })
-    .limit(20)
+// Only fetch the fields required for the listing card
+let query = supabase.from('blog_posts').select('id, title, slug, excerpt, featured_image_url, published_at, author:users(id, full_name)')
+  .order('published_at', { ascending: false })
+  .limit(20)
 ```
 `select('*')` fetches every column including the full blog `content` (which could be 10KB per post). For a listing page, you only need the title, excerpt, author, and image.
 

@@ -243,7 +243,7 @@ export default function MessagesPage() {
 
     const { data } = await db
       .from('conversations')
-      .select('*, context_type, participant1:users!conversations_participant1_id_fkey(id, full_name, email, profile_picture_url, role, department), participant2:users!conversations_participant2_id_fkey(id, full_name, email, profile_picture_url, role, department)')
+      .select('id, participant1_id, participant2_id, last_message, last_message_at, last_message_sender_id, is_pinned_p1, is_pinned_p2, context_type, participant1:users!conversations_participant1_id_fkey(id, full_name, email, profile_picture_url, role, department), participant2:users!conversations_participant2_id_fkey(id, full_name, email, profile_picture_url, role, department)')
       .or(`participant1_id.eq.${u.id},participant2_id.eq.${u.id}`)
       .order('last_message_at', { ascending: false, nullsFirst: false });
 
@@ -294,7 +294,7 @@ export default function MessagesPage() {
   const fetchMessages = useCallback(async (convId: string, scroll = true) => {
     const { data } = await db
       .from('messages')
-      .select('*')
+      .select('id, sender_id, receiver_id, content, created_at, is_read')
       .eq('conversation_id', convId)
       .order('created_at', { ascending: false })
       .limit(PAGE_SIZE);
@@ -318,7 +318,7 @@ export default function MessagesPage() {
     }
     const { data } = await db
       .from('messages')
-      .select('*')
+      .select('id, sender_id, receiver_id, content, created_at, is_read')
       .eq('conversation_id', convId)
       .lt('created_at', oldestMsgIdRef.current)
       .order('created_at', { ascending: false })

@@ -41,7 +41,7 @@ export default function BlogsPage() {
 
   async function loadBlogs() {
     const { data } = await supabase         // → business logic
-      .from('blog_posts').select('*')
+      .from('blog_posts').select('id, title, slug, excerpt, featured_image_url, published_at, author:users(id, full_name)')
   }
 
   return <div>...150 lines of JSX...</div>  // → UI rendering

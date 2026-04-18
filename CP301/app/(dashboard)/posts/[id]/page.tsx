@@ -71,12 +71,29 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   useEffect(() => { fetchPost(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchPost() {
-    const { data: postData } = await db.from('feed_posts').select('*, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(title, organization:organizations(name))').eq('id', id).single();
+    const { data: postData } = await db.from('feed_posts').select('id, author_id, posting_identity_id, content, media_urls, like_count, comment_count, created_at, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(title, organization:organizations(name))').eq('id', id).single();
     if (!postData) { setLoading(false); return; }
-    setPost(postData);
 
-    const { data: commentsData } = await db.from('feed_comments').select('*, user:users(id, full_name, profile_picture_url)').eq('post_id', id).order('created_at', { ascending: true });
-    setComments(commentsData || []);
+    let normalizedPostingIdentity: any = undefined;
+    if (postData.posting_identity) {
+      const rawPi = Array.isArray(postData.posting_identity) ? postData.posting_identity[0] : postData.posting_identity;
+      normalizedPostingIdentity = {
+        title: rawPi.title,
+        organization: rawPi.organization && Array.isArray(rawPi.organization) ? rawPi.organization[0] : rawPi.organization,
+      };
+    }
+
+    const normalizedPost = {
+      ...postData,
+      author: postData.author && Array.isArray(postData.author) ? postData.author[0] : postData.author,
+      posting_identity: normalizedPostingIdentity,
+    };
+
+    setPost(normalizedPost);
+
+    const { data: commentsData } = await db.from('feed_comments').select('id, post_id, user_id, content, created_at, user:users(id, full_name, profile_picture_url)').eq('post_id', id).order('created_at', { ascending: true });
+    const normalizedComments = (commentsData || []).map((c: any) => ({ ...c, user: c.user && Array.isArray(c.user) ? c.user[0] : c.user }));
+    setComments(normalizedComments);
 
     if (user) {
       const { data: like } = await db.from('feed_likes').select('id').eq('post_id', id).eq('user_id', user.id).maybeSingle();
@@ -115,8 +132,11 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     if (!commentInput.trim() || !user) return;
     setSubmitting(true);
     const content = commentInput.trim();
-    const { data } = await db.from('feed_comments').insert({ post_id: id, user_id: user.id, content }).select('*, user:users(id, full_name, profile_picture_url)').single();
-    if (data) setComments(prev => [...prev, data]);
+    const { data } = await db.from('feed_comments').insert({ post_id: id, user_id: user.id, content }).select('id, post_id, user_id, content, created_at, user:users(id, full_name, profile_picture_url)').single();
+    if (data) {
+      const normalized = { ...data, user: data.user && Array.isArray(data.user) ? data.user[0] : data.user };
+      setComments(prev => [...prev, normalized]);
+    }
     // Re-read true comment_count from DB (trigger has already incremented it)
     const { data: fresh } = await db.from('feed_posts').select('comment_count').eq('id', id).single();
     if (fresh) setPost(p => p ? { ...p, comment_count: fresh.comment_count } : null);

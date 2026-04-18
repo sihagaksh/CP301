@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getUpcomingEvents } from '@/lib/db/events';
+import { getUpcomingEventsCursor } from '@/lib/db/events';
 import { getNotices } from '@/lib/db/notices';
 import { getFeaturedBlogs } from '@/lib/db/blogs';
 import { Event, Notice, BlogPost } from '@/lib/types';
@@ -21,7 +21,7 @@ export function useDashboardWidgets() {
             try {
                 setLoading(true);
                 const [eventsResult, noticesResult, blogsResult] = await Promise.allSettled([
-                    getUpcomingEvents(undefined, 3).catch(() => [] as Event[]),
+                    getUpcomingEventsCursor(undefined, 3).catch(() => [] as Event[]),
                     getNotices({ limit: 3 }).then(res => res.data).catch(() => [] as Notice[]),
                     getFeaturedBlogs(3).catch(() => [] as BlogPost[]),
                 ]);

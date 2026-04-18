@@ -200,15 +200,17 @@ export default function FeedPage() {
   async function loadFeed() {
     const { data: posts } = await db
       .from('feed_posts')
-      .select('*, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug))')
+      .select(
+        'id, author_id, posting_identity_id, content, media_urls, source_type, source_id, like_count, comment_count, view_count, is_public, target_roles, created_at, updated_at, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug))'
+      )
       .order('created_at', { ascending: false })
       .limit(20);
 
     // Fetch live community stats simultaneously
     const [membersRes, blogsRes, itemsRes, eventsRes] = await Promise.all([
-      db.from('users').select('*', { count: 'exact', head: true }),
-      db.from('blog_posts').select('*', { count: 'exact', head: true }),
-      db.from('marketplace_items').select('*', { count: 'exact', head: true }).eq('status', 'available'),
+      db.from('users').select('id', { count: 'exact', head: true }),
+      db.from('blog_posts').select('id', { count: 'exact', head: true }),
+      db.from('marketplace_items').select('id', { count: 'exact', head: true }).eq('status', 'available'),
       db.from('events').select('id', { count: 'exact', head: true }).gte('start_date', new Date().toISOString()),
     ]);
 
@@ -234,7 +236,13 @@ export default function FeedPage() {
       likedSet = new Set((likes || []).map((l: { post_id: string }) => l.post_id));
     }
 
-    setFeedItems(posts.map((p: FeedItem) => ({
+    const normalizedPosts = (posts || []).map((p: any) => ({
+      ...p,
+      author: p.author && Array.isArray(p.author) ? p.author[0] : p.author,
+      posting_identity: p.posting_identity && Array.isArray(p.posting_identity) ? p.posting_identity[0] : p.posting_identity,
+    }));
+
+    setFeedItems(normalizedPosts.map((p: any) => ({
       ...p,
       likedByMe: likedSet.has(p.id),
       commentsOpen: false,
@@ -293,11 +301,17 @@ export default function FeedPage() {
     setFeedItems(prev => prev.map(p => p.id === postId ? { ...p, commentsOpen: true, commentsLoading: true } : p));
     const { data } = await db
       .from('feed_comments')
-      .select('*, user:users(id, full_name, profile_picture_url)')
+      .select('id, post_id, user_id, content, created_at, user:users(id, full_name, profile_picture_url)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
+
+    const normalizedComments = (data || []).map((c: any) => ({
+      ...c,
+      user: c.user && Array.isArray(c.user) ? c.user[0] : c.user,
+    }));
+
     setFeedItems(prev => prev.map(p =>
-      p.id === postId ? { ...p, comments: data || [], commentsLoading: false } : p
+      p.id === postId ? { ...p, comments: normalizedComments, commentsLoading: false } : p
     ));
   }
 
@@ -309,11 +323,12 @@ export default function FeedPage() {
     const { data: newComment } = await db
       .from('feed_comments')
       .insert({ post_id: postId, user_id: user.id, content })
-      .select('*, user:users(id, full_name, profile_picture_url)')
+      .select('id, post_id, user_id, content, created_at, user:users(id, full_name, profile_picture_url)')
       .single();
     if (newComment) {
+      const normalizedNew = { ...newComment, user: newComment.user && Array.isArray(newComment.user) ? newComment.user[0] : newComment.user };
       setFeedItems(prev => prev.map(p =>
-        p.id === postId ? { ...p, comments: [...(p.comments || []), newComment] } : p
+        p.id === postId ? { ...p, comments: [...(p.comments || []), normalizedNew] } : p
       ));
     }
     // Re-read true comment_count from DB (trigger has already incremented it)

@@ -13,6 +13,9 @@ export interface GetNoticesFilters extends PaginationParams {
     priority?: NoticePriority;
     status?: NoticeStatus | 'all';
     isActive?: boolean;
+    // Optional cursor pagination support (createdAt + id)
+    cursorCreatedAt?: string | null;
+    cursorId?: string | null;
     userContext?: {
         role: string;
         department?: string | null;
@@ -24,89 +27,44 @@ export interface GetNoticesFilters extends PaginationParams {
  * Fetch notices with pagination and user visibility logic
  */
 export async function getNotices(filters: GetNoticesFilters = {}): Promise<PaginatedResponse<Notice>> {
-    const { page = 1, limit = 20, category, priority, status = 'published', isActive = true, userContext } = filters;
-    const start = (page - 1) * limit;
-    const end = start + limit; // Up to 'end' (exclusive)
+    const { page = 1, limit = 20, category, priority, status = 'published', isActive = true, userContext, cursorCreatedAt, cursorId } = filters;
 
-    let query = db
-        .from('notices')
-        .select(`
-      id, posted_by, posting_identity_id, title, content,
-      category, priority, status, tags, target_roles, target_departments, target_batches,
-      attachments, is_active, is_pinned, valid_from, valid_until,
-      created_at, updated_at,
-      poster:users!notices_posted_by_fkey(id, full_name, role, profile_picture_url),
-      postingIdentity:user_positions!notices_posting_identity_id_fkey(
-        id, title, por_type, is_active,
-        org:organizations(id, name, slug, type, logo_url)
-      )
-    `);
+    try {
+        const rpcParams: Record<string, any> = {
+            p_user_role: userContext?.role ?? null,
+            p_user_department: userContext?.department ?? null,
+            p_user_batch: userContext?.batch ?? null,
+            p_category: category === 'all' ? null : (category ?? null),
+            p_priority: priority ?? null,
+            p_status: status === 'all' ? null : (status ?? null),
+            p_is_active: isActive,
+            p_limit: limit,
+            p_cursor_created_at: cursorCreatedAt ?? null,
+            p_cursor_id: cursorId ?? null,
+            p_page: page
+        };
 
-    // Fetch all active records to filter in-memory since array overlaps are complex in PostgREST
-    if (isActive !== undefined) {
-        query = query.eq('is_active', isActive);
-
-        if (isActive) {
-            const now = new Date().toISOString();
-            query = query.or(`valid_until.is.null,valid_until.gte.${now}`);
+        const { data: rpcResult, error } = await db.rpc('get_visible_notices_json', rpcParams as any) as any;
+        if (error) {
+            console.warn(`[getNotices] rpc error: ${error.message}`);
+            return { data: [], total: 0, page, limit, hasMore: false };
         }
-    }
 
-    if (category && category !== 'all') {
-        query = query.eq('category', category);
-    }
-
-    if (priority) {
-        query = query.eq('priority', priority);
-    }
-
-    if (status && status !== 'all') {
-        query = query.eq('status', status);
-    }
-
-    query = query
-        .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false });
-
-    const { data: rawData, error } = await query;
-
-    if (error) {
-        console.warn(`[getNotices] ${error.message}`);
+        const payload = rpcResult as any;
+        // payload expected shape: { data: [...rows...], total: <number>, has_more: <bool> }
+        const rows = (payload?.data ?? []) as any[];
+        const notices = rows.map(mapNotice);
+        return {
+            data: notices,
+            total: payload?.total ?? notices.length,
+            page,
+            limit,
+            hasMore: !!payload?.has_more,
+        };
+    } catch (err: any) {
+        console.warn(`[getNotices] ${err?.message || err}`);
         return { data: [], total: 0, page, limit, hasMore: false };
     }
-
-    let filteredNotices = (rawData ?? []).map(mapNotice);
-
-    // Apply User Targeting Visibility Logic
-    if (userContext) {
-        filteredNotices = filteredNotices.filter((notice) => {
-            const { targetRoles, targetDepartments, targetBatches } = notice;
-
-            // If arrays are empty, it's public globally
-            const matchesRole = !targetRoles?.length || targetRoles.includes(userContext.role);
-            const matchesDept = !targetDepartments?.length || (userContext.department && targetDepartments.includes(userContext.department));
-            const matchesBatch = !targetBatches?.length || (userContext.batch && targetBatches.includes(userContext.batch));
-
-            // Must match all defined conditions
-            let isVisible = true;
-            if (targetRoles?.length && !matchesRole) isVisible = false;
-            if (targetDepartments?.length && !matchesDept) isVisible = false;
-            if (targetBatches?.length && !matchesBatch) isVisible = false;
-
-            return isVisible;
-        });
-    }
-
-    // Apply pagination in memory
-    const paginatedNotices = filteredNotices.slice(start, end);
-
-    return {
-        data: paginatedNotices,
-        total: filteredNotices.length,
-        page,
-        limit,
-        hasMore: end < filteredNotices.length,
-    };
 }
 
 /**
@@ -135,14 +93,17 @@ export async function createNotice(
             valid_from: noticeData.validFrom || new Date().toISOString(),
             valid_until: noticeData.validUntil || null,
         }])
-        .select(`
-      *,
-      poster:users!notices_posted_by_fkey(id, email, full_name, role, profile_picture_url),
-      postingIdentity:user_positions!notices_posting_identity_id_fkey(
-        id, title, por_type, valid_from, valid_until, is_active,
-        org:organizations(id, name, slug, type, logo_url)
-      )
-    `)
+                .select(`
+            id, posted_by, posting_identity_id, title, content,
+            category, priority, status, tags, target_roles, target_departments, target_batches,
+            attachments, is_active, is_pinned, valid_from, valid_until,
+            created_at, updated_at,
+            poster:users!notices_posted_by_fkey(id, email, full_name, role, profile_picture_url),
+            postingIdentity:user_positions!notices_posting_identity_id_fkey(
+                id, user_id, org_id, title, por_type, valid_from, valid_until, is_active,
+                org:organizations(id, name, slug, type, logo_url)
+            )
+        `)
         .single();
 
     if (error) throw new Error(`[createNotice] ${error.message}`);
@@ -156,13 +117,16 @@ export async function getNotice(noticeId: string): Promise<Notice | null> {
     const { data, error } = await db
         .from('notices')
         .select(`
-      *,
-      poster:users!notices_posted_by_fkey(id, email, full_name, role, profile_picture_url),
-      postingIdentity:user_positions!notices_posting_identity_id_fkey(
-        id, title, por_type, valid_from, valid_until, is_active,
-        org:organizations(id, name, slug, type, logo_url)
-      )
-    `)
+            id, posted_by, posting_identity_id, title, content,
+            category, priority, status, tags, target_roles, target_departments, target_batches,
+            attachments, is_active, is_pinned, valid_from, valid_until,
+            created_at, updated_at,
+            poster:users!notices_posted_by_fkey(id, email, full_name, role, profile_picture_url),
+            postingIdentity:user_positions!notices_posting_identity_id_fkey(
+                id, user_id, org_id, title, por_type, valid_from, valid_until, is_active,
+                org:organizations(id, name, slug, type, logo_url)
+            )
+        `)
         .eq('id', noticeId)
         .single();
 
@@ -212,14 +176,17 @@ export async function updateNotice(
         .from('notices')
         .update(updatePayload)
         .eq('id', noticeId)
-        .select(`
-      *,
-      poster:users!notices_posted_by_fkey(id, email, full_name, role, profile_picture_url),
-      postingIdentity:user_positions!notices_posting_identity_id_fkey(
-        id, title, por_type, valid_from, valid_until, is_active,
-        org:organizations(id, name, slug, type, logo_url)
-      )
-    `)
+                .select(`
+            id, posted_by, posting_identity_id, title, content,
+            category, priority, status, tags, target_roles, target_departments, target_batches,
+            attachments, is_active, is_pinned, valid_from, valid_until,
+            created_at, updated_at,
+            poster:users!notices_posted_by_fkey(id, email, full_name, role, profile_picture_url),
+            postingIdentity:user_positions!notices_posting_identity_id_fkey(
+                id, user_id, org_id, title, por_type, valid_from, valid_until, is_active,
+                org:organizations(id, name, slug, type, logo_url)
+            )
+        `)
         .single();
 
     if (error) throw new Error(`[updateNotice] ${error.message}`);

@@ -12,7 +12,7 @@ import type { MessMenu } from '@/lib/types';
 export async function getMessMenu(month: number, year: number): Promise<MessMenu | null> {
     const { data, error } = await db
         .from('mess_menus')
-        .select('*')
+        .select(`id, month, year, markdown_content, document_url, created_at, updated_at`)
         .eq('month', month)
         .eq('year', year)
         .single();
@@ -53,7 +53,7 @@ export async function upsertMessMenu(
                 updated_at: new Date().toISOString()
             })
             .eq('id', existing.id)
-            .select()
+            .select(`id, month, year, markdown_content, document_url, created_at, updated_at`)
             .single();
     } else {
         // Insert
@@ -65,7 +65,7 @@ export async function upsertMessMenu(
                 markdown_content: menuData.markdownContent,
                 document_url: menuData.documentUrl || null
             }])
-            .select()
+            .select(`id, month, year, markdown_content, document_url, created_at, updated_at`)
             .single();
     }
 

@@ -11,7 +11,40 @@ import type { FeedPost } from '@/lib/types';
  * Get feed posts with pagination
  */
 export async function getFeedPosts(limit = 20, offset = 0): Promise<FeedPost[]> {
-    const { data, error } = await db
+    // Backwards-compatible wrapper that uses cursor API to emulate offset
+    try {
+        const page = Math.floor(offset / limit) + 1;
+        let cursorCreatedAt: string | null | undefined = undefined;
+        let cursorId: string | null | undefined = undefined;
+        let pageData: FeedPost[] = [];
+
+        for (let p = 1; p <= page; p++) {
+            const batch = await getFeedPostsCursor(limit, cursorCreatedAt ?? null, cursorId ?? null);
+            if (p === page) {
+                pageData = batch;
+                break;
+            }
+            if (batch.length === 0) {
+                pageData = [];
+                break;
+            }
+            const last = batch[batch.length - 1];
+            cursorCreatedAt = last.createdAt;
+            cursorId = last.id;
+        }
+        return pageData;
+    } catch (err: any) {
+        console.warn(`[getFeedPosts] ${err?.message ?? err}`);
+        return [];
+    }
+}
+
+/**
+ * Cursor-based feed fetch (safer for large tables)
+ * If cursorCreatedAt and cursorId are provided, fetch posts older than that cursor.
+ */
+export async function getFeedPostsCursor(limit = 20, cursorCreatedAt?: string | null, cursorId?: string | null): Promise<FeedPost[]> {
+    let query = db
         .from('feed_posts')
         .select(`
       id, author_id, posting_identity_id, content, media_urls,
@@ -19,13 +52,20 @@ export async function getFeedPosts(limit = 20, offset = 0): Promise<FeedPost[]> 
       is_public, target_roles, created_at, updated_at,
       author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
-        .eq('is_public', true)
+        .eq('is_public', true);
+
+    if (cursorCreatedAt && cursorId) {
+        // use stable cursor: (created_at, id)
+        query = query.or(`created_at.lt.${cursorCreatedAt},and(created_at.eq.${cursorCreatedAt},id.lt.${cursorId})`);
+    }
+
+    const { data, error } = await query
         .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
+        .order('id', { ascending: false })
+        .limit(limit);
 
     if (error) {
-        // Gracefully handle missing table/view — return empty feed instead of crashing
-        console.warn(`[getFeedPosts] ${error.message} (code: ${error.code})`);
+        console.warn(`[getFeedPostsCursor] ${error.message} (code: ${error.code})`);
         return [];
     }
     return (data ?? []).map(mapFeedPost);

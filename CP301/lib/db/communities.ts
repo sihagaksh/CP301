@@ -16,9 +16,48 @@ export interface GetCommunityFilters extends PaginationParams {
  * Fetch all communities with pagination
  */
 export async function getCommunities(filters: GetCommunityFilters = {}): Promise<PaginatedResponse<Community>> {
-    const { page = 1, limit = 20, search, isPublic } = filters;
-    const start = (page - 1) * limit;
-    const end = start + limit - 1;
+    const { page = 1, limit = 20 } = filters;
+
+    // Use cursor-based retrieval to avoid offset .range(). Iterate over
+    // pages using the cursor API to return the requested page.
+    try {
+        let cursorMemberCount: number | null | undefined = undefined;
+        let cursorId: string | null | undefined = undefined;
+        let pageData: Community[] = [];
+
+        for (let p = 1; p <= page; p++) {
+            const batch = await getCommunitiesCursor(filters, limit, cursorMemberCount ?? null, cursorId ?? null);
+            if (p === page) {
+                pageData = batch;
+                break;
+            }
+            if (batch.length === 0) {
+                pageData = [];
+                break;
+            }
+            const last = batch[batch.length - 1];
+            cursorMemberCount = last.memberCount ?? 0;
+            cursorId = last.id;
+        }
+
+        return {
+            data: pageData,
+            total: 0,
+            page,
+            limit,
+            hasMore: pageData.length === limit,
+        };
+    } catch (error: any) {
+        console.warn(`[getCommunities] ${error?.message ?? error}`);
+        return { data: [], total: 0, page, limit, hasMore: false };
+    }
+}
+
+/**
+ * Cursor-based communities fetch (ordered by member_count desc, id desc)
+ */
+export async function getCommunitiesCursor(filters: GetCommunityFilters = {}, limit = 20, cursorMemberCount?: number | null, cursorId?: string | null): Promise<Community[]> {
+    const { search, isPublic } = filters;
 
     let query = db
         .from('communities')
@@ -27,48 +66,41 @@ export async function getCommunities(filters: GetCommunityFilters = {}): Promise
       is_public, requires_approval, allow_posts,
       member_count, post_count, created_at, updated_at,
       creator:users!communities_creator_id_fkey(id, full_name, role, profile_picture_url)
-    `, { count: 'estimated' });
+    `);
 
-    if (isPublic !== undefined) {
-        query = query.eq('is_public', isPublic);
+    if (isPublic !== undefined) query = query.eq('is_public', isPublic);
+    if (search) query = query.ilike('name', `%${search}%`);
+
+    if (cursorMemberCount !== undefined && cursorMemberCount !== null && cursorId) {
+        query = query.or(`member_count.lt.${cursorMemberCount},and(member_count.eq.${cursorMemberCount},id.lt.${cursorId})`);
     }
 
-    if (search) {
-        query = query.ilike('name', `%${search}%`);
-    }
-
-    query = query
+    const { data, error } = await query
         .order('member_count', { ascending: false })
-        .range(start, end);
-
-    const { data, error, count } = await query;
+        .order('id', { ascending: false })
+        .limit(limit);
 
     if (error) {
-        console.warn(`[getCommunities] ${error.message}`);
-        return { data: [], total: 0, page, limit, hasMore: false };
+        console.warn(`[getCommunitiesCursor] ${error.message}`);
+        return [];
     }
-
-    return {
-        data: (data ?? []).map(mapCommunity),
-        total: count ?? 0,
-        page,
-        limit,
-        hasMore: count ? start + limit < count : false,
-    };
+    return (data ?? []).map(mapCommunity);
 }
 
 /**
  * Get a single community by slug
  */
 export async function getCommunityBySlug(slug: string): Promise<Community | null> {
-    const { data, error } = await db
-        .from('communities')
-        .select(`
-      *,
-      creator:users!communities_creator_id_fkey(id, email, full_name, role, profile_picture_url)
-    `)
-        .eq('slug', slug)
-        .single();
+        const { data, error } = await db
+                .from('communities')
+                .select(`
+            id, creator_id, name, slug, description,
+            is_public, requires_approval, allow_posts,
+            member_count, post_count, created_at, updated_at,
+            creator:users!communities_creator_id_fkey(id, email, full_name, role, profile_picture_url)
+        `)
+                .eq('slug', slug)
+                .single();
 
     if (error) {
         if (error.code === 'PGRST116') return null;
@@ -100,7 +132,9 @@ export async function createCommunity(communityData: {
             allow_posts: true,
         }])
         .select(`
-      *,
+      id, creator_id, name, slug, description,
+      is_public, requires_approval, allow_posts,
+      member_count, post_count, created_at, updated_at,
       creator:users!communities_creator_id_fkey(id, email, full_name, role, profile_picture_url)
     `)
         .single();
@@ -114,7 +148,7 @@ export async function createCommunity(communityData: {
             community_id: community.id,
             user_id: communityData.creatorId,
             role: 'admin',
-        }]).select().maybeSingle();
+        }]).select('id').single();
 
         // Auto-create a Notice Board group
         const { data: nbGroup } = await db.from('community_groups').insert([{
@@ -132,7 +166,7 @@ export async function createCommunity(communityData: {
                 group_id: nbGroup.id,
                 user_id: communityData.creatorId,
                 role: 'admin',
-            }]).maybeSingle();
+            }]).select('id').single();
         }
     }
 
@@ -160,34 +194,68 @@ export async function getCommunityMembers(communityId: string): Promise<Communit
  * Get posts in a community
  */
 export async function getCommunityPosts(communityId: string, page = 1, limit = 20): Promise<PaginatedResponse<CommunityPost>> {
-    const start = (page - 1) * limit;
-    const end = start + limit - 1;
+    try {
+        let cursorCreatedAt: string | null | undefined = undefined;
+        let cursorId: string | null | undefined = undefined;
+        let pageData: CommunityPost[] = [];
 
-    const { data, error, count } = await db
+        for (let p = 1; p <= page; p++) {
+            const batch = await getCommunityPostsCursor(communityId, limit, cursorCreatedAt ?? null, cursorId ?? null);
+            if (p === page) {
+                pageData = batch;
+                break;
+            }
+            if (batch.length === 0) {
+                pageData = [];
+                break;
+            }
+            const last = batch[batch.length - 1];
+            cursorCreatedAt = last.createdAt;
+            cursorId = last.id;
+        }
+
+        return {
+            data: pageData,
+            total: 0,
+            page,
+            limit,
+            hasMore: pageData.length === limit,
+        };
+    } catch (error: any) {
+        console.warn(`[getCommunityPosts] ${error?.message ?? error}`);
+        return { data: [], total: 0, page, limit, hasMore: false };
+    }
+}
+
+/**
+ * Cursor-based community posts fetch (is_pinned desc, created_at desc)
+ */
+export async function getCommunityPostsCursor(communityId: string, limit = 20, cursorCreatedAt?: string | null, cursorId?: string | null) : Promise<CommunityPost[]> {
+    let query = db
         .from('community_posts')
         .select(`
       id, community_id, author_id, title, content,
       media_urls, like_count, comment_count, is_pinned,
       created_at,
       author:users!community_posts_author_id_fkey(id, full_name, role, profile_picture_url)
-    `, { count: 'estimated' })
-        .eq('community_id', communityId)
-        .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false })
-        .range(start, end);
+    `)
+        .eq('community_id', communityId);
 
-    if (error) {
-        console.warn(`[getCommunityPosts] ${error.message}`);
-        return { data: [], total: 0, page, limit, hasMore: false };
+    if (cursorCreatedAt && cursorId) {
+        query = query.or(`created_at.lt.${cursorCreatedAt},and(created_at.eq.${cursorCreatedAt},id.lt.${cursorId})`);
     }
 
-    return {
-        data: (data ?? []).map(mapCommunityPost),
-        total: count ?? 0,
-        page,
-        limit,
-        hasMore: count ? start + limit < count : false,
-    };
+    const { data, error } = await query
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.warn(`[getCommunityPostsCursor] ${error.message}`);
+        return [];
+    }
+    return (data ?? []).map(mapCommunityPost);
 }
 
 // ========================

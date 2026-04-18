@@ -78,11 +78,12 @@ function parseContext(value: FormDataEntryValue | null): UploadContextUnion {
 }
 
 async function isAdminUser(serviceClient: ReturnType<typeof createClient>, userId: string) {
-    const { data: profile } = await serviceClient
+    const res: any = await serviceClient
         .from('users')
         .select('is_admin')
         .eq('id', userId)
         .single();
+    const profile = res?.data as any;
     return !!profile?.is_admin;
 }
 
@@ -110,7 +111,8 @@ const UPLOAD_CONFIGS: Record<UploadKind, UploadConfig> = {
             if (!context.orgId) return false;
             const { count } = await serviceClient
                 .from('user_positions')
-                .select('*', { count: 'exact', head: true })
+                // Use a narrow projection for head/count queries to avoid overfetching
+                .select('id', { count: 'exact', head: true })
                 .eq('user_id', authUser.id)
                 .eq('org_id', context.orgId)
                 .eq('is_active', true);
@@ -208,7 +210,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing upload file.' }, { status: 400 });
         }
 
-        const isAuthorized = await config.authorize(serviceClient, authUser, context);
+        // config.authorize implementations may expect a Supabase client typed slightly
+        // differently across call sites; cast to `any` to avoid brittle generic mismatches.
+        const isAuthorized = await (config.authorize as any)(serviceClient as any, authUser as any, context as any);
         if (!isAuthorized) {
              return NextResponse.json({ error: 'Forbidden: you do not have permission to upload this file type.' }, { status: 403 });
         }

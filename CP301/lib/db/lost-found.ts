@@ -18,10 +18,47 @@ export interface GetLFFilters extends PaginationParams {
  * Fetch lost & found items with pagination and filters
  */
 export async function getLFItems(filters: GetLFFilters = {}): Promise<PaginatedResponse<LostFoundItem>> {
-    const { page = 1, limit = 20, status, category, search, reporterId } = filters;
-    const start = (page - 1) * limit;
-    const end = start + limit - 1;
+    const { page = 1, limit = 20 } = filters;
 
+    // Deprecated offset-based pagination — use cursor API under the hood
+    try {
+        let cursorCreatedAt: string | null | undefined = undefined;
+        let cursorId: string | null | undefined = undefined;
+        let pageData: LostFoundItem[] = [];
+
+        for (let p = 1; p <= page; p++) {
+            const batch = await getLFItemsCursor(filters, limit, cursorCreatedAt ?? null, cursorId ?? null);
+            if (p === page) {
+                pageData = batch;
+                break;
+            }
+            if (batch.length === 0) {
+                pageData = [];
+                break;
+            }
+            const last = batch[batch.length - 1];
+            cursorCreatedAt = last.createdAt;
+            cursorId = last.id;
+        }
+
+        return {
+            data: pageData,
+            total: 0,
+            page,
+            limit,
+            hasMore: pageData.length === limit,
+        };
+    } catch (error: any) {
+        console.warn(`[getLFItems] ${error?.message ?? error}`);
+        return { data: [], total: 0, page, limit, hasMore: false };
+    }
+}
+
+/**
+ * Cursor-based lost & found fetch (created_at, id cursor)
+ */
+export async function getLFItemsCursor(filters: GetLFFilters = {}, limit = 20, cursorCreatedAt?: string | null, cursorId?: string | null): Promise<LostFoundItem[]> {
+    const { status, category, search, reporterId } = filters;
     let query = db
         .from('lost_found_items')
         .select(`
@@ -31,42 +68,27 @@ export async function getLFItems(filters: GetLFFilters = {}): Promise<PaginatedR
       created_at, updated_at,
       reporter:users!lost_found_items_reporter_id_fkey(id, full_name, role, profile_picture_url),
       claimer:users!lost_found_items_claimer_id_fkey(id, full_name, role, profile_picture_url)
-    `, { count: 'estimated' });
+    `);
 
-    if (status && status !== 'all') {
-        query = query.eq('status', status);
+    if (status && status !== 'all') query = query.eq('status', status);
+    if (category && category !== 'all') query = query.eq('category', category);
+    if (reporterId) query = query.eq('reporter_id', reporterId);
+    if (search) query = query.ilike('item_name', `%${search}%`);
+
+    if (cursorCreatedAt && cursorId) {
+        query = query.or(`created_at.lt.${cursorCreatedAt},and(created_at.eq.${cursorCreatedAt},id.lt.${cursorId})`);
     }
 
-    if (category && category !== 'all') {
-        query = query.eq('category', category);
-    }
-
-    if (reporterId) {
-        query = query.eq('reporter_id', reporterId);
-    }
-
-    if (search) {
-        query = query.ilike('item_name', `%${search}%`);
-    }
-
-    query = query
+    const { data, error } = await query
         .order('created_at', { ascending: false })
-        .range(start, end);
-
-    const { data, error, count } = await query;
+        .order('id', { ascending: false })
+        .limit(limit);
 
     if (error) {
-        console.warn(`[getLFItems] ${error.message}`);
-        return { data: [], total: 0, page, limit, hasMore: false };
+        console.warn(`[getLFItemsCursor] ${error.message}`);
+        return [];
     }
-
-    return {
-        data: (data ?? []).map(mapLFItem),
-        total: count ?? 0,
-        page,
-        limit,
-        hasMore: count ? start + limit < count : false,
-    };
+    return (data ?? []).map(mapLFItem);
 }
 
 /**
@@ -75,11 +97,14 @@ export async function getLFItems(filters: GetLFFilters = {}): Promise<PaginatedR
 export async function getLFItemById(id: string): Promise<LostFoundItem | null> {
     const { data, error } = await db
         .from('lost_found_items')
-        .select(`
-      *,
-      reporter:users!lost_found_items_reporter_id_fkey(id, email, full_name, role, profile_picture_url),
-      claimer:users!lost_found_items_claimer_id_fkey(id, email, full_name, role, profile_picture_url)
-    `)
+                .select(`
+            id, reporter_id, claimer_id, item_name, category, status,
+            description, location_lost_found, date_lost_found,
+            contact_info, images, claimed_at, returned_at,
+            created_at, updated_at,
+            reporter:users!lost_found_items_reporter_id_fkey(id, email, full_name, role, profile_picture_url),
+            claimer:users!lost_found_items_claimer_id_fkey(id, email, full_name, role, profile_picture_url)
+        `)
         .eq('id', id)
         .single();
 
@@ -109,10 +134,13 @@ export async function createLFItem(
             contact_info: itemData.contactInfo || null,
             images: itemData.images || [],
         }])
-        .select(`
-      *,
-      reporter:users!lost_found_items_reporter_id_fkey(id, email, full_name, role, profile_picture_url)
-    `)
+                .select(`
+            id, reporter_id, claimer_id, item_name, category, status,
+            description, location_lost_found, date_lost_found,
+            contact_info, images, claimed_at, returned_at,
+            created_at, updated_at,
+            reporter:users!lost_found_items_reporter_id_fkey(id, email, full_name, role, profile_picture_url)
+        `)
         .single();
 
     if (error) throw new Error(`[createLFItem] ${error.message}`);
@@ -140,11 +168,14 @@ export async function updateLFItemStatus(
         .from('lost_found_items')
         .update(updates)
         .eq('id', id)
-        .select(`
-      *,
-      reporter:users!lost_found_items_reporter_id_fkey(id, email, full_name, role, profile_picture_url),
-      claimer:users!lost_found_items_claimer_id_fkey(id, email, full_name, role, profile_picture_url)
-    `)
+                .select(`
+            id, reporter_id, claimer_id, item_name, category, status,
+            description, location_lost_found, date_lost_found,
+            contact_info, images, claimed_at, returned_at,
+            created_at, updated_at,
+            reporter:users!lost_found_items_reporter_id_fkey(id, email, full_name, role, profile_picture_url),
+            claimer:users!lost_found_items_claimer_id_fkey(id, email, full_name, role, profile_picture_url)
+        `)
         .single();
 
     if (error) throw new Error(`[updateLFItemStatus] ${error.message}`);

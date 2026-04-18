@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { mapUser } from '@/lib/db/users';
+import { getUserById } from '@/lib/db/users';
 
 export async function POST(request: Request) {
   try {
@@ -35,20 +35,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get user profile
-    const { data: userProfile, error: profileError } = await db
-      .from('users')
-      .select('*')
-      .eq('id', authData.user.id)
-      .single();
-
-    if (profileError) {
-      console.error('[login] Profile fetch error:', profileError);
-    }
+    // Get user profile via helper to avoid broad selects
+    const userProfile = await getUserById(authData.user.id);
 
     return NextResponse.json({
       message: 'Login successful',
-      user: userProfile ? mapUser(userProfile) : null,
+      user: userProfile || null,
       session: authData.session,
     });
   } catch (error) {

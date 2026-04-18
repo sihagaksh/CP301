@@ -12,7 +12,13 @@ import type { User } from '@/lib/types';
 export async function getUserById(userId: string): Promise<User | null> {
   const { data, error } = await db
     .from('users')
-    .select('*')
+    .select(`
+      id, email, full_name, role, status,
+      department, branch, batch, enrollment_number, employee_id,
+      designation, current_organization, current_position,
+      phone_number, bio, linkedin_url, profile_picture_url,
+      is_verified, is_admin, created_at, updated_at
+    `)
     .eq('id', userId)
     .single();
 
@@ -30,7 +36,13 @@ export async function getUserById(userId: string): Promise<User | null> {
 export async function getUserByEmail(email: string): Promise<User | null> {
   const { data, error } = await db
     .from('users')
-    .select('*')
+    .select(`
+      id, email, full_name, role, status,
+      department, branch, batch, enrollment_number, employee_id,
+      designation, current_organization, current_position,
+      phone_number, bio, linkedin_url, profile_picture_url,
+      is_verified, is_admin, created_at, updated_at
+    `)
     .eq('email', email)
     .single();
 
@@ -65,7 +77,13 @@ export async function updateUserProfile(userId: string, updates: Partial<User>):
       updated_at: new Date().toISOString(),
     })
     .eq('id', userId)
-    .select('*')
+    .select(`
+      id, email, full_name, role, status,
+      department, branch, batch, enrollment_number, employee_id,
+      designation, current_organization, current_position,
+      phone_number, bio, linkedin_url, profile_picture_url,
+      is_verified, is_admin, created_at, updated_at
+    `)
     .single();
 
   if (error) throw new Error(`[updateUserProfile] ${error.message}`);
@@ -82,7 +100,13 @@ export async function updateUserProfile(userId: string, updates: Partial<User>):
 export async function getAllUsers(): Promise<User[]> {
   const { data, error } = await db
     .from('users')
-    .select('*')
+    .select(`
+      id, email, full_name, role, status,
+      department, branch, batch, enrollment_number, employee_id,
+      designation, current_organization, current_position,
+      phone_number, bio, linkedin_url, profile_picture_url,
+      is_verified, is_admin, created_at, updated_at
+    `)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`[getAllUsers] ${error.message}`);
@@ -101,7 +125,13 @@ export async function updateUserRole(userId: string, role: string, isAdmin: bool
       updated_at: new Date().toISOString()
     })
     .eq('id', userId)
-    .select('*')
+    .select(`
+      id, email, full_name, role, status,
+      department, branch, batch, enrollment_number, employee_id,
+      designation, current_organization, current_position,
+      phone_number, bio, linkedin_url, profile_picture_url,
+      is_verified, is_admin, created_at, updated_at
+    `)
     .single();
 
   if (error) throw new Error(`[updateUserRole] ${error.message}`);
@@ -119,7 +149,13 @@ export async function updateUserStatus(userId: string, status: string): Promise<
       updated_at: new Date().toISOString()
     })
     .eq('id', userId)
-    .select('*')
+    .select(`
+      id, email, full_name, role, status,
+      department, branch, batch, enrollment_number, employee_id,
+      designation, current_organization, current_position,
+      phone_number, bio, linkedin_url, profile_picture_url,
+      is_verified, is_admin, created_at, updated_at
+    `)
     .single();
 
   if (error) throw new Error(`[updateUserStatus] ${error.message}`);

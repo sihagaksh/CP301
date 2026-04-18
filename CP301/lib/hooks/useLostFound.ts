@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { getLFItems, createLFItem, getLFItemById, updateLFItemStatus, type GetLFFilters } from '@/lib/db/lost-found';
+import { getLFItemsCursor, createLFItem, getLFItemById, updateLFItemStatus, type GetLFFilters } from '@/lib/db/lost-found';
 import type { LostFoundItem, LFStatus, LFCategory } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,7 @@ export function useLostFound(initialFilters?: GetLFFilters) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
-    const pageRef = useRef(1);
+    const cursorRef = useRef<{ createdAt?: string | null; id?: string | null }>({});
     const fetchingRef = useRef(false);
     const [filters, setFilters] = useState<GetLFFilters>(initialFilters || { limit: 15 });
 
@@ -32,12 +32,19 @@ export function useLostFound(initialFilters?: GetLFFilters) {
             setError(null);
 
             const f = currentFilters || filters;
-            const currentPage = isLoadMore ? pageRef.current + 1 : 1;
-            const response = await getLFItems({ ...f, page: currentPage });
+            let data: any[] = [];
+            if (isLoadMore && cursorRef.current.createdAt && cursorRef.current.id) {
+                data = await getLFItemsCursor(f, f.limit ?? 15, cursorRef.current.createdAt, cursorRef.current.id);
+            } else {
+                data = await getLFItemsCursor(f, f.limit ?? 15);
+            }
 
-            setItems(prev => isLoadMore ? [...prev, ...response.data] : response.data);
-            setHasMore(response.hasMore);
-            pageRef.current = currentPage;
+            setItems(prev => isLoadMore ? [...prev, ...data] : data);
+            setHasMore(data.length === (f.limit ?? 15));
+            if (data.length > 0) {
+                const last = data[data.length - 1];
+                cursorRef.current = { createdAt: last.createdAt, id: last.id };
+            }
         } catch (err: any) {
             setError(err.message || 'Failed to load lost & found items');
         } finally {
@@ -57,7 +64,10 @@ export function useLostFound(initialFilters?: GetLFFilters) {
     }, [loading, hasMore, fetchItems, filters]);
 
     const updateFilters = useCallback((newFilters: Partial<GetLFFilters>) => {
-        setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
+        // Reset cursor state and items when filters change
+        cursorRef.current = {};
+        setItems([]);
+        setFilters(prev => ({ ...prev, ...newFilters }));
     }, []);
 
     const reportItem = useCallback(async (data: {

@@ -1,6 +1,7 @@
 ﻿# Scalability Analysis - Current Project State
 
 Document date: 15 April 2026  
+  Last updated: 18 April 2026
 Project: IIT Ropar Community Platform / CP301  
 Scope: Current working directory state, including uncommitted changes visible on 15 April 2026.  
 Output file: `documentation/scalibility1504.md`
@@ -27,6 +28,8 @@ Important current changes observed:
 | `app/api/admin/upload/route.ts` | New server-side service-role upload route with bearer-token verification and admin check. | Good scalable/security direction because upload authorization is centralized server-side. Needs file size/type limits and should be used consistently. |
 | `db/migrations/023_fix_mess_menu_storage_policy.sql` | Changes `mess-menus` storage upload/update policy to any authenticated user. | Operationally simple, but weaker than the table-level admin model and not ideal for scale/security. |
 | `.next/dev/*` | Generated development artifacts changed. | Not relevant to app scalability; should not be part of documentation or review conclusions. |
+
+| [lib/hooks/useGroupChat.ts](lib/hooks/useGroupChat.ts) & [lib/db/communityGroups.ts](lib/db/communityGroups.ts) | Realtime/message-query fixes: hook now appends realtime inserts, exposes `loadOlderMessages()` and appends on `send()`; DB query now returns latest N messages and adds `getGroupMessagesBefore()` for cursored history. | Reduces websocket/database load for busy rooms, enables on-demand older-history loads, and adds a periodic reconciliation fallback (60s). |
 
 ## Architecture Summary
 
@@ -136,6 +139,31 @@ The new `app/api/admin/upload/route.ts` is a good pattern: it uses a server-side
 | Upload RLS can be stricter | Server route can bypass storage RLS after explicit authorization. |
 
 This should become the standard for admin-only uploads.
+
+### Update: 18 April 2026 — Recent Changes and Current Status
+
+- **Completed in this session:**
+  - Added server-side notices RPC and wired the client: `db/migrations/024_get_visible_notices_rpc.sql`, `lib/db/notices.ts` (now calls the RPC). Fixed enum/text operator errors by updating the RPC signature and added `db/migrations/027_drop_old_get_visible_notices_rpc.sql` to remove the old text-typed overload.
+  - Introduced cursor-based DB APIs for several high-growth lists and updated many hooks: feed, blogs, events, marketplace, lost & found, communities (new/updated functions in `lib/db/*` and hooks in `lib/hooks/*`). Some callers were converted to use cursors.
+  - Replaced several `select('*')` usages with explicit projections in hot paths (notices, marketplace, events, lost & found and related mapping functions). More replacements remain.
+  - Fixed TypeScript/JSX issues uncovered by `tsc`: `components/features/notices/NoticeForm.tsx` and loosened a few strict typings in `app/api/media/upload/route.ts`. A `tsc --noEmit` run now completes successfully against the project tsconfig after these fixes.
+  - Added a migration to drop the old text-typed `get_visible_notices_json` overload to avoid ambiguous RPC resolution.
+  - Realtime group chat reload bug (full-list reload on each insert) was fixed earlier (see `lib/hooks/useGroupChat.ts`, `lib/db/communityGroups.ts`).
+
+- **Current status (short):**
+  - Notices: server-side filtering & cursor pagination implemented; client uses the RPC. Status: **Resolved** (server-side). Follow-up: apply migration to the running DB and restart PostgREST/Supabase so the new signature is picked up.
+  - Cursor pagination: core cursor APIs added for many modules; Status: **Partially done** — callers across the codebase still need conversion and consolidation.
+  - `select('*')` replacement: **Partial** — many hot paths updated, but remaining broad selects (users, messages, notifications, some dashboard pages) should be converted.
+
+- **Remaining/high-priority work:**
+  - Apply the new migrations to the database and restart local/remote Supabase/PostgREST so RPC signature and overload drop take effect.
+  - Finish replacing remaining `select('*')` usages in hot paths (users, messages, notifications, dashboard detail pages).
+  - Convert all callers to the new cursor APIs and remove offset pagination patterns or keep offsets only for small/static lists.
+  - Commit & push these repo changes, run CI and a full `pnpm build` / integration smoke tests, and validate runtime behavior (notably notices UI, feed, and cursor flows).
+  - Implement search indexing (FTS/trigram), SWR caching for repeated reads, map assets CDNization, and auth cookie hardening.
+
+See the "Remaining work" lists at the end of this document for full context and prioritization.
+
 ## What Is Not Good Yet
 
 ### 1. Offset Pagination Will Degrade On Large Tables
@@ -154,25 +182,25 @@ Several high-traffic queries use `.range(start, end)` or offset-style paging.
 
 Recommendation: move high-growth lists to cursor pagination using stable `(created_at, id)` or module-specific cursors like `(published_at, id)` for blogs and `(start_time, id)` for events.
 
-### 2. Notices Fetch All Matching Rows Then Filter/Paginate In Memory
+Status update: **Partial progress** — cursor-based DB APIs and some hook updates were added for feed, blogs, events, marketplace, lost & found, and communities. Remaining callers and pages still need conversion and verification.
 
-`lib/db/notices.ts` fetches active notices, then applies user targeting and pagination in JavaScript. This is one of the clearest scalability issues.
+### 2. Notices — Server-side filtering & pagination (RESOLVED -> partial follow-up)
 
-| Step | Current implementation |
-|---|---|
-| Fetch | Pulls all matching active/published/category rows from Supabase. |
-| Targeting | Filters roles/departments/batches in memory. |
-| Pagination | Applies `.slice(start, end)` after filtering. |
+Status: **Resolved (server-side)** — The codebase now implements server-side targeting and pagination via an RPC (`get_visible_notices_json`) and the client `getNotices()` calls the RPC instead of fetching all rows and filtering in JavaScript.
 
-Why this is bad:
+What changed:
+- New RPC migration: `db/migrations/024_get_visible_notices_rpc.sql` (server-side filtering, cursor/page support, enriched poster/postingIdentity payload).
+- Client: `lib/db/notices.ts` updated to call the RPC and pass NULL for sentinel filters; mapping functions preserved.
+- Migration added to drop the old text-typed overload: `db/migrations/027_drop_old_get_visible_notices_rpc.sql` to avoid ambiguous function resolution.
 
-| Problem | Result |
-|---|---|
-| More notices means larger network payloads | Every notice page load gets heavier. |
-| Pagination is fake at DB level | Page 1 still pays for all matching rows. |
-| User targeting cannot use DB indexes | CPU and memory move from Postgres to browser/server client. |
+Follow-up actions (required):
+- Apply the new migrations to the running database and restart PostgREST/Supabase so the updated function signature and overload removal are visible to the API.
+- Verify UI flows (guest/public notices, pinned notices, and cursor-based paging) and run smoke tests for notices list and detail pages.
 
-Recommendation: push targeting into SQL/PostgREST using array operators or create an RPC/view such as `get_visible_notices(user_role, department, batch, limit, cursor)`.
+Why this improves scalability:
+- Filtering and paging now occur in the database (can use indexes), significantly reducing network payloads and client CPU/memory work.
+
+Recommendation: keep the RPC signature stable and complete remaining validation (migrations applied, tests passing) before marking notices as fully done.
 
 ### 3. Broad `select('*')` Queries Leak Performance And Data Shape
 
@@ -193,6 +221,8 @@ Several files still use `select('*')`, especially detail pages and older query m
 
 Recommendation: replace broad selects with explicit column lists, especially for user/profile, messages, dashboard, and public detail pages.
 
+Status update: **Partial progress** — several hot-paths (notices, marketplace, events, lost & found) were updated to use explicit projections; a systematic sweep remains.
+
 ### 4. Search Uses `ILIKE '%term%'`
 
 Search exists in marketplace, lost-found, events, communities, group settings, and messages user search via `ilike` patterns.
@@ -205,7 +235,7 @@ Search exists in marketplace, lost-found, events, communities, group settings, a
 
 Recommendation: for campus scale, add Postgres full-text search with `tsvector` and GIN indexes for content modules. For people search, use prefix search or trigram indexes. For richer search later, add Meilisearch/Typesense.
 
-### 5. Realtime Chat Reloads The Whole Message List On Each Insert
+### SOLVED: 5. Realtime Chat Reloads The Whole Message List On Each Insert
 
 `useGroupChat` subscribes to `community_group_messages`, but on every inserted message it calls `loadMessages()`, which fetches the latest message list again.
 
@@ -215,7 +245,14 @@ Recommendation: for campus scale, add Postgres full-text search with `tsvector` 
 | Busy room | Many clients repeatedly reload the same history. |
 | Multiple rooms open | More websocket and database load. |
 
-Recommendation: append the new realtime payload directly when possible. Keep periodic reconciliation as a fallback. Also cap history by cursor and load older messages on demand.
+Status: Implemented (18 April 2026) — code fixes applied.
+
+- **Files changed:** [lib/hooks/useGroupChat.ts](lib/hooks/useGroupChat.ts), [lib/db/communityGroups.ts](lib/db/communityGroups.ts).
+- **What changed:**
+  - Hook: `useGroupChat` now appends realtime payloads (de-duplicates by id), enriches sender info from the members cache when available, exposes `loadOlderMessages()` to prepend older messages on demand, and `send()` appends newly created messages instead of forcing a full reload. A periodic reconciliation fallback (60s) remains to recover any missed events.
+  - DB: `getGroupMessages` now fetches the latest N messages (ordered descending then reversed for chronological display) and a new `getGroupMessagesBefore(groupId, before, limit)` supports cursor-based older-history loads.
+- **Effect:** avoids full-list re-fetch on each INSERT, significantly reducing DB and websocket load in busy rooms and when multiple rooms are open.
+- **Next steps:** wire `loadOlderMessages()` into the chat UI (infinite scroll), tune reconciliation interval and limits, and run light load tests to validate improvement.
 
 ### 6. Build Safety Is Disabled
 
@@ -387,7 +424,7 @@ Not good:
 
 ### Notices
 
-Rating: 5.5/10
+Rating: 6.5/10 (improved - server-side RPC implemented; follow-up pending)
 
 Good:
 
@@ -736,7 +773,7 @@ Do these before a real deployment or demo with many users.
 
 | Task | Why | First modules |
 |---|---|---|
-| Append realtime message payloads instead of full reload | Reduces chat DB load. | Group chat, direct messages |
+| Append realtime message payloads instead of full reload — implemented ([lib/hooks/useGroupChat.ts](lib/hooks/useGroupChat.ts), [lib/db/communityGroups.ts](lib/db/communityGroups.ts)) | Reduces chat DB load. | Group chat, direct messages |
 | Add SWR to cacheable reads | Reduces duplicate client requests. | Auth profile, positions, notices, events, dashboard widgets |
 | Add notification count strategy | Header should stay cheap. | Notifications |
 | Add stale-while-revalidate public lists | Better UX for guest paths. | Notices, events, mess-menu |

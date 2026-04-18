@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { getEvents, createEvent, getEventBySlug, type GetEventsFilters } from '@/lib/db/events';
+import { getEventsCursor, createEvent, getEventBySlug, type GetEventsFilters } from '@/lib/db/events';
 import type { Event } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,7 @@ export function useEvents(initialFilters?: GetEventsFilters) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
-  const pageRef = useRef(1);
+  const cursorRef = useRef<{ startTime?: string | null; id?: string | null }>({});
   const fetchingRef = useRef(false);
   const [filters, setFilters] = useState<GetEventsFilters>(initialFilters || { limit: 15 });
 
@@ -32,12 +32,19 @@ export function useEvents(initialFilters?: GetEventsFilters) {
       setError(null);
 
       const f = currentFilters || filters;
-      const currentPage = isLoadMore ? pageRef.current + 1 : 1;
-      const response = await getEvents({ ...f, page: currentPage });
+      let data = [] as any[];
+      if (isLoadMore && cursorRef.current.startTime && cursorRef.current.id) {
+        data = await getEventsCursor(f, f.limit ?? 15, cursorRef.current.startTime, cursorRef.current.id);
+      } else {
+        data = await getEventsCursor(f, f.limit ?? 15);
+      }
 
-      setEvents(prev => isLoadMore ? [...prev, ...response.data] : response.data);
-      setHasMore(response.hasMore);
-      pageRef.current = currentPage;
+      setEvents(prev => isLoadMore ? [...prev, ...data] : data);
+      setHasMore(data.length === (f.limit ?? 15));
+      if (data.length > 0) {
+        const last = data[data.length - 1];
+        cursorRef.current = { startTime: last.startTime ?? last.createdAt, id: last.id };
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load events');
     } finally {
@@ -57,6 +64,8 @@ export function useEvents(initialFilters?: GetEventsFilters) {
   }, [loading, hasMore, fetchEvents]);
 
   const updateFilters = useCallback((newFilters: Partial<GetEventsFilters>) => {
+    // reset cursor when filters change
+    cursorRef.current = {};
     setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 

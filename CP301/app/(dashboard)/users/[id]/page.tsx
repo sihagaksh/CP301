@@ -61,7 +61,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
   async function fetchAll() {
     const [{ data: profileData }, { data: postsData }, { data: posData }] = await Promise.all([
-      db.from('users').select('*').eq('id', id).single(),
+      db.from('users').select('id, email, full_name, role, department, branch, batch, enrollment_number, designation, current_organization, bio, linkedin_url, profile_picture_url, is_verified, created_at, updated_at').eq('id', id).single(),
       db.from('feed_posts').select('id, content, media_urls, like_count, comment_count, created_at')
         .eq('author_id', id).order('created_at', { ascending: false }).limit(30),
       db.from('user_positions').select('id, title, por_type, organization:organizations(name, slug)')

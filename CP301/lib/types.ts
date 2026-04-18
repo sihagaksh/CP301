@@ -348,7 +348,8 @@ export interface QuickLink {
   title: string;
   description?: string;
   url: string;
-  category: LinkCategory;
+  section: string;
+  subSection?: string;
   targetRoles: string[];
   displayOrder: number;
   isFeatured: boolean;

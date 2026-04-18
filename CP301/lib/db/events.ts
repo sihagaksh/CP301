@@ -21,8 +21,45 @@ export async function getUpcomingEvents(
   limit: number = 20,
   page: number = 1
 ): Promise<Event[]> {
-  const start = (page - 1) * limit;
-  const end = start + limit - 1;
+  // Use cursor-based API to avoid offset `.range()` calls. If a caller
+  // requests page > 1, iteratively fetch pages via the cursor API.
+  const now = new Date().toISOString();
+  try {
+    let cursorStartTime: string | null | undefined = undefined;
+    let cursorId: string | null | undefined = undefined;
+    let pageData: Event[] = [];
+
+    for (let p = 1; p <= page; p++) {
+      const batch = await getUpcomingEventsCursor(type, limit, cursorStartTime ?? null, cursorId ?? null);
+      if (p === page) {
+        pageData = batch;
+        break;
+      }
+      if (batch.length === 0) {
+        pageData = [];
+        break;
+      }
+      const last = batch[batch.length - 1];
+      cursorStartTime = last.startTime ?? last.createdAt;
+      cursorId = last.id;
+    }
+    return pageData;
+  } catch (error: any) {
+    console.warn(`[getUpcomingEvents] ${error?.message ?? error}`);
+    return [];
+  }
+}
+
+/**
+ * Cursor-based upcoming events fetch.
+ * If cursorStartTime and cursorId are provided, fetch events AFTER that cursor (ascending by start_time).
+ */
+export async function getUpcomingEventsCursor(
+  type?: EventType | 'all',
+  limit: number = 20,
+  cursorStartTime?: string | null,
+  cursorId?: string | null
+): Promise<Event[]> {
   const now = new Date().toISOString();
 
   let query = db
@@ -36,26 +73,40 @@ export async function getUpcomingEvents(
       postedBy:users!events_posted_by_fkey(id, full_name, role, profile_picture_url)
     `)
     .eq('is_published', true)
-    .gte('start_time', now)
-    .order('start_time', { ascending: true })
-    .range(start, end);
+    .gte('start_time', now);
 
   if (type && type !== 'all') {
     query = query.eq('type', type);
   }
 
-  const { data, error } = await query;
+  if (cursorStartTime && cursorId) {
+    query = query.or(`start_time.gt.${cursorStartTime},and(start_time.eq.${cursorStartTime},id.gt.${cursorId})`);
+  }
+
+  const { data, error } = await query
+    .order('start_time', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(limit);
+
   if (error) {
-    console.warn(`[getUpcomingEvents] ${error.message}`);
+    console.warn(`[getUpcomingEventsCursor] ${error.message}`);
     return [];
   }
   return (data ?? []).map(mapEvent);
 }
 
-export async function getEvents(filters: GetEventsFilters = {}): Promise<PaginatedResponse<Event>> {
-  const { page = 1, limit = 20, type, search } = filters;
-  const start = (page - 1) * limit;
-  const end = start + limit - 1;
+/**
+ * Cursor-based events fetch that supports the same filters as `getEvents`.
+ * Accepts optional `search` and `type` filters and uses a cursor on `start_time,id`.
+ */
+export async function getEventsCursor(
+  filters: GetEventsFilters = {},
+  limit: number = 20,
+  cursorStartTime?: string | null,
+  cursorId?: string | null
+): Promise<Event[]> {
+  const { type, search } = filters;
+  const now = new Date().toISOString();
 
   let query = db
     .from('events')
@@ -66,36 +117,65 @@ export async function getEvents(filters: GetEventsFilters = {}): Promise<Paginat
       is_published, created_at,
       organizer:organizations!events_organizer_id_fkey(id, name, slug, type, logo_url),
       postedBy:users!events_posted_by_fkey(id, full_name, role, profile_picture_url)
-    `, { count: 'estimated' });
+    `)
+    .eq('is_published', true)
+    .gte('start_time', now);
 
-  query = query.eq('is_published', true);
+  if (type && type !== 'all') query = query.eq('type', type);
+  if (search) query = query.ilike('title', `%${search}%`);
 
-  if (type && type !== 'all') {
-    query = query.eq('type', type);
+  if (cursorStartTime && cursorId) {
+    query = query.or(`start_time.gt.${cursorStartTime},and(start_time.eq.${cursorStartTime},id.gt.${cursorId})`);
   }
 
-  if (search) {
-    query = query.ilike('title', `%${search}%`);
-  }
-
-  query = query
+  const { data, error } = await query
     .order('start_time', { ascending: true })
-    .range(start, end);
-
-  const { data, error, count } = await query;
+    .order('id', { ascending: true })
+    .limit(limit);
 
   if (error) {
-    console.warn(`[getEvents] ${error.message}`);
+    console.warn(`[getEventsCursor] ${error.message}`);
+    return [];
+  }
+  return (data ?? []).map(mapEvent);
+}
+
+export async function getEvents(filters: GetEventsFilters = {}): Promise<PaginatedResponse<Event>> {
+  const { page = 1, limit = 20 } = filters;
+
+  // Replace offset-based `.range()` with cursor-based retrieval. This will
+  // iteratively page through the cursor API to reach the requested page.
+  try {
+    let cursorStartTime: string | null | undefined = undefined;
+    let cursorId: string | null | undefined = undefined;
+    let pageData: Event[] = [];
+
+    for (let p = 1; p <= page; p++) {
+      const batch = await getEventsCursor(filters, limit, cursorStartTime ?? null, cursorId ?? null);
+      if (p === page) {
+        pageData = batch;
+        break;
+      }
+      if (batch.length === 0) {
+        pageData = [];
+        break;
+      }
+      const last = batch[batch.length - 1];
+      cursorStartTime = last.startTime ?? last.createdAt;
+      cursorId = last.id;
+    }
+
+    return {
+      data: pageData,
+      total: 0,
+      page,
+      limit,
+      hasMore: pageData.length === limit,
+    };
+  } catch (error: any) {
+    console.warn(`[getEvents] ${error?.message ?? error}`);
     return { data: [], total: 0, page, limit, hasMore: false };
   }
-
-  return {
-    data: (data ?? []).map(mapEvent),
-    total: count ?? 0,
-    page,
-    limit,
-    hasMore: count ? start + limit < count : false,
-  };
 }
 
 /**
@@ -105,7 +185,9 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
   const { data, error } = await db
     .from('events')
     .select(`
-      *,
+      id, title, slug, description, organizer_id, posted_by, type, start_time, end_time,
+      venue_name, venue_map_url, is_online, meeting_url, cover_image_url,
+      registration_url, registration_deadline, max_attendees, tags, is_published, created_at, updated_at,
       organizer:organizations!events_organizer_id_fkey(id, name, slug, type, logo_url),
       postedBy:users!events_posted_by_fkey(id, email, full_name, role, profile_picture_url)
     `)
@@ -126,7 +208,9 @@ export async function getEventById(id: string): Promise<Event | null> {
   const { data, error } = await db
     .from('events')
     .select(`
-      *,
+      id, title, slug, description, organizer_id, posted_by, type, start_time, end_time,
+      venue_name, venue_map_url, is_online, meeting_url, cover_image_url,
+      registration_url, registration_deadline, max_attendees, tags, is_published, created_at, updated_at,
       organizer:organizations!events_organizer_id_fkey(id, name, slug, type, logo_url),
       postedBy:users!events_posted_by_fkey(id, email, full_name, role, profile_picture_url)
     `)
@@ -174,7 +258,9 @@ export async function createEvent(
       is_published: eventData.isPublished !== false,
     }])
     .select(`
-      *,
+      id, title, slug, description, organizer_id, posted_by, type, start_time, end_time,
+      venue_name, venue_map_url, is_online, meeting_url, cover_image_url,
+      registration_url, registration_deadline, max_attendees, tags, is_published, created_at, updated_at,
       organizer:organizations!events_organizer_id_fkey(id, name, slug, type, logo_url),
       postedBy:users!events_posted_by_fkey(id, email, full_name, role, profile_picture_url)
     `)

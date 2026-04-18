@@ -15,6 +15,45 @@ export async function getPublishedBlogs(
   limit = 20,
   offset = 0
 ): Promise<BlogPost[]> {
+  // Backwards-compatible wrapper that uses the cursor API to emulate offset
+  // pagination. Prefer calling `getPublishedBlogsCursor` directly for better
+  // performance on large tables.
+  try {
+    const page = Math.floor(offset / limit) + 1;
+    let cursorPublishedAt: string | null | undefined = undefined;
+    let cursorId: string | null | undefined = undefined;
+    let pageData: BlogPost[] = [];
+
+    for (let p = 1; p <= page; p++) {
+      const batch = await getPublishedBlogsCursor(category, limit, cursorPublishedAt ?? null, cursorId ?? null);
+      if (p === page) {
+        pageData = batch;
+        break;
+      }
+      if (batch.length === 0) {
+        pageData = [];
+        break;
+      }
+      const last = batch[batch.length - 1];
+      cursorPublishedAt = last.publishedAt ?? last.createdAt;
+      cursorId = last.id;
+    }
+    return pageData;
+  } catch (err: any) {
+    console.warn(`[getPublishedBlogs] ${err?.message ?? err}`);
+    return [];
+  }
+}
+
+/**
+ * Cursor-based published blogs fetch (cursor on published_at + id)
+ */
+export async function getPublishedBlogsCursor(
+  category?: BlogCategory,
+  limit = 20,
+  cursorPublishedAt?: string | null,
+  cursorId?: string | null
+): Promise<BlogPost[]> {
   let query = db
     .from('blog_posts')
     .select(`
@@ -26,17 +65,23 @@ export async function getPublishedBlogs(
       author_id, posting_identity_id,
       author:users!blog_posts_author_id_fkey(id, full_name, role, profile_picture_url)
     `)
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .eq('status', 'published');
 
   if (category && category !== 'general') {
     query = query.eq('category', category);
   }
 
-  const { data, error } = await query;
+  if (cursorPublishedAt && cursorId) {
+    query = query.or(`published_at.lt.${cursorPublishedAt},and(published_at.eq.${cursorPublishedAt},id.lt.${cursorId})`);
+  }
+
+  const { data, error } = await query
+    .order('published_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit);
+
   if (error) {
-    console.warn(`[getPublishedBlogs] ${error.message}`);
+    console.warn(`[getPublishedBlogsCursor] ${error.message}`);
     return [];
   }
   return (data ?? []).map(mapBlogPost);

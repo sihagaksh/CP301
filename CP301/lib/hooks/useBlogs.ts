@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { BlogPost, BlogCategory } from '@/lib/types';
-import { getPublishedBlogs, getBlogBySlug } from '@/lib/db/blogs';
+import { getPublishedBlogsCursor, getBlogBySlug } from '@/lib/db/blogs';
 
 export function useBlogs(initialCategory?: BlogCategory) {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -8,7 +8,7 @@ export function useBlogs(initialCategory?: BlogCategory) {
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<BlogCategory | undefined>(initialCategory);
   const [hasMore, setHasMore] = useState(true);
-  const pageRef = useRef(0);
+  const cursorRef = useRef<{ createdAt?: string | null; id?: string | null }>({});
   const fetchingRef = useRef(false);
   const limit = 20;
 
@@ -21,13 +21,19 @@ export function useBlogs(initialCategory?: BlogCategory) {
     try {
       setLoading(true);
       setError(null);
-      const offset = (isLoadMore ? pageRef.current + 1 : 0) * limit;
-      const data = await getPublishedBlogs(cat, limit, offset);
+      let data: BlogPost[] = [];
+      if (isLoadMore && cursorRef.current.createdAt && cursorRef.current.id) {
+        data = await getPublishedBlogsCursor(cat, limit, cursorRef.current.createdAt, cursorRef.current.id);
+      } else {
+        data = await getPublishedBlogsCursor(cat, limit);
+      }
 
       setBlogs(prev => isLoadMore ? [...prev, ...data] : data);
       setHasMore(data.length === limit);
-      if (isLoadMore) pageRef.current += 1;
-      else pageRef.current = 0;
+      if (data.length > 0) {
+        const last = data[data.length - 1];
+        cursorRef.current = { createdAt: last.publishedAt ?? last.createdAt, id: last.id };
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch blogs');
     } finally {

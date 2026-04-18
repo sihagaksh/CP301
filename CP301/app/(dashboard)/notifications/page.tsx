@@ -59,7 +59,7 @@ export default function NotificationsPage() {
     if (!user) return;
     const { data } = await db
       .from('notifications')
-      .select('*')
+      .select('id, user_id, title, message, type, entity_type, entity_id, action_url, is_read, read_at, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50);

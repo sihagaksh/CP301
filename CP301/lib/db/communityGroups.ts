@@ -102,7 +102,10 @@ function mapMessage(row: any): GroupMessage {
 export async function getCommunityGroups(communityId: string): Promise<CommunityGroup[]> {
     const { data, error } = await db
         .from('community_groups')
-        .select('*')
+        .select(`
+            id, community_id, name, description, type, send_permission,
+            created_by, member_count, icon_url, created_at, updated_at
+        `)
         .eq('community_id', communityId)
         .order('type', { ascending: false }) // notice_board first (alphabetically)
         .order('created_at', { ascending: true });
@@ -133,7 +136,10 @@ export async function createCommunityGroup(params: {
             send_permission: params.sendPermission,
             created_by: params.createdBy,
         }])
-        .select('*')
+        .select(`
+            id, community_id, name, description, type, send_permission,
+            created_by, member_count, icon_url, created_at, updated_at
+        `)
         .single();
 
     if (error) throw new Error(`[createCommunityGroup] ${error.message}`);
@@ -262,6 +268,9 @@ export async function demoteAdmin(groupId: string, userId: string): Promise<void
 
 /** Get messages in a group */
 export async function getGroupMessages(groupId: string, limit = 100): Promise<GroupMessage[]> {
+    // Fetch the latest `limit` messages and return them in chronological order.
+    // Ordering descending then reversing ensures we return the most recent
+    // messages while keeping an ascending array for display.
     const { data, error } = await db
         .from('community_group_messages')
         .select(`
@@ -269,14 +278,34 @@ export async function getGroupMessages(groupId: string, limit = 100): Promise<Gr
             sender:users!community_group_messages_sender_id_fkey(id, full_name, profile_picture_url)
         `)
         .eq('group_id', groupId)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
         .limit(limit);
 
     if (error) {
         console.warn('[getGroupMessages]', error.message);
         return [];
     }
-    return (data ?? []).map(mapMessage);
+    return (data ?? []).map(mapMessage).reverse();
+}
+
+/** Get messages older than a cursor (created_at) */
+export async function getGroupMessagesBefore(groupId: string, before: string, limit = 50): Promise<GroupMessage[]> {
+    const { data, error } = await db
+        .from('community_group_messages')
+        .select(`
+            id, group_id, sender_id, content, created_at,
+            sender:users!community_group_messages_sender_id_fkey(id, full_name, profile_picture_url)
+        `)
+        .eq('group_id', groupId)
+        .lt('created_at', before)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.warn('[getGroupMessagesBefore]', error.message);
+        return [];
+    }
+    return (data ?? []).map(mapMessage).reverse();
 }
 
 /** Send a message to a group */

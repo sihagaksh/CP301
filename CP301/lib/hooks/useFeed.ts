@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { FeedPost } from '@/lib/types';
-import { getFeedPosts, createFeedPost } from '@/lib/db/feed';
+import { getFeedPostsCursor, createFeedPost } from '@/lib/db/feed';
 
 export function useFeed() {
     const [posts, setPosts] = useState<FeedPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(true);
-    const pageRef = useRef(0);
+    const cursorRef = useRef<{ createdAt?: string | null; id?: string | null }>({});
     const limit = 15;
     const fetchingRef = useRef(false);
 
@@ -18,13 +18,23 @@ export function useFeed() {
         try {
             setLoading(true);
             setError(null);
-            const offset = (isLoadMore ? pageRef.current + 1 : 0) * limit;
-            const data = await getFeedPosts(limit, offset);
+            let data: FeedPost[] = [];
+            if (isLoadMore && cursorRef.current.createdAt && cursorRef.current.id) {
+                data = await getFeedPostsCursor(limit, cursorRef.current.createdAt, cursorRef.current.id);
+            } else if (isLoadMore) {
+                // no cursor yet, fetch initial page to seed cursor then subsequent call will use it
+                data = await getFeedPostsCursor(limit);
+            } else {
+                data = await getFeedPostsCursor(limit);
+            }
 
             setPosts(prev => isLoadMore ? [...prev, ...data] : data);
             setHasMore(data.length === limit);
-            if (isLoadMore) pageRef.current += 1;
-            else pageRef.current = 0;
+            // update cursor to the last item's createdAt/id
+            if (data.length > 0) {
+                const last = data[data.length - 1];
+                cursorRef.current = { createdAt: last.createdAt, id: last.id };
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch feed');
         } finally {

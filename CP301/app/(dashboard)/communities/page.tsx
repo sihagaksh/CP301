@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { db } from '@/lib/db';
-import { getCommunities } from '@/lib/db/communities';
+import { getCommunitiesCursor } from '@/lib/db/communities';
 import { getCommunityGroups } from '@/lib/db/communityGroups';
 import { getCommunityMembers } from '@/lib/db/communities';
 import { GroupChat } from '@/components/features/communities/GroupChat';
@@ -56,8 +56,8 @@ export default function CommunitiesPage() {
         setLoadingComm(true);
         try {
             // Get all communities
-            const result = await getCommunities({ limit: 50 });
-            setAllCommunities(result.data);
+            const data = await getCommunitiesCursor({}, 50);
+            setAllCommunities(data);
 
             // Get my memberships
             const { data: myMems } = await db
@@ -68,8 +68,8 @@ export default function CommunitiesPage() {
             setMyMemberships(ids);
 
             // Split
-            const mine = result.data.filter(c => ids.has(c.id));
-            const discover = result.data.filter(c => !ids.has(c.id));
+            const mine = data.filter((c: Community) => ids.has(c.id));
+            const discover = data.filter((c: Community) => !ids.has(c.id));
             setMyCommunities(mine);
             setDiscoverList(discover);
         } finally {

@@ -129,7 +129,34 @@ export async function getChildOrganizations(parentId: string): Promise<Organizat
         .order('name');
 
     if (error) throw new Error(`[getChildOrganizations] ${error.message}`);
-    return (data ?? []).map(mapOrganization);
+    
+    const children = (data ?? []).map(mapOrganization);
+
+    // If there are children, compute their metrics too
+    if (children.length > 0) {
+        const childIds = children.map(c => c.id);
+        const [
+            { data: allMembers },
+            { data: allPositions },
+            { data: allOrgsWithParent }
+        ] = await Promise.all([
+            db.from('org_members').select('org_id, user_id').in('org_id', childIds).eq('status', 'approved'),
+            db.from('user_positions').select('org_id, user_id').in('org_id', childIds).eq('is_active', true),
+            db.from('organizations').select('id, parent_id').in('parent_id', childIds).eq('is_active', true)
+        ]);
+
+        children.forEach(org => {
+            const orgMembers = (allMembers ?? []).filter(m => m.org_id === org.id).map(m => m.user_id);
+            const orgPors = (allPositions ?? []).filter(p => p.org_id === org.id).map(p => p.user_id);
+            const uniqueUsers = new Set([...orgMembers, ...orgPors]);
+            org.memberCount = uniqueUsers.size;
+
+            const orgChildren = (allOrgsWithParent ?? []).filter(o => o.parent_id === org.id);
+            org.childCount = orgChildren.length;
+        });
+    }
+
+    return children;
 }
 
 /**

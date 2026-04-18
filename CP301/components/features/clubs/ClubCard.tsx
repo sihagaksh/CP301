@@ -27,9 +27,20 @@ export function ClubCard({ org }: ClubCardProps) {
                     <AvatarFallback className="bg-zinc-200 dark:bg-zinc-800 text-2xl font-bold">{getInitials(org.name)}</AvatarFallback>
                 </Avatar>
 
-                <Badge variant="secondary" className="text-[10px] font-semibold uppercase tracking-wider mb-2">
-                    {orgTypeLabels[org.type] || org.type}
-                </Badge>
+                <div className="flex flex-wrap justify-center items-center gap-2 mb-2">
+                    <Badge variant="secondary" className="text-[10px] font-semibold uppercase tracking-wider">
+                        {orgTypeLabels[org.type] || org.type}
+                    </Badge>
+                    {org.type === 'board' || org.type === 'governance_body' ? (
+                        <Badge variant="outline" className="text-[10px] font-semibold tracking-wider border-primary/50 text-primary bg-primary/5">
+                            {org.childCount ?? 0} {org.type === 'board' ? 'Clubs' : 'Entities'}
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-[10px] font-semibold tracking-wider border-accent-gold/50 text-accent-gold bg-accent-gold/5">
+                            {org.memberCount ?? 0} {org.memberCount === 1 ? 'Member' : 'Members'}
+                        </Badge>
+                    )}
+                </div>
 
                 <h3 className="font-serif font-bold text-lg text-foreground group-hover:text-accent-gold transition-colors line-clamp-2 mb-1">
                     {org.name}
@@ -42,9 +53,9 @@ export function ClubCard({ org }: ClubCardProps) {
                 )}
 
                 {org.foundedYear && (
-                    <span className="text-[10px] text-muted-foreground mt-auto pt-3 opacity-70">
-                        Est. {org.foundedYear}
-                    </span>
+                    <div className="mt-auto pt-4 text-xs font-medium text-muted-foreground">
+                        <span>Est. {org.foundedYear}</span>
+                    </div>
                 )}
             </GlassSurface>
         </Link>

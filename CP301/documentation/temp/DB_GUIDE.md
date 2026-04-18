@@ -59,7 +59,10 @@ Right now, Supabase is imported directly in every page component:
 // src/app/(dashboard)/blogs/page.tsx
 import { createClient } from '@/lib/supabase'
 const supabase = createClient()
-const { data } = await supabase.from('blog_posts').select('*')
+// Avoid `select('*')` on page components — prefer explicit projections
+const { data } = await supabase
+    .from('blog_posts')
+    .select('id, title, slug, excerpt, featured_image_url, category, company_name, role_applied, view_count, like_count, comment_count, published_at, created_at')
 ```
 
 If you ever want to switch databases — or even just update a query — you have to find and change code in 14+ different page files.

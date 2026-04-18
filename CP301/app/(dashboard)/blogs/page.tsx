@@ -14,7 +14,11 @@ import { useState, useEffect } from 'react';
 import type { BlogPost } from '@/lib/types';
 
 export default function BlogsPage() {
-    const { blogs, loading, hasMore, loadMore, category, setCategory } = useBlogs();
+    const { 
+        blogs, loading, hasMore, loadMore, category, setCategory, sort, setSort, 
+        tag, setTag, authorId, setAuthorId, keyword, setKeyword,
+        startDate, setStartDate, endDate, setEndDate 
+    } = useBlogs();
     const { user } = useAuth();
 
     const [drafts, setDrafts] = useState<BlogPost[]>([]);
@@ -98,6 +102,18 @@ export default function BlogsPage() {
                     loadMore={loadMore}
                     category={category}
                     setCategory={setCategory}
+                    sort={sort}
+                    setSort={setSort}
+                    tag={tag}
+                    setTag={setTag}
+                    authorId={authorId}
+                    setAuthorId={setAuthorId}
+                    keyword={keyword}
+                    setKeyword={setKeyword}
+                    startDate={startDate}
+                    setStartDate={setStartDate}
+                    endDate={endDate}
+                    setEndDate={setEndDate}
                 />
             </div>
         </PageContainer>

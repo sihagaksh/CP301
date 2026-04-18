@@ -49,9 +49,13 @@ export function AdminOrgManagement() {
     const [newOrgParentId, setNewOrgParentId] = useState<string>('none');
     const [newOrgDescription, setNewOrgDescription] = useState('');
     const [newOrgInstagram, setNewOrgInstagram] = useState('');
+    const [newOrgWebsite, setNewOrgWebsite] = useState('');
     const [newOrgLogoFile, setNewOrgLogoFile] = useState<File | null>(null);
     const [newOrgLogoPreview, setNewOrgLogoPreview] = useState('');
     const [orgFormError, setOrgFormError] = useState<string | null>(null);
+    const [newOrgExtraLinks, setNewOrgExtraLinks] = useState<{ key: string; value: string }[]>([]);
+    const [newExtraKey, setNewExtraKey] = useState('');
+    const [newExtraValue, setNewExtraValue] = useState('');
 
     // Edit Org State
     const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
@@ -62,8 +66,12 @@ export function AdminOrgManagement() {
     const [editOrgParentId, setEditOrgParentId] = useState<string>('none');
     const [editOrgDescription, setEditOrgDescription] = useState('');
     const [editOrgInstagram, setEditOrgInstagram] = useState('');
+    const [editOrgWebsite, setEditOrgWebsite] = useState('');
     const [editOrgLogoFile, setEditOrgLogoFile] = useState<File | null>(null);
     const [editOrgLogoPreview, setEditOrgLogoPreview] = useState('');
+    const [editOrgExtraLinks, setEditOrgExtraLinks] = useState<{ key: string; value: string }[]>([]);
+    const [editExtraKey, setEditExtraKey] = useState('');
+    const [editExtraValue, setEditExtraValue] = useState('');
 
     // CSV Upload State
     type CsvResult = { succeeded: number; failed: { row: string; reason: string }[] };
@@ -105,11 +113,37 @@ export function AdminOrgManagement() {
         return handle ? `https://www.instagram.com/${handle}` : '';
     };
 
-    const buildSocialLinks = (current: Organization['socialLinks'], instagramValue: string) => {
-        const next = { ...(current ?? {}) };
+    const normalizeWebsiteUrl = (value: string) => {
+        const trimmed = value.trim();
+        if (!trimmed) return '';
+        if (/^https?:\/\//i.test(trimmed)) return trimmed;
+        return `https://${trimmed}`;
+    };
+
+    const buildSocialLinks = (
+        current: Organization['socialLinks'],
+        instagramValue: string,
+        websiteValue?: string,
+        extraLinks?: { key: string; value: string }[]
+    ) => {
+        const next = { ...(current ?? {}) } as Record<string, string>;
         const instagram = normalizeInstagramUrl(instagramValue);
         if (instagram) next.instagram = instagram;
         else delete next.instagram;
+        if (websiteValue !== undefined) {
+            const website = normalizeWebsiteUrl(websiteValue);
+            if (website) next.website = website;
+            else delete next.website;
+        }
+        if (extraLinks && extraLinks.length) {
+            for (const { key, value } of extraLinks) {
+                const k = (key || '').trim();
+                if (!k) continue;
+                const v = normalizeWebsiteUrl(value || '');
+                if (v) next[k] = v;
+                else delete next[k];
+            }
+        }
         return next;
     };
 
@@ -154,6 +188,10 @@ export function AdminOrgManagement() {
         setNewOrgParentId('none');
         setNewOrgDescription('');
         setNewOrgInstagram('');
+        setNewOrgWebsite('');
+        setNewOrgExtraLinks([]);
+        setNewExtraKey('');
+        setNewExtraValue('');
         setNewOrgLogoFile(null);
         setNewOrgLogoPreview('');
         setOrgFormError(null);
@@ -167,6 +205,19 @@ export function AdminOrgManagement() {
         setEditOrgParentId(org.parentId ?? 'none');
         setEditOrgDescription(org.description ?? '');
         setEditOrgInstagram(org.socialLinks?.instagram ?? '');
+        setEditOrgWebsite(org.socialLinks?.website ?? '');
+        // Populate extra links (any social_links keys except instagram and website)
+        const extras: { key: string; value: string }[] = [];
+        if (org.socialLinks) {
+            for (const k of Object.keys(org.socialLinks)) {
+                if (k === 'instagram' || k === 'website') continue;
+                const v = org.socialLinks[k];
+                if (typeof v === 'string' && v.trim()) extras.push({ key: k, value: v });
+            }
+        }
+        setEditOrgExtraLinks(extras);
+        setEditExtraKey('');
+        setEditExtraValue('');
         setEditOrgLogoFile(null);
         setEditOrgLogoPreview(org.logoUrl ?? '');
         setOrgFormError(null);
@@ -186,6 +237,28 @@ export function AdminOrgManagement() {
         setFile(file);
         setPreview(URL.createObjectURL(file));
     };
+
+    // Extra-links helpers (create)
+    const addNewExtraLink = () => {
+        const key = (newExtraKey || '').trim();
+        const value = (newExtraValue || '').trim();
+        if (!key || !value) return;
+        setNewOrgExtraLinks(prev => [...prev, { key, value }]);
+        setNewExtraKey('');
+        setNewExtraValue('');
+    };
+    const removeNewExtraLink = (idx: number) => setNewOrgExtraLinks(prev => prev.filter((_, i) => i !== idx));
+
+    // Extra-links helpers (edit)
+    const addEditExtraLink = () => {
+        const key = (editExtraKey || '').trim();
+        const value = (editExtraValue || '').trim();
+        if (!key || !value) return;
+        setEditOrgExtraLinks(prev => [...prev, { key, value }]);
+        setEditExtraKey('');
+        setEditExtraValue('');
+    };
+    const removeEditExtraLink = (idx: number) => setEditOrgExtraLinks(prev => prev.filter((_, i) => i !== idx));
 
     const handleCreateOrg = async () => {
         if (!newOrgName || !newOrgSlug || !newOrgType) return;
@@ -210,7 +283,7 @@ export function AdminOrgManagement() {
             parentId: newOrgParentId === 'none' ? undefined : newOrgParentId,
             description: newOrgDescription,
             logoUrl,
-            socialLinks: buildSocialLinks(undefined, newOrgInstagram),
+            socialLinks: buildSocialLinks(undefined, newOrgInstagram, newOrgWebsite, newOrgExtraLinks),
             isActive: true
         });
 
@@ -245,7 +318,7 @@ export function AdminOrgManagement() {
             parentId: editOrgParentId === 'none' ? undefined : editOrgParentId,
             description: editOrgDescription,
             logoUrl,
-            socialLinks: buildSocialLinks(editingOrg.socialLinks, editOrgInstagram),
+            socialLinks: buildSocialLinks(editingOrg.socialLinks, editOrgInstagram, editOrgWebsite, editOrgExtraLinks),
             isActive: editingOrg.isActive,
         });
 
@@ -263,24 +336,55 @@ export function AdminOrgManagement() {
     // ------------------------------------
     // CSV helpers
     // ------------------------------------
-    // Shared: parse a CSV file text into an array of {col: value} objects
+    // Shared: parse a CSV/TSV file text into an array of {col: value} objects
     const parseCSV = (text: string): Record<string, string>[] => {
-        const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
+        const lines = text.trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean);
         if (lines.length < 2) return [];
+
+        // Delimiter detection: check first line for tabs vs commas
+        const firstLine = lines[0];
+        const delimiter = firstLine.includes('\t') ? '\t' : ',';
+
         const parseRow = (line: string): string[] => {
-            const result: string[] = []; let current = ''; let inQuotes = false;
-            for (const char of line) {
-                if (char === '"') { inQuotes = !inQuotes; }
-                else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
-                else { current += char; }
+            const result: string[] = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        // Escaped quote: "" inside a quoted field
+                        current += '"';
+                        i++; // skip next quote
+                    } else {
+                        // Toggle quote state
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === delimiter && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
             }
-            result.push(current.trim()); return result;
+            result.push(current.trim());
+            return result;
         };
-        const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/"/g, ''));
+
+        const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/^"|"$/g, ''));
         return lines.slice(1).map(line => {
             const vals = parseRow(line);
             const obj: Record<string, string> = {};
-            headers.forEach((h, i) => { obj[h] = (vals[i] ?? '').trim(); });
+            headers.forEach((h, i) => {
+                let v = (vals[i] ?? '').trim();
+                // Strip wrapping quotes if the parser didn't already (for edge cases)
+                if (v.startsWith('"') && v.endsWith('"')) {
+                    v = v.slice(1, -1).replace(/""/g, '"');
+                }
+                obj[h] = v;
+            });
             return obj;
         });
     };
@@ -294,7 +398,10 @@ export function AdminOrgManagement() {
 
     const escape = (v: string | undefined | null) => {
         if (!v) return '';
-        return v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g, '""')}"` : v;
+        const str = String(v);
+        return str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\t')
+            ? `"${str.replace(/"/g, '""')}"`
+            : str;
     };
 
     // -- ORGS --
@@ -303,11 +410,26 @@ export function AdminOrgManagement() {
     const handleOrgCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]; if (!file) return;
         setCsvResult(null); setIsUploading(true);
-        const rawRows = parseCSV(await file.text());
+        const text = await file.text();
+        const rawRows = parseCSV(text);
         console.log('[CSV Upload] Parsed rows:', rawRows.length, 'Sample:', rawRows[0]);
-        if (!rawRows.length) { setCsvResult({ succeeded: 0, failed: [{ row: 'header', reason: 'No data rows found.' }] }); setIsUploading(false); return; }
+        
+        if (!rawRows.length) { 
+            setCsvResult({ succeeded: 0, failed: [{ row: 'header', reason: 'No data rows found.' }] }); 
+            setIsUploading(false); 
+            return; 
+        }
+
         if (!rawRows[0].name || !rawRows[0].slug || !rawRows[0].type) {
-            setCsvResult({ succeeded: 0, failed: [{ row: 'header', reason: `Missing required columns: name, slug, type. Found columns: ${Object.keys(rawRows[0]).join(', ')}` }] }); setIsUploading(false); return;
+            setCsvResult({ 
+                succeeded: 0, 
+                failed: [{ 
+                    row: 'header', 
+                    reason: `Missing required columns: name, slug, type. Found: ${Object.keys(rawRows[0]).join(', ')}` 
+                }] 
+            }); 
+            setIsUploading(false); 
+            return;
         }
 
         // Topological sort: parents must be uploaded before their children
@@ -316,9 +438,6 @@ export function AdminOrgManagement() {
             const sorted: Record<string, string>[] = [];
             const visited = new Set<string>();
             const visit = (row: Record<string, string>) => {
-                // If the row lacks an ID but has a parent_id, we can't perfectly topologically sort it 
-                // easily by ID if it's completely new. However, we assume new orgs generated *without* IDs
-                // won't be referenced as parents in the exact same file (since you can't reference an ID before it's created).
                 const rowKey = row.id || row.slug;
                 if (visited.has(rowKey)) return;
                 visited.add(rowKey);
@@ -334,20 +453,28 @@ export function AdminOrgManagement() {
         };
 
         const rows = sortByDependency(rawRows);
-        console.log('[CSV Upload] Sorted order:', rows.map(r => `${r.slug} (parent_id: ${r.parent_id || 'NONE'})`));
-
         const rpcPayload = rows.map(r => {
             let parsedSocialLinks = undefined;
-            if (r.social_links && r.social_links.trim() !== '') {
+            const socialStr = (r.social_links || '').trim();
+            if (socialStr !== '') {
                 try {
-                    parsedSocialLinks = JSON.parse(r.social_links);
+                    // 1. Try JSON parsing (standard case)
+                    parsedSocialLinks = JSON.parse(socialStr);
                 } catch (err) {
-                    console.warn(`Failed to parse social_links for ${r.slug}`);
+                    // 2. Fallback: Check if it's a raw URL (common mistake in manual CSV edits)
+                    if (socialStr.startsWith('http')) {
+                        const isInsta = socialStr.includes('instagram.com');
+                        parsedSocialLinks = isInsta ? { instagram: socialStr } : { website: socialStr };
+                    } else {
+                        console.warn(`[CSV] social_links parse failed for ${r.slug}:`, socialStr);
+                    }
                 }
             }
             return {
                 id: r.id || undefined,
-                name: r.name, slug: r.slug, type: r.type ? r.type.trim().toLowerCase() : '',
+                name: r.name, 
+                slug: r.slug, 
+                type: r.type ? r.type.trim().toLowerCase() : '',
                 parent_id: r.parent_id || undefined,
                 description: r.description || undefined,
                 logo_url: r.logo_url || undefined,
@@ -624,7 +751,7 @@ export function AdminOrgManagement() {
                                         New Organization
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="sm:max-w-[500px]">
+                                <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
                                     <DialogHeader>
                                         <DialogTitle>Create Organization</DialogTitle>
                                         <DialogDescription>
@@ -679,6 +806,27 @@ export function AdminOrgManagement() {
                                             <p className="text-xs text-muted-foreground">Used as a public link only. The profile picture is not fetched from Instagram.</p>
                                         </div>
                                         <div className="grid gap-2">
+                                            <Label htmlFor="website">Website / Link</Label>
+                                            <Input id="website" value={newOrgWebsite} onChange={e => setNewOrgWebsite(e.target.value)} placeholder="https://example.org or example.org" />
+                                            <p className="text-xs text-muted-foreground">Optional public website or link for the organization.</p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label>Additional Links</Label>
+                                            <div className="flex gap-2">
+                                                <Input placeholder="label (e.g., linkedin)" value={newExtraKey} onChange={e => setNewExtraKey(e.target.value)} />
+                                                <Input placeholder="https://... or example.com" value={newExtraValue} onChange={e => setNewExtraValue(e.target.value)} />
+                                                <Button onClick={addNewExtraLink} variant="outline"><Plus /></Button>
+                                            </div>
+                                            <div className="space-y-1 mt-2">
+                                                {newOrgExtraLinks.map((l, i) => (
+                                                    <div key={i} className="flex items-center justify-between bg-muted p-2 rounded">
+                                                        <div className="truncate text-sm"><strong>{l.key}</strong>: {l.value}</div>
+                                                        <Button size="sm" variant="ghost" onClick={() => removeNewExtraLink(i)}><XCircle /></Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-2">
                                             <Label htmlFor="logo">Organization icon</Label>
                                             <div className="flex items-center gap-4">
                                                 <Avatar className="h-16 w-16 border border-border">
@@ -708,7 +856,7 @@ export function AdminOrgManagement() {
                             </Dialog>
 
                             <Dialog open={!!editingOrg} onOpenChange={(open) => { if (!open) { setEditingOrg(null); setEditOrgLogoFile(null); setOrgFormError(null); } }}>
-                                <DialogContent className="sm:max-w-[500px]">
+                                <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
                                     <DialogHeader>
                                         <DialogTitle>Edit Organization</DialogTitle>
                                         <DialogDescription>
@@ -761,6 +909,27 @@ export function AdminOrgManagement() {
                                             <Label htmlFor="edit-instagram">Instagram URL</Label>
                                             <Input id="edit-instagram" value={editOrgInstagram} onChange={e => setEditOrgInstagram(e.target.value)} placeholder="https://www.instagram.com/club_handle" />
                                             <p className="text-xs text-muted-foreground">Used as a public link only. The profile picture is not fetched from Instagram.</p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-website">Website / Link</Label>
+                                            <Input id="edit-website" value={editOrgWebsite} onChange={e => setEditOrgWebsite(e.target.value)} placeholder="https://example.org or example.org" />
+                                            <p className="text-xs text-muted-foreground">Optional public website or link for the organization.</p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label>Additional Links</Label>
+                                            <div className="flex gap-2">
+                                                <Input placeholder="label (e.g., linkedin)" value={editExtraKey} onChange={e => setEditExtraKey(e.target.value)} />
+                                                <Input placeholder="https://... or example.com" value={editExtraValue} onChange={e => setEditExtraValue(e.target.value)} />
+                                                <Button onClick={addEditExtraLink} variant="outline"><Plus /></Button>
+                                            </div>
+                                            <div className="space-y-1 mt-2">
+                                                {editOrgExtraLinks.map((l, i) => (
+                                                    <div key={i} className="flex items-center justify-between bg-muted p-2 rounded">
+                                                        <div className="truncate text-sm"><strong>{l.key}</strong>: {l.value}</div>
+                                                        <Button size="sm" variant="ghost" onClick={() => removeEditExtraLink(i)}><XCircle /></Button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                         <div className="grid gap-2">
                                             <Label htmlFor="edit-logo">Organization icon</Label>

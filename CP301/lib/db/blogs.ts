@@ -28,7 +28,7 @@ export async function getPublishedBlogs(
     let pageData: BlogPost[] = [];
 
     for (let p = 1; p <= page; p++) {
-      const batch = await getPublishedBlogsCursor(category, limit, cursorPublishedAt ?? null, cursorId ?? null);
+      const batch = await getPublishedBlogsCursor(category, limit, cursorPublishedAt ?? null, cursorId ?? null, undefined, undefined, undefined, 'newest');
       if (p === page) {
         pageData = batch;
         break;
@@ -55,25 +55,79 @@ export async function getPublishedBlogsCursor(
   category?: BlogCategory,
   limit = 20,
   cursorPublishedAt?: string | null,
-  cursorId?: string | null
+  cursorId?: string | null,
+  tag?: string | null,
+  authorId?: string | null,
+  search?: string | null,
+  sort: 'newest' | 'popular' = 'newest',
+  cursorLikeCount?: number | null,
+  cursorViewCount?: number | null,
+  startDate?: string | null,
+  endDate?: string | null
 ): Promise<BlogPost[]> {
-  let query = db
-    .from('blog_posts')
-    .select(`
+  let selectFields = `
       id, title, slug, content, excerpt, featured_image_url,
-      category, company_name, role_applied, interview_round,
+      category, tags,
+      company_name, role_applied, interview_round,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
       author_id, posting_identity_id,
       author:users!blog_posts_author_id_fkey(id, full_name, role, profile_picture_url)
-    `)
+    `;
+
+  // No computed score column here for blogs; support a simple 'popular' sort using like_count, view_count
+
+  let query = db
+    .from('blog_posts')
+    .select(selectFields)
     .eq('status', 'published');
 
   if (category && category !== 'general') {
     query = query.eq('category', category);
   }
 
+  // filter by tag (array contains)
+  if (tag) {
+    try { query = query.contains('tags', [tag]); } catch (e) { /* ignore if driver unsupported */ }
+  }
+
+  // filter by author
+  if (authorId) query = query.eq('author_id', authorId);
+  // filter by search keyword in title/content
+  if (search) {
+    try { query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`); } catch (e) { /* ignore if driver unsupported */ }
+  }
+
+  // filter by date range
+  if (startDate) query = query.gte('published_at', startDate);
+  if (endDate) query = query.lte('published_at', endDate);
+  if (sort === 'popular') {
+    // cursor based on like_count, then view_count, then id (descending order)
+    if (
+      cursorLikeCount !== undefined && cursorLikeCount !== null &&
+      cursorViewCount !== undefined && cursorViewCount !== null &&
+      cursorId
+    ) {
+      // Find rows with like_count < cursorLikeCount OR (like_count = cursorLikeCount AND view_count < cursorViewCount) OR (like_count = cursorLikeCount AND view_count = cursorViewCount AND id < cursorId)
+      try {
+        query = query.or(`like_count.lt.${cursorLikeCount},and(like_count.eq.${cursorLikeCount},and(view_count.lt.${cursorViewCount},id.lt.${cursorId}))`);
+      } catch (e) { /* ignore if driver doesn't support complex or */ }
+    }
+    const { data, error } = await query
+      .order('like_count', { ascending: false })
+      .order('view_count', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn(`[getPublishedBlogsCursor] ${error.message}`);
+      return [];
+    }
+    return (data ?? []).map(mapBlogPost);
+  }
+
+  // default newest ordering (published_at desc)
   if (cursorPublishedAt && cursorId) {
     query = query.or(`published_at.lt.${cursorPublishedAt},and(published_at.eq.${cursorPublishedAt},id.lt.${cursorId})`);
   }
@@ -98,7 +152,7 @@ export async function getBlogBySlug(slug: string): Promise<BlogPost | null> {
     .from('blog_posts')
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, company_name, role_applied, interview_round,
+      category, tags, company_name, role_applied, interview_round,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
@@ -124,7 +178,7 @@ export async function getFeaturedBlogs(limit = 6): Promise<BlogPost[]> {
     .from('blog_posts')
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, company_name, role_applied, interview_round,
+      category, tags, company_name, role_applied, interview_round,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
@@ -177,7 +231,7 @@ export async function createBlogPost(
     })
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, company_name, role_applied, interview_round,
+      category, tags, company_name, role_applied, interview_round,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
@@ -203,7 +257,7 @@ export async function publishBlogPost(blogId: string): Promise<BlogPost> {
     .eq('id', blogId)
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, company_name, role_applied, interview_round,
+      category, tags, company_name, role_applied, interview_round,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,
@@ -306,6 +360,7 @@ export function mapBlogPost(row: any): BlogPost {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     author: row.author ? mapUser(row.author) : undefined,
+    engagementScore: row.score ?? undefined,
   };
 }
 
@@ -325,7 +380,7 @@ export async function getUserDrafts(userId: string): Promise<BlogPost[]> {
     .from('blog_posts')
     .select(`
       id, title, slug, content, excerpt, featured_image_url,
-      category, company_name, role_applied, interview_round,
+      category, tags, company_name, role_applied, interview_round,
       status, is_featured, allow_comments,
       view_count, like_count, comment_count,
       published_at, created_at, updated_at,

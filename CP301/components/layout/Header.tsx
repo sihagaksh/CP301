@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { PostingIdentitySelector } from '@/components/features/profile/PostingIdentitySelector';
+import { GlobalSearch } from '@/components/features/search/GlobalSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { getInitials } from '@/lib/utils';
 import { db } from '@/lib/db';
@@ -100,16 +101,9 @@ export function Header({ onMenuClick }: HeaderProps) {
           </Link>
         </div>
 
-        {/* Center section: Search */}
-        <div className="hidden md:flex flex-1 max-w-md">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="search"
-              placeholder="Search..."
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
-            />
-          </div>
+        {/* Center section: Search Engine Component */}
+        <div className="hidden md:flex flex-1 max-w-md justify-center">
+            <GlobalSearch />
         </div>
 
         {/* Right section: Actions */}

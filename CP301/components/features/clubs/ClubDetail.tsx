@@ -51,14 +51,25 @@ export function ClubDetail() {
                     <AvatarFallback className="bg-zinc-200 dark:bg-zinc-800 text-3xl font-bold">{getInitials(org.name)}</AvatarFallback>
                 </Avatar>
                 <div className="text-center sm:text-left">
-                    <Badge variant="secondary" className="text-[10px] font-semibold uppercase tracking-wider mb-2">
-                        {org.type.replace('_', ' ')}
-                    </Badge>
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+                        <Badge variant="secondary" className="text-[10px] font-semibold uppercase tracking-wider">
+                            {org.type.replace('_', ' ')}
+                        </Badge>
+                        {isParentBody ? (
+                            <Badge variant="outline" className="text-[10px] font-semibold tracking-wider border-primary/50 text-primary bg-primary/5">
+                                {children ? children.length : 0} {org.type === 'board' ? 'Clubs' : 'Entities'}
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline" className="text-[10px] font-semibold tracking-wider border-accent-gold/50 text-accent-gold bg-accent-gold/5">
+                                {members ? members.length : 0} {members && members.length === 1 ? 'Member' : 'Members'}
+                            </Badge>
+                        )}
+                    </div>
                     <h1 className="text-3xl font-serif font-bold tracking-tight text-foreground">{org.name}</h1>
                     {org.description && (
                         <p className="text-muted-foreground mt-2 max-w-xl">{org.description}</p>
                     )}
-                    <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-muted-foreground justify-center sm:justify-start">
                         {org.email && (
                             <a href={`mailto:${org.email}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
                                 <Mail className="w-4 h-4" /> {org.email}
@@ -115,11 +126,22 @@ export function ClubDetail() {
                                         <AvatarImage src={child.logoUrl} className="object-cover" />
                                         <AvatarFallback className="bg-zinc-200 dark:bg-zinc-800 font-bold">{getInitials(child.name)}</AvatarFallback>
                                     </Avatar>
-                                    <div className="min-w-0">
+                                    <div className="min-w-0 flex-1">
                                         <p className="font-semibold text-foreground truncate">{child.name}</p>
-                                        <Badge variant="secondary" className="text-[9px] uppercase mt-1">
-                                            {child.type.replace('_', ' ')}
-                                        </Badge>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                            <Badge variant="secondary" className="text-[9px] uppercase">
+                                                {child.type.replace('_', ' ')}
+                                            </Badge>
+                                            {child.type === 'board' || child.type === 'governance_body' ? (
+                                                <Badge variant="outline" className="text-[9px] font-medium tracking-wider border-primary/50 text-primary bg-primary/5">
+                                                    {child.childCount ?? 0} {child.type === 'board' ? 'Clubs' : 'Entities'}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="text-[9px] font-medium tracking-wider border-accent-gold/50 text-accent-gold bg-accent-gold/5">
+                                                    {child.memberCount ?? 0} {child.memberCount === 1 ? 'Member' : 'Members'}
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </div>
                                 </GlassSurface>
                             </Link>

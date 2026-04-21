@@ -18,7 +18,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Save, Send, Image as ImageIcon, X } from 'lucide-react';
+import { Save, Send, Image as ImageIcon, X, Layout, Eye } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.css';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const CATEGORIES: { label: string; value: BlogCategory }[] = [
     { label: 'Placement', value: 'placement' },
@@ -310,16 +315,63 @@ export function BlogForm({ initialData }: BlogFormProps) {
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="content">Content <span className="text-destructive">*</span></Label>
-                        <Textarea
-                            id="content"
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            placeholder="Write your full story here..."
-                            className="min-h-[300px]"
-                            required
-                        />
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="content">Content <span className="text-destructive">*</span></Label>
+                        </div>
+                        
+                        <Tabs defaultValue="write" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 mb-2">
+                                <TabsTrigger value="write" className="gap-2">
+                                    <Layout className="w-4 h-4" /> Write
+                                </TabsTrigger>
+                                <TabsTrigger value="preview" className="gap-2">
+                                    <Eye className="w-4 h-4" /> Preview
+                                </TabsTrigger>
+                            </TabsList>
+                            
+                            <TabsContent value="write" className="mt-0">
+                                <Textarea
+                                    id="content"
+                                    value={content}
+                                    onChange={(e) => setContent(e.target.value)}
+                                    placeholder="Write your full story here... Use Markdown for formatting (e.g. ## for headings, **bold**, *italics*, [links])"
+                                    className="min-h-[400px] font-mono text-sm leading-relaxed"
+                                    required
+                                />
+                            </TabsContent>
+                            
+                            <TabsContent value="preview" className="mt-0">
+                                <div className="min-h-[400px] p-6 rounded-md border bg-muted/20 overflow-y-auto">
+                                    {content ? (
+                                        <div className="prose prose-sm dark:prose-invert max-w-none
+                                            prose-headings:font-serif prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground
+                                            prose-h1:text-3xl prose-h1:mt-0
+                                            prose-h2:text-xl prose-h2:md:text-2xl prose-h2:mt-10 prose-h2:border-b prose-h2:pb-2 prose-h2:border-border
+                                            prose-h3:text-lg prose-h3:md:text-xl prose-h3:mt-8
+                                            prose-p:text-foreground/90 prose-p:leading-relaxed
+                                            prose-a:text-amber-600 dark:prose-a:text-amber-400 prose-a:no-underline hover:prose-a:underline
+                                            prose-code:bg-muted prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-code:text-xs prose-code:before:content-none prose-code:after:content-none
+                                            prose-pre:bg-zinc-900 prose-pre:text-zinc-100 prose-pre:rounded-xl
+                                            prose-blockquote:border-amber-500 prose-blockquote:text-muted-foreground
+                                            prose-img:rounded-xl prose-img:shadow-md
+                                            prose-hr:border-border">
+                                            <ReactMarkdown 
+                                                remarkPlugins={[remarkGfm]} 
+                                                rehypePlugins={[rehypeHighlight]}
+                                            >
+                                                {content}
+                                            </ReactMarkdown>
+                                        </div>
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center text-muted-foreground py-20">
+                                            <Eye className="w-10 h-10 mb-2 opacity-20" />
+                                            <p>Your preview will appear here...</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </TabsContent>
+                        </Tabs>
                     </div>
 
                     <div className="pt-6 border-t flex flex-col sm:flex-row justify-end gap-3">

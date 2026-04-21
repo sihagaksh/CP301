@@ -22,7 +22,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, LogOut } from 'lucide-react';
+import { Shield, LogOut, Building2 } from 'lucide-react';
+
 import { db } from '@/lib/db';
 
 interface SidebarProps {
@@ -56,7 +57,8 @@ const GUEST_LINKS = [
 
 export function Sidebar({ isOpen, onClose, isGuest = false }: SidebarProps) {
   const pathname = usePathname();
-  const { user, signOutGuest } = useAuth();
+  const { user, isOrgAccount, signOutGuest } = useAuth();
+
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
@@ -111,6 +113,7 @@ export function Sidebar({ isOpen, onClose, isGuest = false }: SidebarProps) {
   }, [user]);
 
   const links = isGuest ? GUEST_LINKS : MAIN_LINKS;
+
 
   return (
     <>
@@ -175,8 +178,30 @@ export function Sidebar({ isOpen, onClose, isGuest = false }: SidebarProps) {
               );
             })}
 
-            {/* Admin Link (Only for authenticated admins) */}
-            {!isGuest && user?.isAdmin && (
+            {/* Org Admin Link (Only for org accounts) */}
+            {!isGuest && isOrgAccount && (
+              <>
+                <div className="pt-4 pb-2">
+                  <div className="h-px bg-sidebar-border w-full" />
+                </div>
+                <Link
+                  href="/org-admin"
+                  onClick={onClose}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    pathname.startsWith('/org-admin')
+                      ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                  )}
+                >
+                  <Building2 size={18} className={pathname.startsWith('/org-admin') ? '' : 'text-primary'} />
+                  Org Admin Portal
+                </Link>
+              </>
+            )}
+
+            {/* Admin Link (Only for authenticated super-admins, not org accounts) */}
+            {!isGuest && user?.isAdmin && !isOrgAccount && (
               <>
                 <div className="pt-4 pb-2">
                   <div className="h-px bg-sidebar-border w-full" />

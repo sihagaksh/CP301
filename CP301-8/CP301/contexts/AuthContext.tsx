@@ -7,15 +7,16 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { db } from '@/lib/db';
-import type { User, SignInRequest, SignUpRequest, UserPosition } from '@/lib/types';
+import type { User, SignInRequest, SignUpRequest, UserPosition, Organization } from '@/lib/types';
 import { getUserById } from '@/lib/db/users';
-import { getUserPositions } from '@/lib/db/organizations';
+import { getUserPositions, getOrganizationById } from '@/lib/db/organizations';
 
 export interface PostingIdentity {
   id: string | null;
   label: string;
   org_name?: string;
   org_slug?: string;
+  org_id?: string;  // set for org-account identities; used to write acting_as_org_id
 }
 
 // Routes that don't require authentication
@@ -37,6 +38,9 @@ interface AuthContextType {
   postingIdentities: PostingIdentity[];
   activeIdentity: PostingIdentity | null;
   setActiveIdentity: (identity: PostingIdentity) => void;
+  // Org account fields
+  isOrgAccount: boolean;
+  linkedOrg: Organization | null;
   loading: boolean;
   error: string | null;
   signUp: (data: SignUpRequest) => Promise<void>;
@@ -58,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [selectedIdentityId, setSelectedIdentityId] = useState<string | null>(null);
   const [postingIdentities, setPostingIdentities] = useState<PostingIdentity[]>([]);
   const [activeIdentity, setActiveIdentity] = useState<PostingIdentity | null>(null);
+  const [linkedOrg, setLinkedOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isInitialized = React.useRef(false);
@@ -137,9 +142,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userData = await getUserById(session.user.id);
           if (userData) {
             setUser(userData);
-            const positions = await getUserPositions(session.user.id);
-            setActivePositions(positions);
-            buildPostingIdentities(userData, positions);
+
+            if (userData.isOrgAccount && userData.linkedOrgId) {
+              // ── Org account path ──────────────────────────────────
+              const org = await getOrganizationById(userData.linkedOrgId);
+              setLinkedOrg(org);
+              setActivePositions([]);
+              const orgIdentity: PostingIdentity = {
+                id: null,
+                label: org?.name ?? 'Organization',
+                org_name: org?.name,
+                org_slug: org?.slug,
+                org_id: org?.id,   // ← used by feed/events/etc to set acting_as_org_id
+              };
+              setPostingIdentities([orgIdentity]);
+              setActiveIdentity(orgIdentity);
+              // Org accounts stay on the normal dashboard — no redirect.
+              // /org-admin is accessible via the sidebar link for structural management.
+            } else {
+              // ── Human user path (unchanged) ────────────────────────
+              setLinkedOrg(null);
+              const positions = await getUserPositions(session.user.id);
+              setActivePositions(positions);
+              buildPostingIdentities(userData, positions);
+              // Org accounts see the normal dashboard.
+              // Block /org-admin for non-org-account users.
+              if (typeof window !== 'undefined' && window.location.pathname.startsWith('/org-admin')) {
+                window.location.replace('/');
+              }
+            }
           } else {
             // They have a Supabase session but no profile in the DB.
             // This is a broken user state — force sign out.
@@ -180,9 +211,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const userData = await getUserById(session.user.id);
                 if (userData) {
                   setUser(userData);
-                  const positions = await getUserPositions(session.user.id);
-                  setActivePositions(positions);
-                  buildPostingIdentities(userData, positions);
+                  if (userData.isOrgAccount && userData.linkedOrgId) {
+                    const org = await getOrganizationById(userData.linkedOrgId);
+                    setLinkedOrg(org);
+                    setActivePositions([]);
+                    const orgIdentity: PostingIdentity = {
+                      id: null,
+                      label: org?.name ?? 'Organization',
+                      org_name: org?.name,
+                      org_slug: org?.slug,
+                      org_id: org?.id,
+                    };
+                    setPostingIdentities([orgIdentity]);
+                    setActiveIdentity(orgIdentity);
+                  } else {
+                    setLinkedOrg(null);
+                    const positions = await getUserPositions(session.user.id);
+                    setActivePositions(positions);
+                    buildPostingIdentities(userData, positions);
+                  }
                 }
               } finally {
                 fetchingUserRef.current = false;
@@ -200,6 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (event === 'SIGNED_OUT') {
         document.cookie = 'sb-auth-token=; path=/; max-age=0';
         setUser(null);
+        setLinkedOrg(null);
         setActivePositions(null);
         setSelectedIdentityId(null);
         setPostingIdentities([]);
@@ -373,6 +421,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         postingIdentities,
         activeIdentity,
         setActiveIdentity,
+        isOrgAccount: user?.isOrgAccount ?? false,
+        linkedOrg,
         loading,
         error,
         signUp,

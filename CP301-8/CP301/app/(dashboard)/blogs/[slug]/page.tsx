@@ -18,6 +18,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.css';
 
 export default function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const router = useRouter();
@@ -319,10 +323,23 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
                 )}
 
                 {/* Article Content */}
-                <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-a:text-amber-600 dark:prose-a:text-amber-400">
-                    {blog.content.split('\n').map((paragraph, index) => (
-                        paragraph.trim() ? <p key={index}>{paragraph}</p> : <br key={index} />
-                    ))}
+                <div className="prose prose-lg dark:prose-invert max-w-none
+                    prose-headings:font-serif prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground
+                    prose-h1:text-4xl prose-h1:md:text-5xl prose-h1:mt-0
+                    prose-h2:text-2xl prose-h2:md:text-3xl prose-h2:mt-10 prose-h2:border-b prose-h2:pb-2 prose-h2:border-border
+                    prose-h3:text-xl prose-h3:md:text-2xl prose-h3:mt-8
+                    prose-p:text-foreground/90 prose-p:leading-relaxed
+                    prose-code:bg-muted prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+                    prose-pre:bg-zinc-900 prose-pre:text-zinc-100 prose-pre:rounded-xl
+                    prose-blockquote:border-amber-500 prose-blockquote:text-muted-foreground
+                    prose-img:rounded-xl prose-img:shadow-md
+                    prose-hr:border-border">
+                    <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]} 
+                        rehypePlugins={[rehypeHighlight]}
+                    >
+                        {blog.content}
+                    </ReactMarkdown>
                 </div>
 
                 {/* Footer Actions */}

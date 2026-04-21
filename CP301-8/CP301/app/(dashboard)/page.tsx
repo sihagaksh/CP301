@@ -36,6 +36,8 @@ interface FeedItem {
   comment_count: number;
   created_at: string;
   posting_identity_id?: string;
+  acting_as_org_id?: string;
+  acting_as_org?: { id: string; name: string; slug: string } | null;
   author?: {
     id: string; full_name: string; role: string;
     profile_picture_url?: string; department?: string;
@@ -207,7 +209,7 @@ export default function FeedPage() {
     const { data: posts } = await db
       .from('feed_posts')
       .select(
-        'id, author_id, posting_identity_id, content, media_urls, source_type, source_id, like_count, comment_count, view_count, is_public, target_roles, created_at, updated_at, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug))'
+        'id, author_id, posting_identity_id, acting_as_org_id, content, media_urls, source_type, source_id, like_count, comment_count, view_count, is_public, target_roles, created_at, updated_at, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug)), acting_as_org:organizations!feed_posts_acting_as_org_id_fkey(id, name, slug)'
       )
       .order('created_at', { ascending: false })
       .limit(20);
@@ -246,6 +248,7 @@ export default function FeedPage() {
       ...p,
       author: p.author && Array.isArray(p.author) ? p.author[0] : p.author,
       posting_identity: p.posting_identity && Array.isArray(p.posting_identity) ? p.posting_identity[0] : p.posting_identity,
+      acting_as_org: p.acting_as_org && Array.isArray(p.acting_as_org) ? p.acting_as_org[0] : p.acting_as_org,
     }));
 
     setFeedItems(normalizedPosts.map((p: any) => ({
@@ -421,6 +424,7 @@ export default function FeedPage() {
       author_id: user.id,
       content: newPost.trim(),
       posting_identity_id: activeIdentity?.id || null,
+      acting_as_org_id: activeIdentity?.org_id || null,
       media_urls: mediaUrls.length > 0 ? mediaUrls : null,
     });
     setNewPost('');
@@ -471,7 +475,10 @@ export default function FeedPage() {
   const getInitials = (name?: string) =>
     name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
-  const getIdentityLabel = (item: FeedItem) => {
+  const getIdentityLabel = (item: FeedItem): string | null => {
+    // Org account posted on behalf of the org
+    if (item.acting_as_org?.name) return item.acting_as_org.name;
+    // Human POR holder posted under their role
     if (item.posting_identity?.title) {
       const orgName = (item.posting_identity.organization as unknown as { name: string })?.name;
       return orgName ? `${item.posting_identity.title}, ${orgName}` : item.posting_identity.title;
@@ -543,7 +550,8 @@ export default function FeedPage() {
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileSelect} />
 
-                {postingIdentities.length > 1 && (
+                {/* Identity indicator — shown for org accounts (always 1 identity) or POR holders with >1 */}
+                {(activeIdentity?.org_id || postingIdentities.length > 1) && (
                   <div className="relative">
                     <button
                       className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"

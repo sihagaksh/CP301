@@ -455,11 +455,11 @@ export async function upsertPORByEntry(row: {
 export async function addOrgMember(orgId: string, userId: string): Promise<OrgMember | null> {
     const { data, error } = await db
         .from('org_members')
-        .insert({
+        .upsert({
             org_id: orgId,
             user_id: userId,
             status: 'approved',
-        })
+        }, { onConflict: 'user_id,org_id' })
         .select(`
             id, org_id, user_id, status, joined_at,
             user:users!org_members_user_id_fkey(id, email, full_name, role, profile_picture_url, enrollment_number, employee_id)

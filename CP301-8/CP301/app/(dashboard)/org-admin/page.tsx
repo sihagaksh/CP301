@@ -20,13 +20,28 @@ const TABS: { id: OrgAdminTab; label: string; desc: string }[] = [
 export default function OrgAdminPage() {
     const { user, isOrgAccount, linkedOrg, loading } = useAuth();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<OrgAdminTab>('structure');
+    const [activeTab, setActiveTab] = useState<OrgAdminTab>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('orgAdminActiveTab');
+            if (saved && TABS.some(t => t.id === saved)) {
+                return saved as OrgAdminTab;
+            }
+        }
+        return 'structure';
+    });
 
     useEffect(() => {
         if (!loading && (!user || !isOrgAccount)) {
             router.replace('/');
         }
     }, [user, isOrgAccount, loading, router]);
+
+    const handleTabChange = (id: OrgAdminTab) => {
+        setActiveTab(id);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('orgAdminActiveTab', id);
+        }
+    };
 
     if (loading || !linkedOrg) {
         return (
@@ -63,7 +78,7 @@ export default function OrgAdminPage() {
                 {TABS.map(tab => (
                     <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => handleTabChange(tab.id)}
                         className={`shrink-0 text-sm font-medium px-6 py-2.5 rounded-lg transition-all ${
                             activeTab === tab.id
                                 ? 'bg-white text-primary shadow-sm dark:bg-zinc-800 dark:text-primary'

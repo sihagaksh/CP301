@@ -40,7 +40,7 @@ export function AdminOrgRoster({ orgId, orgName }: AdminOrgRosterProps) {
 
     // Form states
     const [selectedUserId, setSelectedUserId] = useState<string>('');
-    const [porTitle, setPorTitle] = useState('');
+    const [porTitle, setPorTitle] = useState('Secretary');
     const [porType, setPorType] = useState<any>('secretary');
 
     // Edit Org Form states
@@ -83,12 +83,15 @@ export function AdminOrgRoster({ orgId, orgName }: AdminOrgRosterProps) {
     };
 
     const handleAssignPOR = async () => {
-        if (!selectedUserId || !porTitle) return;
+        if (!selectedUserId) return;
+        if (porType === 'custom' && !porTitle) return;
+
+        const finalTitle = porType === 'custom' ? porTitle : porType.charAt(0).toUpperCase() + porType.slice(1);
 
         const newPor = await assignPOR({
             userId: selectedUserId,
             orgId: orgId,
-            title: porTitle,
+            title: finalTitle,
             porType: porType,
             validFrom: new Date().toISOString(),
             isActive: true
@@ -204,25 +207,50 @@ export function AdminOrgRoster({ orgId, orgName }: AdminOrgRosterProps) {
                                             <SelectValue placeholder="Choose a member" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {members.map(m => (
-                                                <SelectItem key={m.userId} value={m.userId}>
-                                                    {m.user?.fullName} ({m.user?.email})
-                                                </SelectItem>
-                                            ))}
+                                            {(() => {
+                                                const membersWithoutPOR = members.filter(m => !positions.some(p => p.userId === m.userId));
+                                                if (membersWithoutPOR.length === 0) {
+                                                    return (
+                                                        <SelectItem value="none" disabled>
+                                                            All members already hold a position
+                                                        </SelectItem>
+                                                    );
+                                                }
+                                                return membersWithoutPOR.map(m => (
+                                                    <SelectItem key={m.userId} value={m.userId}>
+                                                        {m.user?.fullName} ({m.user?.email})
+                                                    </SelectItem>
+                                                ));
+                                            })()}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Exact Title (e.g., General Secretary)</Label>
-                                    <Input
-                                        placeholder="e.g. General Secretary"
-                                        value={porTitle}
-                                        onChange={e => setPorTitle(e.target.value)}
-                                    />
-                                </div>
+                                {porType === 'custom' && (
+                                    <div className="space-y-2">
+                                        <Label>Exact Title (e.g., General Secretary)</Label>
+                                        <Input
+                                            placeholder="e.g. General Secretary"
+                                            value={porTitle}
+                                            onChange={e => setPorTitle(e.target.value)}
+                                        />
+                                    </div>
+                                )}
                                 <div className="space-y-2">
                                     <Label>Position Level</Label>
-                                    <Select value={porType} onValueChange={setPorType}>
+                                    <Select value={porType} onValueChange={(val) => {
+                                        setPorType(val);
+                                        if (val !== 'custom') {
+                                            const titleMap: Record<string, string> = {
+                                                secretary: 'Secretary',
+                                                representative: 'Representative',
+                                                coordinator: 'Coordinator',
+                                                mentor: 'Mentor'
+                                            };
+                                            setPorTitle(titleMap[val] || val);
+                                        } else {
+                                            setPorTitle('');
+                                        }
+                                    }}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
@@ -235,7 +263,7 @@ export function AdminOrgRoster({ orgId, orgName }: AdminOrgRosterProps) {
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white" onClick={handleAssignPOR} disabled={!selectedUserId || !porTitle}>
+                                <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white" onClick={handleAssignPOR} disabled={!selectedUserId || (porType === 'custom' && !porTitle)}>
                                     Grant Official POR
                                 </Button>
                             </div>

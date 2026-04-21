@@ -115,6 +115,26 @@ export async function getOrganizationBySlug(slug: string): Promise<Organization 
 }
 
 /**
+ * Get a single organization by ID
+ */
+export async function getOrganizationById(orgId: string): Promise<Organization | null> {
+    const { data, error } = await db
+        .from('organizations')
+        .select(`
+            id, name, slug, type, parent_id, description, logo_url,
+            email, social_links, is_active, founded_year, created_at, updated_at
+        `)
+        .eq('id', orgId)
+        .single();
+
+    if (error) {
+        if (error.code === 'PGRST116') return null;
+        throw new Error(`[getOrganizationById] ${error.message}`);
+    }
+    return data ? mapOrganization(data) : null;
+}
+
+/**
  * Get all child organizations for a specific parent organization
  */
 export async function getChildOrganizations(parentId: string): Promise<Organization[]> {
@@ -336,9 +356,10 @@ export async function upsertOrganization(row: {
 /**
  * Get ALL members across all orgs (Admin only) — used for bulk CSV export.
  * Joins user and org info so the download includes full names, emails, org slugs.
+ * @param scopeOrgIds - if provided, only returns members for these org IDs (org-admin scoping)
  */
-export async function getAllOrgMembers(): Promise<OrgMember[]> {
-    const { data, error } = await db
+export async function getAllOrgMembers(scopeOrgIds?: string[]): Promise<OrgMember[]> {
+    let query = db
         .from('org_members')
         .select(`
             id, org_id, user_id, status, joined_at,
@@ -348,15 +369,21 @@ export async function getAllOrgMembers(): Promise<OrgMember[]> {
         .eq('status', 'approved')
         .order('joined_at', { ascending: false });
 
+    if (scopeOrgIds && scopeOrgIds.length > 0) {
+        query = query.in('org_id', scopeOrgIds);
+    }
+
+    const { data, error } = await query;
     if (error) throw new Error(`[getAllOrgMembers] ${error.message}`);
     return (data ?? []).map(mapOrgMember);
 }
 
 /**
  * Get ALL positions (PORs) across all orgs (Admin only) — used for bulk CSV export.
+ * @param scopeOrgIds - if provided, only returns PORs for these org IDs (org-admin scoping)
  */
-export async function getAllOrgPositions(): Promise<UserPosition[]> {
-    const { data, error } = await db
+export async function getAllOrgPositions(scopeOrgIds?: string[]): Promise<UserPosition[]> {
+    let query = db
         .from('user_positions')
         .select(`
             id, user_id, org_id, title, por_type, valid_from, valid_until, is_active, created_at,
@@ -365,6 +392,11 @@ export async function getAllOrgPositions(): Promise<UserPosition[]> {
         `)
         .order('created_at', { ascending: false });
 
+    if (scopeOrgIds && scopeOrgIds.length > 0) {
+        query = query.in('org_id', scopeOrgIds);
+    }
+
+    const { data, error } = await query;
     if (error) throw new Error(`[getAllOrgPositions] ${error.message}`);
     return (data ?? []).map(mapUserPosition);
 }
@@ -511,4 +543,3 @@ export function mapOrgMember(row: any): OrgMember {
         user: row.user ? mapUser(row.user) : undefined,
     };
 }
-

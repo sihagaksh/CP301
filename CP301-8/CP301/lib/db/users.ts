@@ -6,19 +6,23 @@
 import { db } from './client';
 import type { User } from '@/lib/types';
 
+// Shared select columns — includes org-account fields added in migration 038
+const USER_SELECT = `
+  id, email, full_name, role, status,
+  department, branch, batch, enrollment_number, employee_id,
+  designation, current_organization, current_position,
+  phone_number, bio, linkedin_url, profile_picture_url,
+  is_verified, is_admin, is_org_account, linked_org_id,
+  created_at, updated_at
+`;
+
 /**
  * Get user by ID
  */
 export async function getUserById(userId: string): Promise<User | null> {
   const { data, error } = await db
     .from('users')
-    .select(`
-      id, email, full_name, role, status,
-      department, branch, batch, enrollment_number, employee_id,
-      designation, current_organization, current_position,
-      phone_number, bio, linkedin_url, profile_picture_url,
-      is_verified, is_admin, created_at, updated_at
-    `)
+    .select(USER_SELECT)
     .eq('id', userId)
     .single();
 
@@ -36,13 +40,7 @@ export async function getUserById(userId: string): Promise<User | null> {
 export async function getUserByEmail(email: string): Promise<User | null> {
   const { data, error } = await db
     .from('users')
-    .select(`
-      id, email, full_name, role, status,
-      department, branch, batch, enrollment_number, employee_id,
-      designation, current_organization, current_position,
-      phone_number, bio, linkedin_url, profile_picture_url,
-      is_verified, is_admin, created_at, updated_at
-    `)
+    .select(USER_SELECT)
     .eq('email', email)
     .single();
 
@@ -77,13 +75,7 @@ export async function updateUserProfile(userId: string, updates: Partial<User>):
       updated_at: new Date().toISOString(),
     })
     .eq('id', userId)
-    .select(`
-      id, email, full_name, role, status,
-      department, branch, batch, enrollment_number, employee_id,
-      designation, current_organization, current_position,
-      phone_number, bio, linkedin_url, profile_picture_url,
-      is_verified, is_admin, created_at, updated_at
-    `)
+    .select(USER_SELECT)
     .single();
 
   if (error) throw new Error(`[updateUserProfile] ${error.message}`);
@@ -100,13 +92,7 @@ export async function updateUserProfile(userId: string, updates: Partial<User>):
 export async function getAllUsers(): Promise<User[]> {
   const { data, error } = await db
     .from('users')
-    .select(`
-      id, email, full_name, role, status,
-      department, branch, batch, enrollment_number, employee_id,
-      designation, current_organization, current_position,
-      phone_number, bio, linkedin_url, profile_picture_url,
-      is_verified, is_admin, created_at, updated_at
-    `)
+    .select(USER_SELECT)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`[getAllUsers] ${error.message}`);
@@ -125,13 +111,7 @@ export async function updateUserRole(userId: string, role: string, isAdmin: bool
       updated_at: new Date().toISOString()
     })
     .eq('id', userId)
-    .select(`
-      id, email, full_name, role, status,
-      department, branch, batch, enrollment_number, employee_id,
-      designation, current_organization, current_position,
-      phone_number, bio, linkedin_url, profile_picture_url,
-      is_verified, is_admin, created_at, updated_at
-    `)
+    .select(USER_SELECT)
     .single();
 
   if (error) throw new Error(`[updateUserRole] ${error.message}`);
@@ -149,13 +129,7 @@ export async function updateUserStatus(userId: string, status: string): Promise<
       updated_at: new Date().toISOString()
     })
     .eq('id', userId)
-    .select(`
-      id, email, full_name, role, status,
-      department, branch, batch, enrollment_number, employee_id,
-      designation, current_organization, current_position,
-      phone_number, bio, linkedin_url, profile_picture_url,
-      is_verified, is_admin, created_at, updated_at
-    `)
+    .select(USER_SELECT)
     .single();
 
   if (error) throw new Error(`[updateUserStatus] ${error.message}`);
@@ -187,6 +161,8 @@ export function mapUser(row: any): User {
     profilePictureUrl: row.profile_picture_url,
     isVerified: row.is_verified,
     isAdmin: row.is_admin,
+    isOrgAccount: row.is_org_account ?? false,
+    linkedOrgId: row.linked_org_id ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

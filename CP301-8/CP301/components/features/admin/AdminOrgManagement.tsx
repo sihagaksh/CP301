@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAdmin } from '@/lib/hooks/useAdmin';
 import { db } from '@/lib/db/client';
 import { Organization } from '@/lib/types';
+import { parseCSV, triggerDownload, escape } from '@/lib/csv-utils';
 import { Button } from '@/components/ui/button';
 import {
     ChevronDown,
@@ -32,6 +33,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { getInitials } from '@/lib/utils';
+
 
 export function AdminOrgManagement() {
     const { fetchAllOrganizations, createNewOrg, updateOrg, bulkUpsertOrgs, bulkUpsertMembers, bulkUpsertPORs, fetchAllMembers, fetchAllPositions, error: adminError } = useAdmin();
@@ -333,76 +335,8 @@ export function AdminOrgManagement() {
         setIsSavingEdit(false);
     };
 
-    // ------------------------------------
-    // CSV helpers
-    // ------------------------------------
-    // Shared: parse a CSV/TSV file text into an array of {col: value} objects
-    const parseCSV = (text: string): Record<string, string>[] => {
-        const lines = text.trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-        if (lines.length < 2) return [];
-
-        // Delimiter detection: check first line for tabs vs commas
-        const firstLine = lines[0];
-        const delimiter = firstLine.includes('\t') ? '\t' : ',';
-
-        const parseRow = (line: string): string[] => {
-            const result: string[] = [];
-            let current = '';
-            let inQuotes = false;
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                const nextChar = line[i + 1];
-
-                if (char === '"') {
-                    if (inQuotes && nextChar === '"') {
-                        // Escaped quote: "" inside a quoted field
-                        current += '"';
-                        i++; // skip next quote
-                    } else {
-                        // Toggle quote state
-                        inQuotes = !inQuotes;
-                    }
-                } else if (char === delimiter && !inQuotes) {
-                    result.push(current.trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            result.push(current.trim());
-            return result;
-        };
-
-        const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/^"|"$/g, ''));
-        return lines.slice(1).map(line => {
-            const vals = parseRow(line);
-            const obj: Record<string, string> = {};
-            headers.forEach((h, i) => {
-                let v = (vals[i] ?? '').trim();
-                // Strip wrapping quotes if the parser didn't already (for edge cases)
-                if (v.startsWith('"') && v.endsWith('"')) {
-                    v = v.slice(1, -1).replace(/""/g, '"');
-                }
-                obj[h] = v;
-            });
-            return obj;
-        });
-    };
-
-    const triggerDownload = (csv: string, filename: string) => {
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    const escape = (v: string | undefined | null) => {
-        if (!v) return '';
-        const str = String(v);
-        return str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\t')
-            ? `"${str.replace(/"/g, '""')}"`
-            : str;
-    };
+    // CSV helpers are now imported from @/lib/csv-utils
+    // (parseCSV, triggerDownload, escape)
 
     // -- ORGS --
     const ORG_COLS = 'id,name,slug,type,parent_id,description,logo_url,email,social_links,founded_year,is_active';

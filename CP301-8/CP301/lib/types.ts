@@ -50,6 +50,9 @@ export interface User {
   profilePictureUrl?: string;
   isVerified: boolean;
   isAdmin: boolean;
+  // Org account fields (null/false for all human users)
+  isOrgAccount?: boolean;   // true only for dedicated org-account users
+  linkedOrgId?: string;     // which Organization this account controls
   createdAt: string;
   updatedAt: string;
 }
@@ -100,6 +103,7 @@ export interface BlogPost {
   id: string;
   authorId: string;
   postingIdentityId?: string;
+  actingAsOrgId?: string;     // set when posted by an org account
   title: string;
   slug: string;
   content: string;
@@ -122,6 +126,7 @@ export interface BlogPost {
   updatedAt: string;
   author?: User;
   postingIdentity?: UserPosition;
+  actingAsOrg?: Organization;  // populated join when actingAsOrgId is set
 }
 
 export interface MarketplaceItem {
@@ -165,6 +170,8 @@ export interface Event {
   postedBy: string;
   organizerId?: string;
   postingIdentityId?: string;
+  actingAsOrgId?: string;     // set when posted by an org account
+  actingAsOrg?: Organization; // populated join
   title: string;
   slug: string;
   description?: string;
@@ -249,6 +256,8 @@ export interface Notice {
   id: string;
   postedBy: string;
   postingIdentityId?: string;
+  actingAsOrgId?: string;     // set when posted by an org account
+  actingAsOrg?: Organization; // populated join
   title: string;
   content: string;
   category: NoticeCategory;
@@ -328,6 +337,8 @@ export interface FeedPost {
   id: string;
   authorId: string;
   postingIdentityId?: string;
+  actingAsOrgId?: string;     // set when posted by an org account
+  actingAsOrg?: Organization; // populated join
   content: string;
   mediaUrls: string[];
   sourceType: 'post' | 'blog' | 'event' | 'notice';

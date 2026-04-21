@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLostFound } from '@/lib/hooks/useLostFound';
 import { LFItemCard } from './LFItemCard';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,30 @@ import {
 
 export function LFItemList() {
     const { items, loading, error, hasMore, loadMore, filters, updateFilters } = useLostFound({ limit: 12 });
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Infinite scroll observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loading) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = loadMoreRef.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, loadMore]);
 
     if (error) {
         return (
@@ -111,19 +135,18 @@ export function LFItemList() {
                 </div>
             )}
 
-            {hasMore && (
-                <div className="pt-6 flex justify-center col-span-full">
-                    <Button
-                        variant="outline"
-                        onClick={loadMore}
-                        disabled={loading}
-                        className="min-w-[200px]"
-                    >
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                        {loading ? 'Loading...' : 'Load More Items'}
-                    </Button>
-                </div>
-            )}
+            {/* Infinite Scroll Sentinel */}
+            <div ref={loadMoreRef} className="pt-6 pb-2 flex justify-center w-full col-span-full">
+                {loading && items.length > 0 && (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span className="text-sm font-medium">Loading more items...</span>
+                    </div>
+                )}
+                {!loading && !hasMore && items.length > 0 && (
+                    <p className="text-sm text-muted-foreground pt-4">You have reached the end.</p>
+                )}
+            </div>
         </div>
     );
 }

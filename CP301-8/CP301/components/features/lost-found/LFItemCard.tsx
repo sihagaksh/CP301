@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { MapPin, Calendar, User, Search, CheckCircle2 } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { MapPin, Calendar, User, Search, CheckCircle2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { LostFoundItem, LFStatus } from '@/lib/types';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -77,13 +77,19 @@ export function LFItemCard({ item }: LFItemCardProps) {
                         {item.dateLostFound && (
                             <div className="flex items-center gap-2">
                                 <Calendar className="w-3.5 h-3.5 shrink-0" />
-                                <span>{format(new Date(item.dateLostFound), 'MMM do, yyyy')}</span>
+                                <span>{item.status === 'lost' ? 'Lost on ' : 'Found on '}{format(new Date(item.dateLostFound), 'MMM do, yyyy')}</span>
                             </div>
                         )}
 
-                        <div className="flex items-center gap-2">
-                            <User className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">Reported by {item.reporter?.fullName}</span>
+                        <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <User className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate">By {item.reporter?.fullName?.split(' ')[0] || 'User'}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0 text-[10px] text-muted-foreground/80 lowercase">
+                                <Clock className="w-3 h-3" />
+                                <span>{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

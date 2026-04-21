@@ -147,6 +147,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // ── Org account path ──────────────────────────────────
               const org = await getOrganizationById(userData.linkedOrgId);
               setLinkedOrg(org);
+              // Use the org's logo as the account avatar everywhere
+              if (org?.logoUrl) {
+                userData.profilePictureUrl = org.logoUrl;
+              }
+              setUser(userData);
               setActivePositions([]);
               const orgIdentity: PostingIdentity = {
                 id: null,
@@ -214,6 +219,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   if (userData.isOrgAccount && userData.linkedOrgId) {
                     const org = await getOrganizationById(userData.linkedOrgId);
                     setLinkedOrg(org);
+                    // Use org logo as the account avatar everywhere
+                    if (org?.logoUrl) {
+                      userData.profilePictureUrl = org.logoUrl;
+                    }
+                    setUser(userData);
                     setActivePositions([]);
                     const orgIdentity: PostingIdentity = {
                       id: null,

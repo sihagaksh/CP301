@@ -37,7 +37,7 @@ interface FeedItem {
   created_at: string;
   posting_identity_id?: string;
   acting_as_org_id?: string;
-  acting_as_org?: { id: string; name: string; slug: string } | null;
+  acting_as_org?: { id: string; name: string; slug: string; logo_url?: string | null } | null;
   author?: {
     id: string; full_name: string; role: string;
     profile_picture_url?: string; department?: string;
@@ -209,7 +209,7 @@ export default function FeedPage() {
     const { data: posts } = await db
       .from('feed_posts')
       .select(
-        'id, author_id, posting_identity_id, acting_as_org_id, content, media_urls, source_type, source_id, like_count, comment_count, view_count, is_public, target_roles, created_at, updated_at, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug)), acting_as_org:organizations!feed_posts_acting_as_org_id_fkey(id, name, slug)'
+        'id, author_id, posting_identity_id, acting_as_org_id, content, media_urls, source_type, source_id, like_count, comment_count, view_count, is_public, target_roles, created_at, updated_at, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug)), acting_as_org:organizations!feed_posts_acting_as_org_id_fkey(id, name, slug, logo_url)'
       )
       .order('created_at', { ascending: false })
       .limit(20);
@@ -632,9 +632,12 @@ export default function FeedPage() {
                       <div className="flex gap-3 mb-3">
                         <Link href={`/users/${item.author?.id}`} className="no-underline">
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-semibold text-sm overflow-hidden flex-shrink-0">
-                            {item.author?.profile_picture_url
-                              ? <img src={item.author.profile_picture_url} alt={item.author.full_name} className="w-full h-full object-cover" />
-                              : getInitials(item.author?.full_name)}
+                            {/* For org posts: prefer org logo. For human posts: prefer profile pic. */}
+                            {item.acting_as_org?.logo_url
+                              ? <img src={item.acting_as_org.logo_url} alt={item.acting_as_org.name} className="w-full h-full object-cover" />
+                              : item.author?.profile_picture_url
+                                ? <img src={item.author.profile_picture_url} alt={item.author.full_name} className="w-full h-full object-cover" />
+                                : getInitials(item.author?.full_name)}
                           </div>
                         </Link>
                         <div className="flex-1">

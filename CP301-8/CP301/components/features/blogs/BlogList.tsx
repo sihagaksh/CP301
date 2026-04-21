@@ -69,6 +69,30 @@ export function BlogList({
     const authorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const [isCustomDate, setIsCustomDate] = useState(!!(startDate || endDate));
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Infinite scroll observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loading) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = loadMoreRef.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, loadMore]);
 
     useEffect(() => {
         setLocalKeyword(keyword || '');
@@ -327,25 +351,18 @@ export function BlogList({
                     </div>
                 )}
 
-                {/* Load More Button */}
-                {blogs.length > 0 && hasMore && (
-                    <div className="flex justify-center pt-16">
-                        <Button
-                            variant="outline"
-                            size="lg"
-                            onClick={loadMore}
-                            disabled={loading}
-                            className="min-w-[240px] rounded-full border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group"
-                        >
-                            {loading ? <Spinner className="mr-2" /> : (
-                                <>
-                                    <span>Load More Experiences</span>
-                                    <ChevronDown className="ml-2 w-4 h-4 transition-transform group-hover:translate-y-1" />
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                )}
+                {/* Infinite Scroll Sentinel */}
+                <div ref={loadMoreRef} className="pt-10 pb-4 flex justify-center w-full">
+                    {loading && blogs.length > 0 && (
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Spinner className="h-6 w-6" />
+                            <span className="text-sm font-medium">Loading more blogs...</span>
+                        </div>
+                    )}
+                    {!loading && !hasMore && blogs.length > 0 && (
+                        <p className="text-sm text-muted-foreground pt-4">You have reached the end.</p>
+                    )}
+                </div>
             </div>
         </div>
     );

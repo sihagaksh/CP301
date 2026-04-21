@@ -1,6 +1,7 @@
 'use client';
 
 import React, { use, useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Clock, Eye, MessageSquare, Briefcase, User, Calendar, Send, FileText, Pencil, Trash2, Heart, HeartOff, Loader2, MoreHorizontal } from 'lucide-react';
@@ -320,9 +321,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
 
                 {/* Article Content */}
                 <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-a:text-amber-600 dark:prose-a:text-amber-400">
-                    {blog.content.split('\n').map((paragraph, index) => (
-                        paragraph.trim() ? <p key={index}>{paragraph}</p> : <br key={index} />
-                    ))}
+                    <ReactMarkdown>{blog.content}</ReactMarkdown>
                 </div>
 
                 {/* Footer Actions */}

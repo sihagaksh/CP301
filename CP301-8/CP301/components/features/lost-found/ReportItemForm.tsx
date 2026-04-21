@@ -15,11 +15,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export function ReportItemForm() {
     const router = useRouter();
     const { user } = useAuth();
     const { reportItem } = useLostFound();
+    const { toast } = useToast();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -116,6 +118,10 @@ export function ReportItemForm() {
             });
 
             if (success) {
+                toast({
+                    title: '✅ Report submitted!',
+                    description: 'Your item has been posted to Lost & Found.',
+                });
                 router.push('/lost-found');
             } else {
                 setError('Failed to submit report. Please try again.');

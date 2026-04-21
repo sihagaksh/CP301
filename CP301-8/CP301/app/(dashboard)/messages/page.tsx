@@ -263,21 +263,6 @@ function SwipeableDMMessage({ msg, isMine, activeConv, currentUserId, onReply }:
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/* Swipe reply icon (left of bubble for mine, left of avatar for others) */}
-      <div
-        className="flex-shrink-0 flex items-center justify-center self-center"
-        style={{
-          width: 28,
-          opacity: iconProgress,
-          transform: `scale(${0.5 + iconProgress * 0.5})`,
-          transition: isAnimating ? 'opacity 0.2s, transform 0.2s' : 'none',
-          order: isMine ? -1 : 0,
-          pointerEvents: 'none',
-        }}
-      >
-        <CornerUpLeft className="w-4 h-4 text-amber-500" />
-      </div>
-
       {!isMine && (
         <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold flex-shrink-0 overflow-hidden">
           {activeConv.participant.profile_picture_url
@@ -302,30 +287,46 @@ function SwipeableDMMessage({ msg, isMine, activeConv, currentUserId, onReply }:
         <Reply className="w-3.5 h-3.5" />
       </button>
 
-      {/* Bubble */}
-      <div
-        className="max-w-[65%]"
-        style={{
-          transform: `translateX(${offset}px)`,
-          transition: isAnimating ? 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
-        }}
-      >
-        {/* Quoted reply snippet */}
-        {msg.reply_to && (
-          <div className="mb-1 mx-0.5 px-2.5 py-1.5 rounded-lg text-xs border-l-[3px] border-gray-400 dark:border-gray-500 bg-black/10 dark:bg-black/20">
-            <p className="font-semibold text-black dark:text-white truncate mb-0.5">
-              {msg.reply_to.sender_id === currentUserId ? 'You' : activeConv.participant.full_name}
-            </p>
-            <p className="truncate text-black dark:text-white opacity-90">{msg.reply_to.content}</p>
-          </div>
-        )}
-        <div className={`px-3.5 py-2 rounded-2xl text-sm leading-relaxed ${isMine ? 'bg-amber-500 text-white rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm border border-border'}`}>
-          {msg.content}
+      <div className="relative max-w-[85%] sm:max-w-[75%]">
+        {/* Swipe reply icon (absoluted to left, revealed when bubble moves right) */}
+        <div
+          className="absolute top-0 bottom-0 flex items-center justify-center pointer-events-none"
+          style={{
+            left: -28,
+            width: 28,
+            zIndex: -1,
+            opacity: iconProgress,
+            transform: `scale(${0.5 + iconProgress * 0.5})`,
+            transition: isAnimating ? 'opacity 0.2s, transform 0.2s' : 'none',
+          }}
+        >
+          <CornerUpLeft className="w-4 h-4 text-amber-500" />
         </div>
-        <p className={`text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1 ${isMine ? 'justify-end pr-0.5' : 'pl-0.5'}`}>
-          {format(new Date(msg.created_at), 'HH:mm')}
-          {isMine && (msg.is_read ? <CheckCheck size={12} className="text-sky-400" /> : <Check size={12} className="text-muted-foreground" />)}
-        </p>
+
+        <div
+          className="w-full relative z-10"
+          style={{
+            transform: `translateX(${offset}px)`,
+            transition: isAnimating ? 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+          }}
+        >
+          {/* Quoted reply snippet */}
+          {msg.reply_to && (
+            <div className="mb-1 mx-0.5 px-2.5 py-1.5 rounded-lg text-xs border-l-[3px] border-gray-400 dark:border-gray-500 bg-black/10 dark:bg-black/20">
+              <p className="font-semibold text-black dark:text-white truncate mb-0.5">
+                {msg.reply_to.sender_id === currentUserId ? 'You' : activeConv.participant.full_name}
+              </p>
+              <p className="truncate text-black dark:text-white opacity-90">{msg.reply_to.content}</p>
+            </div>
+          )}
+          <div className={`px-3.5 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${isMine ? 'bg-amber-500 text-white rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm border border-border'}`}>
+            {msg.content}
+          </div>
+          <p className={`text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1 ${isMine ? 'justify-end pr-0.5' : 'pl-0.5'}`}>
+            {format(new Date(msg.created_at), 'HH:mm')}
+            {isMine && (msg.is_read ? <CheckCheck size={12} className="text-sky-400" /> : <Check size={12} className="text-muted-foreground" />)}
+          </p>
+        </div>
       </div>
     </div>
   );

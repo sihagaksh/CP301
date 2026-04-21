@@ -15,11 +15,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export function CreateListingForm() {
     const router = useRouter();
     const { user } = useAuth();
     const { createListing } = useMarketplace();
+    const { toast } = useToast();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -120,6 +122,10 @@ export function CreateListingForm() {
             });
 
             if (success) {
+                toast({
+                    title: '✅ Listing posted!',
+                    description: 'Your item is now live on the Marketplace.',
+                });
                 router.push('/marketplace');
             } else {
                 setError('Failed to create listing. Please try again.');

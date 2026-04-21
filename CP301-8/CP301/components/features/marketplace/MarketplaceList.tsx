@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useMarketplace } from '@/lib/hooks/useMarketplace';
 import { MarketplaceCard } from './MarketplaceCard';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,30 @@ const CATEGORIES: { value: ItemCategory | 'all', label: string }[] = [
 export function MarketplaceList() {
     const { items, loading, error, hasMore, loadMore, filters, updateFilters } = useMarketplace({ limit: 12 });
     const [showFilters, setShowFilters] = React.useState(false);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Infinite scroll observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loading) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = loadMoreRef.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, loadMore]);
 
     if (error) {
         return (
@@ -36,7 +60,7 @@ export function MarketplaceList() {
     }
 
     return (
-        <div className="space-y-6 animate-fade-in flex flex-col md:flex-row gap-4 md:gap-8">
+        <div className="w-full animate-fade-in flex flex-col md:flex-row gap-4 md:gap-8">
             
             {/* Mobile Filter Toggle */}
             <div className="md:hidden">
@@ -50,7 +74,7 @@ export function MarketplaceList() {
             </div>
 
             {/* Sidebar Filters */}
-            <div className={`md:w-64 shrink-0 space-y-6 ${showFilters ? 'block' : 'hidden md:block'}`}>
+            <div className={`md:w-64 shrink-0 mt-0 md:mt-0 space-y-6 ${showFilters ? 'block' : 'hidden md:block'}`}>
                 <div className="sticky top-24 space-y-6">
                     <div className="relative w-full">
                         <SearchX className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -154,9 +178,22 @@ export function MarketplaceList() {
                             <MarketplaceCard key={item.id} item={item} />
                         ))}
                     </div>
+
+                    {/* Infinite Scroll Sentinel */}
+                    <div ref={loadMoreRef} className="pt-10 pb-4 flex justify-center w-full">
+                        {loading && (
+                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                                <span className="text-sm font-medium">Loading more items...</span>
+                            </div>
+                        )}
+                        {!loading && !hasMore && items.length > 0 && (
+                            <p className="text-sm text-muted-foreground">You have reached the end.</p>
+                        )}
+                    </div>
                 </div>
 
-                {/* Loading & Empty States */}
+                {/* Initial Loading & Empty States */}
                 {loading && items.length === 0 && (
                     <div className="flex justify-center p-12 w-full">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -168,20 +205,6 @@ export function MarketplaceList() {
                         <SearchX className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                         <h3 className="text-lg font-medium text-foreground mb-1">No items found</h3>
                         <p className="text-sm text-muted-foreground">Try adjusting your category or price filters.</p>
-                    </div>
-                )}
-
-                {hasMore && (
-                    <div className="pt-8 flex justify-center w-full">
-                        <Button
-                            variant="outline"
-                            onClick={loadMore}
-                            disabled={loading}
-                            className="min-w-[200px]"
-                        >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                            {loading ? 'Loading...' : 'Load More Items'}
-                        </Button>
                     </div>
                 )}
             </div>

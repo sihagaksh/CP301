@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import Script from 'next/script'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
+import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: '--font-sans' });
@@ -56,6 +57,7 @@ export default function RootLayout({
       <body className={`${dmSans.variable} ${playfair.variable} ${jetBrainsMono.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
+          <Toaster />
           <ServiceWorkerRegistration />
         </AuthProvider>
         <Analytics />

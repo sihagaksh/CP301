@@ -5,10 +5,11 @@ import Link from 'next/link';
 import {
   Heart, MessageCircle, Share2, TrendingUp,
   BookOpen, Calendar, Megaphone,
-  Sparkles, Send, ChevronDown,
-  ImageIcon, X, ChevronLeft, ChevronRight, Check, Loader2, Eye,
-  MoreHorizontal, Pencil, Trash2
+  Sparkles, Send,
+  ImageIcon, X, ChevronLeft, ChevronRight, Check, Loader2,
+  MoreHorizontal, Pencil, Trash2, Shield, User, ChevronDown
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { updateFeedPost, deleteFeedPost } from '@/lib/db/feed';
 import { db } from '@/lib/db';
@@ -158,12 +159,11 @@ function FeedPhotoCarousel({ item }: { item: FeedItem }) {
 }
 
 export default function FeedPage() {
-  const { user, postingIdentities, activeIdentity, setActiveIdentity } = useAuth();
+  const { user, activePositions, selectedIdentityId, setSelectedIdentityId, activeIdentity, setActiveIdentity } = useAuth();
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState('');
   const [posting, setPosting] = useState(false);
-  const [showIdentityPicker, setShowIdentityPicker] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -420,11 +420,19 @@ export default function FeedPage() {
     setUploadError(null);
     const { urls: mediaUrls, failed } = await uploadImages();
     if (failed) { setPosting(false); return; }
+
+    // Derive org_id from selected POR (for human users) or fall back to activeIdentity (org accounts)
+    const selectedPos = selectedIdentityId
+      ? (activePositions ?? []).find(p => p.id === selectedIdentityId)
+      : null;
+    const postingIdentityId = selectedPos?.id ?? activeIdentity?.id ?? null;
+    const actingAsOrgId = selectedPos?.orgId ?? activeIdentity?.org_id ?? null;
+
     await db.from('feed_posts').insert({
       author_id: user.id,
       content: newPost.trim(),
-      posting_identity_id: activeIdentity?.id || null,
-      acting_as_org_id: activeIdentity?.org_id || null,
+      posting_identity_id: postingIdentityId,
+      acting_as_org_id: actingAsOrgId,
       media_urls: mediaUrls.length > 0 ? mediaUrls : null,
     });
     setNewPost('');
@@ -539,6 +547,92 @@ export default function FeedPage() {
               </div>
             )}
 
+            {/* ── Identity picker (compact dropdown) ──────────────────────── */}
+            {((activePositions && activePositions.length > 0) || activeIdentity?.org_id) && (() => {
+              const selectedPos = selectedIdentityId
+                ? (activePositions ?? []).find(p => p.id === selectedIdentityId)
+                : null;
+              const triggerLabel = activeIdentity?.org_id
+                ? (activeIdentity.org_name ?? activeIdentity.label)
+                : selectedPos
+                  ? `${selectedPos.title}${selectedPos.org?.name ? `, ${selectedPos.org.name}` : ''}`
+                  : `Personal (${user?.role})`;
+              const isOfficial = !!(selectedPos || activeIdentity?.org_id);
+              return (
+                <div className="mb-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          'flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
+                          isOfficial
+                            ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200'
+                            : 'bg-muted/40 border-border text-foreground'
+                        )}
+                        disabled={!!activeIdentity?.org_id}
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          {isOfficial
+                            ? <Shield size={13} className="text-amber-500 shrink-0" />
+                            : <User size={13} className="text-muted-foreground shrink-0" />}
+                          <span className="truncate text-xs font-medium">
+                            <span className="text-muted-foreground mr-1">Posting as</span>
+                            {triggerLabel}
+                          </span>
+                        </span>
+                        {!activeIdentity?.org_id && <ChevronDown size={12} className="shrink-0 opacity-40" />}
+                      </button>
+                    </DropdownMenuTrigger>
+                    {!activeIdentity?.org_id && (
+                      <DropdownMenuContent align="start" className="w-[260px] p-1">
+                        {/* Personal */}
+                        <DropdownMenuItem
+                          className={cn(
+                            'flex items-center gap-2.5 rounded-md px-3 py-2 cursor-pointer',
+                            selectedIdentityId === null && 'bg-zinc-100 dark:bg-zinc-800'
+                          )}
+                          onClick={() => setSelectedIdentityId(null)}
+                        >
+                          <User size={14} className="text-zinc-500 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium capitalize">Personal ({user?.role})</p>
+                          </div>
+                          {selectedIdentityId === null && <Check size={13} className="text-zinc-500 shrink-0" />}
+                        </DropdownMenuItem>
+
+                        {(activePositions ?? []).filter(p => p.isActive).length > 0 && (
+                          <>
+                            <div className="my-1 border-t border-border" />
+                            {(activePositions ?? []).filter(p => p.isActive).map(pos => {
+                              const isSel = selectedIdentityId === pos.id;
+                              return (
+                                <DropdownMenuItem
+                                  key={pos.id}
+                                  className={cn(
+                                    'flex items-center gap-2.5 rounded-md px-3 py-2 cursor-pointer',
+                                    isSel && 'bg-amber-50 dark:bg-amber-900/25'
+                                  )}
+                                  onClick={() => setSelectedIdentityId(pos.id)}
+                                >
+                                  <Shield size={14} className={isSel ? 'text-amber-500 shrink-0' : 'text-zinc-400 shrink-0'} />
+                                  <div className="flex-1 min-w-0">
+                                    <p className={cn('text-sm font-semibold truncate', isSel ? 'text-amber-800 dark:text-amber-200' : '')}>{pos.title}</p>
+                                    {pos.org?.name && <p className={cn('text-xs truncate', isSel ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground')}>{pos.org.name}</p>}
+                                  </div>
+                                  {isSel && <Check size={13} className="text-amber-500 shrink-0" />}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    )}
+                  </DropdownMenu>
+                </div>
+              );
+            })()}
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button
@@ -549,32 +643,6 @@ export default function FeedPage() {
                   {selectedFiles.length > 0 ? `${selectedFiles.length} photo(s)` : 'Photo'}
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileSelect} />
-
-                {/* Identity indicator — shown for org accounts (always 1 identity) or POR holders with >1 */}
-                {(activeIdentity?.org_id || postingIdentities.length > 1) && (
-                  <div className="relative">
-                    <button
-                      className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setShowIdentityPicker(!showIdentityPicker)}
-                    >
-                      Posting as: <strong className="text-amber-500">{activeIdentity?.label}</strong>
-                      <ChevronDown size={12} />
-                    </button>
-                    {showIdentityPicker && (
-                      <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg p-1.5 z-10 min-w-[200px] shadow-lg">
-                        {postingIdentities.map((identity, i) => (
-                          <button
-                            key={i}
-                            className="block w-full text-left text-sm px-3 py-1.5 rounded hover:bg-accent transition-colors"
-                            onClick={() => { setActiveIdentity(identity); setShowIdentityPicker(false); }}
-                          >
-                            {identity.label}{identity.org_name ? ` — ${identity.org_name}` : ''}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
 
               <button

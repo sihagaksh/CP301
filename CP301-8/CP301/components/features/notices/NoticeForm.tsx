@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { GlassSurface } from '@/components/ui/GlassSurface';
-import { Send, Target, ShieldCheck, Tag, Save, Paperclip, X, UploadCloud, Loader2 } from 'lucide-react';
+import { Send, Target, ShieldCheck, Tag, Save, Paperclip, X, UploadCloud, Loader2, Shield, User, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { Notice, NoticeCategory, NoticePriority, NoticeStatus } from '@/lib/types';
 import {
     Select,
@@ -16,6 +17,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 
 interface NoticeFormProps {
@@ -217,25 +225,77 @@ export function NoticeForm({ initialData, onSubmit, isEdit = false }: NoticeForm
                                 <ShieldCheck className="w-4 h-4 text-accent-gold" /> Post As (Identity)
                             </Label>
 
-                            <Select
-                                value={selectedIdentityId || 'base_role'}
-                                onValueChange={(val) => setSelectedIdentityId(val === 'base_role' ? null : val)}
-                            >
-                                <SelectTrigger className="bg-black/5 dark:bg-white/5 border-border">
-                                    <SelectValue placeholder="Select Identity" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {canPostPersonal && <SelectItem value="base_role">Personal Identity ({user?.role})</SelectItem>}
-                                    {activePositions?.map(pos => (
-                                        <SelectItem key={pos.id} value={pos.id}>
-                                            <span className="font-semibold text-accent-gold">{pos.title}</span>
-                                            <span className="text-muted-foreground ml-2">({pos.org?.name})</span>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            {(() => {
+                                const selectedPos = selectedIdentityId ? activePositions?.find(p => p.id === selectedIdentityId) : null;
+                                const triggerLabel = selectedPos
+                                    ? `${selectedPos.title}${selectedPos.org?.name ? `, ${selectedPos.org.name}` : ''}`
+                                    : canPostPersonal ? `Personal (${user?.role})` : 'Select identity';
+                                const isOfficial = !!selectedPos;
+                                return (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className={cn(
+                                                    'flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
+                                                    isOfficial
+                                                        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200'
+                                                        : 'bg-black/5 dark:bg-white/5 border-border text-foreground'
+                                                )}
+                                            >
+                                                <span className="flex items-center gap-2 truncate">
+                                                    {isOfficial
+                                                        ? <Shield className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                                        : <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                                    <span className="truncate font-medium">{triggerLabel}</span>
+                                                </span>
+                                                <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-40" />
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start" className="w-[280px] p-1">
+                                            {canPostPersonal && (
+                                                <DropdownMenuItem
+                                                    className={cn(
+                                                        'flex items-center gap-2.5 rounded-md px-3 py-2 cursor-pointer',
+                                                        selectedIdentityId === null && 'bg-zinc-100 dark:bg-zinc-800'
+                                                    )}
+                                                    onClick={() => setSelectedIdentityId(null)}
+                                                >
+                                                    <User className="h-4 w-4 text-zinc-500 shrink-0" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium capitalize">Personal ({user?.role})</p>
+                                                        <p className="text-xs text-muted-foreground">Post as yourself</p>
+                                                    </div>
+                                                    {selectedIdentityId === null && <Check className="h-4 w-4 text-zinc-500 shrink-0" />}
+                                                </DropdownMenuItem>
+                                            )}
+                                            {activePositions && activePositions.length > 0 && <DropdownMenuSeparator />}
+                                            {activePositions?.map(pos => {
+                                                const isSel = selectedIdentityId === pos.id;
+                                                return (
+                                                    <DropdownMenuItem
+                                                        key={pos.id}
+                                                        className={cn(
+                                                            'flex items-center gap-2.5 rounded-md px-3 py-2 cursor-pointer',
+                                                            isSel && 'bg-amber-50 dark:bg-amber-900/25'
+                                                        )}
+                                                        onClick={() => setSelectedIdentityId(pos.id)}
+                                                    >
+                                                        <Shield className={cn('h-4 w-4 shrink-0', isSel ? 'text-amber-500' : 'text-zinc-400')} />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={cn('text-sm font-semibold truncate', isSel ? 'text-amber-800 dark:text-amber-200' : '')}>{pos.title}</p>
+                                                            {pos.org?.name && <p className={cn('text-xs truncate', isSel ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground')}>{pos.org.name}</p>}
+                                                        </div>
+                                                        {isSel && <Check className="h-4 w-4 text-amber-500 shrink-0" />}
+                                                    </DropdownMenuItem>
+                                                );
+                                            })}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                );
+                            })()}
 
-                            <p className="text-xs text-muted-foreground mt-1">If you have an official organization position, you can post this notice under that authoritative identity.</p>
+                            <p className="text-xs text-muted-foreground">Select the identity under which this notice will be attributed.</p>
                         </div>
 
                         {/* Attachments Section */}

@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNotices } from '@/lib/hooks/useNotices';
 import { NoticeCard } from './NoticeCard';
 import { Loader2, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { NoticeCategory, NoticeStatus } from '@/lib/types';
+import { NoticeCategory, NoticeStatus, NoticePriority } from '@/lib/types';
 
 interface NoticeListProps {
     category?: NoticeCategory | 'all';
@@ -19,6 +19,31 @@ interface NoticeListProps {
 
 export function NoticeList({ category = 'all', status = 'published', priority = 'all', startDate = null, endDate = null, search = '', compact = false }: NoticeListProps) {
     const { notices, loading, error, hasMore, loadMore } = useNotices({ category, status, priority, startDate, endDate, search });
+
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Infinite scroll observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loading) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = loadMoreRef.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, loadMore]);
 
     if (error) {
         return (
@@ -52,20 +77,16 @@ export function NoticeList({ category = 'all', status = 'published', priority = 
                 ))}
             </div>
 
-            {/* Always reserve space at the bottom to prevent layout shift and scrollbar toggling */}
-            <div className="flex flex-col justify-center items-center min-h-[80px] mt-6">
-                {loading && (
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            {/* Infinite Scroll Sentinel */}
+            <div ref={loadMoreRef} className="flex flex-col justify-center items-center min-h-[80px] mt-6">
+                {loading && notices.length > 0 && (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                        <span className="text-sm font-medium">Loading more notices...</span>
+                    </div>
                 )}
-
-                {!loading && hasMore && (
-                    <Button
-                        variant="outline"
-                        onClick={loadMore}
-                        className="rounded-full px-8 hover:bg-accent-cyan/10 hover:text-accent-cyan hover:border-accent-cyan/50 transition-colors"
-                    >
-                        Load More Notices
-                    </Button>
+                {!loading && !hasMore && notices.length > 0 && (
+                    <p className="text-sm text-muted-foreground">You have reached the end.</p>
                 )}
             </div>
         </div>

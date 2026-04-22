@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useEvents } from '@/lib/hooks/useEvents';
 import { EventCard } from './EventCard';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,31 @@ import { Label } from '@/components/ui/label';
 export function EventList() {
     const { events, loading, error, hasMore, loadMore, filters, updateFilters } = useEvents({ limit: 10 });
     const [searchOpen, setSearchOpen] = React.useState(false);
+
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Infinite scroll observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loading) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = loadMoreRef.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, loadMore]);
 
     if (error) {
         return (
@@ -126,19 +151,18 @@ export function EventList() {
                 </div>
             )}
 
-            {hasMore && (
-                <div className="pt-4 flex justify-center col-span-full">
-                    <Button
-                        variant="outline"
-                        onClick={loadMore}
-                        disabled={loading}
-                        className="w-full sm:w-auto min-w-[200px]"
-                    >
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                        {loading ? 'Loading...' : 'Load More Events'}
-                    </Button>
-                </div>
-            )}
+            {/* Infinite Scroll Sentinel */}
+            <div ref={loadMoreRef} className="pt-4 flex justify-center col-span-full min-h-[40px]">
+                {loading && events.length > 0 && (
+                    <div className="flex items-center gap-2 text-muted-foreground p-4">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">Loading more events...</span>
+                    </div>
+                )}
+                {!loading && !hasMore && events.length > 0 && (
+                     <p className="text-sm text-muted-foreground p-4">You have reached the end.</p>
+                )}
+            </div>
         </div>
     );
 }

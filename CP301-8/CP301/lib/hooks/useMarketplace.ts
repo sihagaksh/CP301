@@ -3,7 +3,9 @@
 // Hook for fetching and managing Marketplace items
 // ============================================================
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
 import { getMarketplaceItemsCursor, createMarketplaceItem, getMarketplaceItemById, updateMarketplaceItemStatus, type GetMarketplaceFilters } from '@/lib/db/marketplace';
 import type { MarketplaceItem, ListingStatus, ItemCategory, ItemCondition } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,64 +15,43 @@ export function useMarketplace(initialFilters?: GetMarketplaceFilters) {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [items, setItems] = useState<MarketplaceItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const cursorRef = useRef<{ createdAt?: string | null; id?: string | null }>({});
-  const fetchingRef = useRef(false);
   const [filters, setFilters] = useState<GetMarketplaceFilters>(initialFilters || { limit: 12 });
 
+  const getKey = (pageIndex: number, previousPageData: MarketplaceItem[]) => {
+    if (previousPageData && previousPageData.length < (filters.limit ?? 12)) return null;
+    if (pageIndex === 0) return ['marketplace', filters];
 
-  const fetchItems = useCallback(async (isLoadMore = false, currentFilters?: GetMarketplaceFilters) => {
-    if (fetchingRef.current) {
-      return;
+    const last = previousPageData[previousPageData.length - 1];
+    return ['marketplace', filters, last.createdAt, last.id];
+  };
+
+  const fetcher = async (args: any[]) => {
+    const [_, f, createdAt, id] = args;
+    if (createdAt && id) {
+      return getMarketplaceItemsCursor(f, f.limit ?? 12, createdAt, id);
     }
-    fetchingRef.current = true;
-    try {
-      setLoading(true);
-      setError(null);
+    return getMarketplaceItemsCursor(f, f.limit ?? 12);
+  };
 
-      const f = currentFilters || filters;
-      let data = [] as any[];
-      if (isLoadMore && cursorRef.current.createdAt && cursorRef.current.id) {
-        data = await getMarketplaceItemsCursor(f, f.limit ?? 12, cursorRef.current.createdAt, cursorRef.current.id);
-      } else {
-        data = await getMarketplaceItemsCursor(f, f.limit ?? 12);
-      }
+  const { data, error, isLoading, size, setSize, mutate } = useSWRInfinite<MarketplaceItem[]>(getKey, fetcher, {
+    persistSize: true,
+    revalidateOnFocus: false,
+    revalidateFirstPage: false,
+  });
 
-      setItems(prev => isLoadMore ? [...prev, ...data] : data);
-      setHasMore(data.length === (f.limit ?? 12));
-      if (data.length > 0) {
-        const last = data[data.length - 1];
-        cursorRef.current = { createdAt: last.createdAt, id: last.id };
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load marketplace items');
-    } finally {
-      setLoading(false);
-      fetchingRef.current = false;
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchItems(false, filters);
-  }, [filters]);
+  const items = data ? ([] as MarketplaceItem[]).concat(...data) : [];
+  const loading = isLoading;
+  const hasMore = data ? data[data.length - 1]?.length === (filters.limit ?? 12) : true;
 
   const loadMore = useCallback(() => {
-    if (!loading && hasMore) {
-      fetchItems(true);
-    }
-  }, [loading, hasMore, fetchItems]);
+    if (!loading && hasMore) setSize(size + 1);
+  }, [loading, hasMore, size, setSize]);
 
   const updateFilters = useCallback((newFilters: Partial<GetMarketplaceFilters>) => {
-    // Reset cursor state when filters change to start a fresh query
-    cursorRef.current = {};
-    setItems([]);
     setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
-  const createListing = useCallback(async (data: {
+  const createListing = useCallback(async (dataObj: {
     title: string;
     description?: string;
     category: ItemCategory;
@@ -83,9 +64,14 @@ export function useMarketplace(initialFilters?: GetMarketplaceFilters) {
   }) => {
     if (!user) return null;
     try {
-      const newItem = await createMarketplaceItem({ ...data, sellerId: user.id });
+      const newItem = await createMarketplaceItem({ ...dataObj, sellerId: user.id });
       if (newItem) {
-        setItems(prev => [newItem, ...prev]);
+         mutate((currentData) => {
+            if (!currentData) return [[newItem]];
+            const newData = [...currentData];
+            newData[0] = [newItem, ...newData[0]];
+            return newData;
+         }, false);
         toast({
           title: "Listing Created",
           description: "Your item has been successfully listed on the marketplace."
@@ -101,13 +87,18 @@ export function useMarketplace(initialFilters?: GetMarketplaceFilters) {
       });
       return null;
     }
-  }, [user, toast]);
+  }, [user, toast, mutate]);
 
   const updateStatus = useCallback(async (id: string, newStatus: ListingStatus) => {
     try {
       const updated = await updateMarketplaceItemStatus(id, newStatus);
       if (updated) {
-        setItems(prev => prev.map(item => item.id === id ? updated : item));
+         mutate((currentData) => {
+           if (!currentData) return currentData;
+           return currentData.map(page => 
+             page.map(item => item.id === id ? updated : item)
+           );
+         }, false);
         toast({ title: `Listing marked as ${newStatus}` });
       }
       return updated;
@@ -119,19 +110,13 @@ export function useMarketplace(initialFilters?: GetMarketplaceFilters) {
       });
       return null;
     }
-  }, [toast]);
+  }, [toast, mutate]);
 
   return {
-    items,
-    loading,
-    error,
-    hasMore,
-    loadMore,
-    filters,
-    updateFilters,
-    createListing,
-    updateStatus,
-    refreshItems: () => fetchItems(false, filters)
+    items, loading, error: error?.message || null,
+    hasMore, loadMore, filters, updateFilters,
+    createListing, updateStatus,
+    refreshItems: () => mutate()
   };
 }
 
@@ -139,37 +124,10 @@ export function useMarketplace(initialFilters?: GetMarketplaceFilters) {
  * Hook to fetch a single Marketplace Item by ID
  */
 export function useMarketplaceItem(id: string | null) {
-  const [item, setItem] = useState<MarketplaceItem | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchItem() {
-      if (!id) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getMarketplaceItemById(id);
-        if (isMounted) setItem(data);
-      } catch (err: any) {
-        if (isMounted) setError(err.message || 'Failed to fetch listing details');
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
-
-    fetchItem();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id]);
-
-  return { item, loading, error };
+  const fetcher = async () => {
+    if (!id) return null;
+    return getMarketplaceItemById(id);
+  };
+  const { data: item, error, isLoading } = useSWR(id ? ['marketplace_item', id] : null, fetcher, { revalidateOnFocus: false });
+  return { item: item || null, loading: isLoading, error: error?.message || null };
 }

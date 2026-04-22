@@ -34,7 +34,7 @@ export function EventCard({ event, compact = false }: EventCardProps) {
         {/* Calendar Date Badge (Left Side) */}
         <div className={cn(
           'shrink-0 flex flex-col items-center justify-center rounded-xl overflow-hidden border shadow-sm',
-          compact ? 'w-14 h-16' : 'w-16 h-20 sm:w-20 sm:h-24',
+          compact ? 'w-14 h-16' : 'w-20 h-20 sm:w-24 sm:h-24',
           isPast ? 'bg-zinc-100 border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700' : 'bg-white border-accent-gold/20 dark:bg-background/50 dark:border-accent-gold/20'
         )}>
           <div className={cn(
@@ -42,13 +42,14 @@ export function EventCard({ event, compact = false }: EventCardProps) {
             compact ? 'text-[10px] py-1' : 'text-xs py-1.5',
             isPast ? 'bg-zinc-500' : 'bg-accent-gold'
           )}>
-            {month.toUpperCase()}
+            {format(startDate, 'EEE').toUpperCase()}
           </div>
           <div className={cn(
-            'flex-1 w-full flex items-center justify-center font-serif font-bold text-foreground',
-            compact ? 'text-xl' : 'text-2xl sm:text-3xl'
+            'flex-1 w-full flex items-center justify-center font-serif font-bold text-foreground text-center leading-tight',
+            compact ? 'text-lg' : 'text-xl sm:text-2xl flex-col'
           )}>
-            {day}
+            <span>{day}</span>
+            <span className={cn("text-muted-foreground", compact ? "ml-1 text-xs" : "text-sm sm:text-base")}>{month.toUpperCase()}</span>
           </div>
         </div>
 

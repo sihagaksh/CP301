@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, Megaphone, Map, Home, MessageSquare, Users, MoreHorizontal } from 'lucide-react';
+import { Calendar, Megaphone, Map, Home, MessageSquare, Users, MoreHorizontal, MapIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/db';
@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { href: '/notices', label: 'Notices', icon: Megaphone },
   { href: '/messages', label: 'Messages', icon: MessageSquare },
   { href: '/', label: 'Feed', icon: Home },
-  { href: '/communities', label: 'Communities', icon: Users },
+  { href: '/map', label: 'Maps', icon: MapIcon },
 ];
 
 const GUEST_NAV_ITEMS = [

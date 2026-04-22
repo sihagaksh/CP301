@@ -3,6 +3,7 @@ import { DM_Sans, Playfair_Display, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Script from 'next/script'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { SWRProvider } from '@/components/providers/SWRProvider'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
@@ -55,11 +56,13 @@ export default function RootLayout({
         <Script src="/theme-init.js" strategy="beforeInteractive" />
       </head>
       <body className={`${dmSans.variable} ${playfair.variable} ${jetBrainsMono.variable} font-sans antialiased`}>
-        <AuthProvider>
-          {children}
-          <Toaster />
-          <ServiceWorkerRegistration />
-        </AuthProvider>
+        <SWRProvider>
+          <AuthProvider>
+            {children}
+            <Toaster />
+            <ServiceWorkerRegistration />
+          </AuthProvider>
+        </SWRProvider>
         <Analytics />
       </body>
     </html>

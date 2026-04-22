@@ -184,20 +184,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (typeof window !== 'undefined') window.location.replace('/login');
           }
         } else {
-          // DESYNC DETECTION: Supabase client has no session (localStorage empty),
-          // BUT we are on a protected route like the dashboard.
-          if (typeof window !== 'undefined' && !isPublicPath(window.location.pathname)) {
+          // No Supabase session. Decide what to do based on current URL.
+          if (typeof window !== 'undefined') {
+            const pathname = window.location.pathname;
             const hash = window.location.hash;
-            // If they got bounced to `/` because of misconfigured Supabase Redirect URLs
-            // but the hash contains a recovery token or an error that might be from recovery:
-            if (hash.includes('type=recovery') || (hash.includes('error=') && hash.includes('otp_expired'))) {
-               window.location.replace('/reset-password' + hash);
-               return;
+
+            // ── /reset-password: NEVER redirect away. ─────────────────────────
+            // The reset-password page manages its own auth state via the
+            // PASSWORD_RECOVERY event from Supabase. Redirecting here would break
+            // the PKCE recovery flow because the hash exchange happens client-side
+            // after AuthContext's checkAuth() has already run.
+            if (pathname === '/reset-password') {
+              setLoading(false);
+              return;
             }
-            
-            // Otherwise, normal unauthenticated user -> force to login
-            document.cookie = 'sb-auth-token=; path=/; max-age=0';
-            window.location.replace('/login');
+
+            // ── Recovery hash bounce-back ──────────────────────────────────────
+            // If navigated to root (e.g. misconfigured Supabase redirect URL)
+            // but the hash contains a recovery token, forward to /reset-password.
+            if (
+              !isPublicPath(pathname) &&
+              (hash.includes('type=recovery') ||
+                (hash.includes('error=') && hash.includes('otp_expired')))
+            ) {
+              window.location.replace('/reset-password' + hash);
+              return;
+            }
+
+            // ── Normal unauthenticated user on protected route ─────────────────
+            if (!isPublicPath(pathname)) {
+              document.cookie = 'sb-auth-token=; path=/; max-age=0';
+              window.location.replace('/login');
+            }
           }
         }
       } catch (err) {

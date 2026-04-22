@@ -3,40 +3,30 @@
 // Hook for fetching organizations (Clubs & Bodies) directory
 // ============================================================
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import useSWR from 'swr';
 import { getOrganizations, getOrganizationBySlug, getOrgMembers, getOrgPositions, getChildOrganizations } from '@/lib/db/organizations';
 import type { Organization, OrgMember, UserPosition, OrgType } from '@/lib/types';
 
 export function useOrganizations(typeFilter?: OrgType) {
-    const [orgs, setOrgs] = useState<Organization[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [filterType, setFilterType] = useState<OrgType | undefined>(typeFilter);
 
-    const fetchOrgs = useCallback(async (type?: OrgType) => {
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await getOrganizations(type);
-            setOrgs(data);
-        } catch (err: any) {
-            setError(err.message || 'Failed to load organizations');
-        } finally {
-            setLoading(false);
+    const { data, error, isLoading, mutate } = useSWR(
+        ['organizations', filterType],
+        () => getOrganizations(filterType),
+        {
+            revalidateOnFocus: false,
+            revalidateIfStale: false,
         }
-    }, []);
-
-    useEffect(() => {
-        fetchOrgs(filterType);
-    }, [filterType, fetchOrgs]);
+    );
 
     return {
-        orgs,
-        loading,
-        error,
+        orgs: data || [],
+        loading: isLoading,
+        error: error?.message || null,
         filterType,
         setFilterType,
-        refreshOrgs: () => fetchOrgs(filterType),
+        refreshOrgs: () => mutate(),
     };
 }
 
@@ -44,48 +34,36 @@ export function useOrganizations(typeFilter?: OrgType) {
  * Hook to fetch a single organization by slug with its members and positions
  */
 export function useOrganizationDetail(slug: string | null) {
-    const [org, setOrg] = useState<Organization | null>(null);
-    const [members, setMembers] = useState<OrgMember[]>([]);
-    const [positions, setPositions] = useState<UserPosition[]>([]);
-    const [children, setChildren] = useState<Organization[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data, error, isLoading } = useSWR(
+        slug ? ['orgDetail', slug] : null,
+        async () => {
+            const orgData = await getOrganizationBySlug(slug!);
+            if (!orgData) return { org: null, members: [], positions: [], children: [] };
 
-    useEffect(() => {
-        let isMounted = true;
-
-        async function fetchDetail() {
-            if (!slug) { setLoading(false); return; }
-
-            try {
-                setLoading(true);
-                setError(null);
-                const orgData = await getOrganizationBySlug(slug);
-                if (!isMounted) return;
-                setOrg(orgData);
-
-                if (orgData) {
-                    const [membersData, positionsData, childrenData] = await Promise.all([
-                        getOrgMembers(orgData.id),
-                        getOrgPositions(orgData.id),
-                        getChildOrganizations(orgData.id)
-                    ]);
-                    if (isMounted) {
-                        setMembers(membersData);
-                        setPositions(positionsData);
-                        setChildren(childrenData);
-                    }
-                }
-            } catch (err: any) {
-                if (isMounted) setError(err.message || 'Failed to fetch organization details');
-            } finally {
-                if (isMounted) setLoading(false);
-            }
+            const [membersData, positionsData, childrenData] = await Promise.all([
+                getOrgMembers(orgData.id),
+                getOrgPositions(orgData.id),
+                getChildOrganizations(orgData.id)
+            ]);
+            return {
+                org: orgData,
+                members: membersData,
+                positions: positionsData,
+                children: childrenData
+            };
+        },
+        {
+            revalidateOnFocus: false,
+            revalidateIfStale: false,
         }
+    );
 
-        fetchDetail();
-        return () => { isMounted = false; };
-    }, [slug]);
-
-    return { org, members, positions, children, loading, error };
+    return {
+        org: data?.org || null,
+        members: data?.members || [],
+        positions: data?.positions || [],
+        children: data?.children || [],
+        loading: isLoading,
+        error: error?.message || null
+    };
 }

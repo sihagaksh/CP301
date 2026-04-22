@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import useSWR, { mutate } from 'swr';
 import Link from 'next/link';
 import {
   Heart, MessageCircle, Share2, TrendingUp,
@@ -178,95 +179,132 @@ export default function FeedPage() {
   const [stats, setStats] = useState({ members: 0, blogs: 0, items: 0, events: 0 });
   const [trendingItems, setTrendingItems] = useState<{id: string, title: string, type: string, slug?: string}[]>([]);
   const viewedPosts = useRef(new Set<string>());
+  // Track whether we've already seeded local state from cache to avoid re-overwriting mutations
+  const hasSynced = useRef(false);
 
-  useEffect(() => { 
-    loadFeed(); 
-    loadTrending();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // ── SWR: Feed + Community Stats ─────────────────────────────────────────────
+  // dedupingInterval: 0 means SWR uses its own in-memory cache but won't re-fetch
+  // within the same tab session unless mutate() is called explicitly.
+  const { data: cachedFeedData, isLoading: isFeedLoading } = useSWR(
+    'feed_main_data',
+    async () => {
+      const { data: posts } = await db
+        .from('feed_posts')
+        .select(
+          'id, author_id, posting_identity_id, acting_as_org_id, content, media_urls, source_type, source_id, like_count, comment_count, view_count, is_public, target_roles, created_at, updated_at, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug)), acting_as_org:organizations!feed_posts_acting_as_org_id_fkey(id, name, slug, logo_url)'
+        )
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      const [membersRes, blogsRes, itemsRes, eventsRes] = await Promise.all([
+        db.from('users').select('id', { count: 'exact', head: true }),
+        db.from('blog_posts').select('id', { count: 'exact', head: true }),
+        db.from('marketplace_items').select('id', { count: 'exact', head: true }).eq('status', 'available'),
+        db.from('events').select('id', { count: 'exact', head: true }).gte('start_date', new Date().toISOString()),
+      ]);
+
+      const newStats = {
+        members: membersRes.count || 0,
+        blogs: blogsRes.count || 0,
+        items: itemsRes.count || 0,
+        events: eventsRes.count || 0,
+      };
+
+      if (!posts || posts.length === 0) return { posts: [], stats: newStats };
+
+      const { data: { user: dbUser } } = await db.auth.getUser();
+
+      let likedSet = new Set<string>();
+      if (dbUser) {
+        const { data: likes } = await db
+          .from('feed_likes')
+          .select('post_id')
+          .eq('user_id', dbUser.id)
+          .in('post_id', posts.map((p: any) => p.id));
+        likedSet = new Set((likes || []).map((l: any) => l.post_id));
+      }
+
+      const normalizedPosts = posts.map((p: any) => ({
+        ...p,
+        author: Array.isArray(p.author) ? p.author[0] : p.author,
+        posting_identity: Array.isArray(p.posting_identity) ? p.posting_identity[0] : p.posting_identity,
+        acting_as_org: Array.isArray(p.acting_as_org) ? p.acting_as_org[0] : p.acting_as_org,
+        likedByMe: likedSet.has(p.id),
+        commentsOpen: false,
+        comments: [],
+        commentsLoading: false,
+        shareTooltip: false,
+        carouselIndex: 0,
+      }));
+
+      return { posts: normalizedPosts, stats: newStats };
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnReconnect: false,
+      // Keep data alive for entire tab session; only re-fetch on explicit mutate()
+      dedupingInterval: 24 * 60 * 60 * 1000,
+    }
+  );
+
+  // ── SWR: Trending ───────────────────────────────────────────────────────────
+  const { data: cachedTrending } = useSWR(
+    'trending_items_data',
+    async () => {
+      const { data } = await db.rpc('get_trending_items', { limit_count: 5 });
+      return data || [];
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 24 * 60 * 60 * 1000,
+    }
+  );
+
+  // ── Sync SWR cache → local state (once only, preserving subsequent mutations) ─
+  useEffect(() => {
+    if (!cachedFeedData || hasSynced.current) return;
+    hasSynced.current = true;
+    setFeedItems(cachedFeedData.posts);
+    setStats(cachedFeedData.stats);
+    setLoading(false);
+  }, [cachedFeedData]);
 
   useEffect(() => {
-    // Observer to track feed views
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const postId = entry.target.getAttribute('data-feed-id');
-          if (postId && !viewedPosts.current.has(postId)) {
-            viewedPosts.current.add(postId);
-            incrementFeedViewsRPC(postId);
-            setFeedItems(prev => prev.map(p => p.id === postId ? { ...p, view_count: (p.view_count || 0) + 1 } : p));
-          }
-        }
-      });
-    }, { threshold: 0.5 });
+    if (cachedTrending) setTrendingItems(cachedTrending);
+  }, [cachedTrending]);
 
+  // Mark loading done even if feed is empty
+  useEffect(() => {
+    if (!isFeedLoading && !hasSynced.current) {
+      setLoading(false);
+    }
+  }, [isFeedLoading]);
+
+  // ── IntersectionObserver: track post views ───────────────────────────────────
+  useEffect(() => {
+    if (feedItems.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const postId = entry.target.getAttribute('data-feed-id');
+            if (postId && !viewedPosts.current.has(postId)) {
+              viewedPosts.current.add(postId);
+              incrementFeedViewsRPC(postId);
+              setFeedItems(prev => prev.map(p => p.id === postId ? { ...p, view_count: (p.view_count || 0) + 1 } : p));
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
     const items = document.querySelectorAll('[data-feed-id]');
     items.forEach(el => observer.observe(el));
-
     return () => observer.disconnect();
-  }, [feedItems.length]); // Re-attach when new items are added
-
-  async function loadFeed() {
-    const { data: posts } = await db
-      .from('feed_posts')
-      .select(
-        'id, author_id, posting_identity_id, acting_as_org_id, content, media_urls, source_type, source_id, like_count, comment_count, view_count, is_public, target_roles, created_at, updated_at, author:users!feed_posts_author_id_fkey(id, full_name, role, profile_picture_url, department), posting_identity:user_positions(id, title, organization:organizations(name, slug)), acting_as_org:organizations!feed_posts_acting_as_org_id_fkey(id, name, slug, logo_url)'
-      )
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    // Fetch live community stats simultaneously
-    const [membersRes, blogsRes, itemsRes, eventsRes] = await Promise.all([
-      db.from('users').select('id', { count: 'exact', head: true }),
-      db.from('blog_posts').select('id', { count: 'exact', head: true }),
-      db.from('marketplace_items').select('id', { count: 'exact', head: true }).eq('status', 'available'),
-      db.from('events').select('id', { count: 'exact', head: true }).gte('start_date', new Date().toISOString()),
-    ]);
-
-    setStats({
-      members: membersRes.count || 0,
-      blogs: blogsRes.count || 0,
-      items: itemsRes.count || 0,
-      events: eventsRes.count || 0,
-    });
-
-    if (!posts) { setLoading(false); return; }
-
-    // Fetch user directly to avoid race conditions with React context on initial mount
-    const { data: { user: dbUser } } = await db.auth.getUser();
-
-    let likedSet = new Set<string>();
-    if (dbUser) {
-      const { data: likes } = await db
-        .from('feed_likes')
-        .select('post_id')
-        .eq('user_id', dbUser.id)
-        .in('post_id', posts.map((p: { id: string }) => p.id));
-      likedSet = new Set((likes || []).map((l: { post_id: string }) => l.post_id));
-    }
-
-    const normalizedPosts = (posts || []).map((p: any) => ({
-      ...p,
-      author: p.author && Array.isArray(p.author) ? p.author[0] : p.author,
-      posting_identity: p.posting_identity && Array.isArray(p.posting_identity) ? p.posting_identity[0] : p.posting_identity,
-      acting_as_org: p.acting_as_org && Array.isArray(p.acting_as_org) ? p.acting_as_org[0] : p.acting_as_org,
-    }));
-
-    setFeedItems(normalizedPosts.map((p: any) => ({
-      ...p,
-      likedByMe: likedSet.has(p.id),
-      commentsOpen: false,
-      comments: [],
-      commentsLoading: false,
-      shareTooltip: false,
-      carouselIndex: 0,
-    })));
-    setLoading(false);
-  }
-
-  async function loadTrending() {
-    const { data } = await db.rpc('get_trending_items', { limit_count: 5 });
-    if (data) setTrendingItems(data);
-  }
+  }, [feedItems.length]);
 
   async function handleLike(postId: string) {
     if (!user) return;
@@ -433,7 +471,9 @@ export default function FeedPage() {
     setUploadError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     setPosting(false);
-    loadFeed();
+    
+    // Instead of loadFeed, just mutate the SWR cache
+    mutate('feed_main_data');
   }
   
   const handleDeletePost = async (postId: string) => {
@@ -806,7 +846,8 @@ export default function FeedPage() {
           )}
         </div>
 
-        {/* Right Sidebar — sticky, does NOT scroll with feed */}
+        {/* Right Sidebar — only shown when feed has content */}
+        {feedItems.length > 0 && (
         <div className="lg:col-span-4">
           <div className="sticky top-4 space-y-4">
             <div className="bg-card border border-border rounded-xl p-4">
@@ -845,6 +886,7 @@ export default function FeedPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

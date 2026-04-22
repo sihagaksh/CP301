@@ -19,34 +19,58 @@ export default function ResetPasswordPage() {
   const [isReady, setIsReady] = useState(false);
   const [isDone, setIsDone] = useState(false);
 
-  // Supabase sends a PASSWORD_RECOVERY event once the hash in the URL
-  // is validated client-side. We wait for it before showing the form.
   useEffect(() => {
-    // Look for error in URL hash (Supabase redirects with hash errors for PKCE)
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      if (hashParams.get('error')) {
-        const errorDesc = hashParams.get('error_description') || hashParams.get('error');
-        // Replace '+' with space in URL encoded strings
-        setError(errorDesc ? decodeURIComponent(errorDesc.replace(/\+/g, '%20')) : 'Reset link is invalid or expired.');
-        setIsReady(true);
-        return;
-      }
+    // ── Step 1: Check for errors in URL hash or query params ─────────────────
+    // Supabase may redirect here with an error in the hash fragment when the
+    // OTP is expired or the link has already been used.
+    if (typeof window === 'undefined') return;
+
+    const hash = window.location.hash;
+    const search = window.location.search;
+
+    // Parse hash and query for errors
+    const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.substring(1) : hash);
+    const queryParams = new URLSearchParams(search);
+
+    const errorCode = hashParams.get('error') || queryParams.get('error');
+    const errorDesc =
+      hashParams.get('error_description') ||
+      queryParams.get('error_description') ||
+      hashParams.get('error') ||
+      queryParams.get('error');
+
+    if (errorCode) {
+      const readableError = errorDesc
+        ? decodeURIComponent(errorDesc.replace(/\+/g, ' '))
+        : 'This reset link is invalid or has expired. Please request a new one.';
+      setError(readableError);
+      setIsReady(true); // Show the error UI, not the spinner
+      return;
     }
 
-    const { data: { subscription } } = db.auth.onAuthStateChange((event) => {
+    // ── Step 2: If no error, wait for Supabase to emit PASSWORD_RECOVERY ─────
+    // Supabase JS client automatically exchanges the hash fragment for a session
+    // when the page loads. We just need to listen for the event.
+    const { data: authListener } = db.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsReady(true);
+        setError(null);
+      } else if (event === 'SIGNED_IN' && session) {
+        // Some Supabase versions fire SIGNED_IN instead of PASSWORD_RECOVERY
+        // Check if this is a recovery session
+        db.auth.getUser().then(({ data: { user } }) => {
+          if (user) setIsReady(true);
+        });
       }
     });
 
-    // Also handle the case where the user loaded the page after Supabase
-    // already picked up the hash (race condition), by checking session.
+    // ── Step 3: Fallback — check if there's already a session ────────────────
+    // (handles race condition where hash was processed before this effect ran)
     db.auth.getSession().then(({ data: { session } }) => {
       if (session) setIsReady(true);
     });
 
-    return () => subscription?.unsubscribe();
+    return () => authListener.subscription?.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,12 +81,10 @@ export default function ResetPasswordPage() {
       setError('Please fill in both fields');
       return;
     }
-
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
       return;
     }
-
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -70,18 +92,13 @@ export default function ResetPasswordPage() {
 
     try {
       setIsSubmitting(true);
-
       const { error: updateError } = await db.auth.updateUser({ password });
-
       if (updateError) {
         setError(updateError.message);
         return;
       }
-
-      // Sign out so the user logs in fresh with the new password
       await db.auth.signOut();
       setIsDone(true);
-
       setTimeout(() => router.push('/login'), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -112,8 +129,28 @@ export default function ResetPasswordPage() {
     );
   }
 
+  // ── Error State (link invalid/expired) ────────────────────────
+  if (error && isReady && !password && !confirmPassword) {
+    return (
+      <Card className="w-full">
+        <CardContent className="pt-8 pb-6 text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
+              <span className="text-red-500 text-3xl font-bold">!</span>
+            </div>
+          </div>
+          <h2 className="text-xl font-serif font-semibold text-foreground">Link Invalid or Expired</h2>
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button asChild variant="primary" size="md" className="w-full mt-4">
+            <Link href="/forgot-password">Request a New Link</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // ── Loading / waiting for recovery event ─────────────────────
-  if (!isReady && !error) {
+  if (!isReady) {
     return (
       <Card className="w-full">
         <CardContent className="pt-8 pb-6 text-center space-y-3">
@@ -125,28 +162,6 @@ export default function ResetPasswordPage() {
               Request a new one
             </Link>
           </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // ── Error State (Invalid Link) ────────────────────────────────
-  if (isReady && error && !password && !confirmPassword) {
-    return (
-      <Card className="w-full">
-        <CardContent className="pt-8 pb-6 text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
-              <span className="text-red-500 text-3xl font-bold">!</span>
-            </div>
-          </div>
-          <h2 className="text-xl font-serif font-semibold text-foreground">Link Invalid or Expired</h2>
-          <p className="text-sm text-muted-foreground">
-            {error}
-          </p>
-          <Button asChild variant="primary" size="md" className="w-full mt-4">
-            <Link href="/forgot-password">Request a New Link</Link>
-          </Button>
         </CardContent>
       </Card>
     );
@@ -166,7 +181,6 @@ export default function ResetPasswordPage() {
 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Error message */}
           {error && (
             <div className="p-3 rounded-lg bg-red-100 dark:bg-red-500/20 border border-red-300 dark:border-red-500/30 text-red-800 dark:text-red-300 text-sm">
               {error}
@@ -228,7 +242,7 @@ export default function ResetPasswordPage() {
             </div>
           </div>
 
-          {/* Password strength hint */}
+          {/* Password strength hints */}
           {password && (
             <ul className="text-xs space-y-1 text-muted-foreground">
               <li className={password.length >= 8 ? 'text-green-600 dark:text-green-400' : ''}>
@@ -243,7 +257,6 @@ export default function ResetPasswordPage() {
             </ul>
           )}
 
-          {/* Submit */}
           <Button
             type="submit"
             variant="primary"

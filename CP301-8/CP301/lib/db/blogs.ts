@@ -375,7 +375,6 @@ export function mapBlogPost(row: any): BlogPost {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     author: row.author ? mapUser(row.author) : undefined,
-    engagementScore: row.score ?? undefined,
   };
 }
 

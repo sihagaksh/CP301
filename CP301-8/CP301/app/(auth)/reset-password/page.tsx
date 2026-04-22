@@ -22,6 +22,18 @@ export default function ResetPasswordPage() {
   // Supabase sends a PASSWORD_RECOVERY event once the hash in the URL
   // is validated client-side. We wait for it before showing the form.
   useEffect(() => {
+    // Look for error in URL hash (Supabase redirects with hash errors for PKCE)
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      if (hashParams.get('error')) {
+        const errorDesc = hashParams.get('error_description') || hashParams.get('error');
+        // Replace '+' with space in URL encoded strings
+        setError(errorDesc ? decodeURIComponent(errorDesc.replace(/\+/g, '%20')) : 'Reset link is invalid or expired.');
+        setIsReady(true);
+        return;
+      }
+    }
+
     const { data: { subscription } } = db.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsReady(true);
@@ -34,7 +46,7 @@ export default function ResetPasswordPage() {
       if (session) setIsReady(true);
     });
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,7 +113,7 @@ export default function ResetPasswordPage() {
   }
 
   // ── Loading / waiting for recovery event ─────────────────────
-  if (!isReady) {
+  if (!isReady && !error) {
     return (
       <Card className="w-full">
         <CardContent className="pt-8 pb-6 text-center space-y-3">
@@ -113,6 +125,28 @@ export default function ResetPasswordPage() {
               Request a new one
             </Link>
           </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // ── Error State (Invalid Link) ────────────────────────────────
+  if (isReady && error && !password && !confirmPassword) {
+    return (
+      <Card className="w-full">
+        <CardContent className="pt-8 pb-6 text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
+              <span className="text-red-500 text-3xl font-bold">!</span>
+            </div>
+          </div>
+          <h2 className="text-xl font-serif font-semibold text-foreground">Link Invalid or Expired</h2>
+          <p className="text-sm text-muted-foreground">
+            {error}
+          </p>
+          <Button asChild variant="primary" size="md" className="w-full mt-4">
+            <Link href="/forgot-password">Request a New Link</Link>
+          </Button>
         </CardContent>
       </Card>
     );

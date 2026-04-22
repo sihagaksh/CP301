@@ -20,7 +20,7 @@ export interface PostingIdentity {
 }
 
 // Routes that don't require authentication
-const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password'];
+const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/auth/callback'];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
@@ -186,9 +186,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // DESYNC DETECTION: Supabase client has no session (localStorage empty),
           // BUT we are on a protected route like the dashboard.
-          // This means the proxy let us in because of a stale server cookie.
-          // We must destroy the stale cookie and redirect to login.
           if (typeof window !== 'undefined' && !isPublicPath(window.location.pathname)) {
+            const hash = window.location.hash;
+            // If they got bounced to `/` because of misconfigured Supabase Redirect URLs
+            // but the hash contains a recovery token or an error that might be from recovery:
+            if (hash.includes('type=recovery') || (hash.includes('error=') && hash.includes('otp_expired'))) {
+               window.location.replace('/reset-password' + hash);
+               return;
+            }
+            
+            // Otherwise, normal unauthenticated user -> force to login
             document.cookie = 'sb-auth-token=; path=/; max-age=0';
             window.location.replace('/login');
           }

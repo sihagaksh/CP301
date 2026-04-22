@@ -3,7 +3,9 @@
 // Hook for fetching and managing Events
 // ============================================================
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
 import { getEventsCursor, createEvent, getEventBySlug, type GetEventsFilters } from '@/lib/db/events';
 import type { Event } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,71 +15,70 @@ export function useEvents(initialFilters?: GetEventsFilters) {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const cursorRef = useRef<{ startTime?: string | null; id?: string | null }>({});
-  const fetchingRef = useRef(false);
   const [filters, setFilters] = useState<GetEventsFilters>(initialFilters || { limit: 15 });
 
+  const getKey = (pageIndex: number, previousPageData: Event[]) => {
+    // reached the end
+    if (previousPageData && !previousPageData.length) return null;
+    
+    // first page, we don't have `previousPageData`
+    if (pageIndex === 0) return ['events', filters];
 
-  const fetchEvents = useCallback(async (isLoadMore = false, currentFilters?: GetEventsFilters) => {
-    if (fetchingRef.current) {
-      return;
+    // add the cursor to the API fetch based on the last item
+    const last = previousPageData[previousPageData.length - 1];
+    const startTime = last.startTime ?? last.createdAt;
+    const id = last.id;
+    return ['events', filters, startTime, id];
+  };
+
+  const fetcher = async (args: any[]) => {
+    const [_, f, startTime, id] = args;
+    if (startTime && id) {
+       return getEventsCursor(f, f.limit ?? 15, startTime, id);
     }
-    fetchingRef.current = true;
-    try {
-      setLoading(true);
-      setError(null);
+    return getEventsCursor(f, f.limit ?? 15);
+  };
 
-      const f = currentFilters || filters;
-      let data = [] as any[];
-      if (isLoadMore && cursorRef.current.startTime && cursorRef.current.id) {
-        data = await getEventsCursor(f, f.limit ?? 15, cursorRef.current.startTime, cursorRef.current.id);
-      } else {
-        data = await getEventsCursor(f, f.limit ?? 15);
-      }
-
-      setEvents(prev => isLoadMore ? [...prev, ...data] : data);
-      setHasMore(data.length === (f.limit ?? 15));
-      if (data.length > 0) {
-        const last = data[data.length - 1];
-        cursorRef.current = { startTime: last.startTime ?? last.createdAt, id: last.id };
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load events');
-    } finally {
-      setLoading(false);
-      fetchingRef.current = false;
+  const { data, error, isLoading, size, setSize, mutate } = useSWRInfinite<Event[]>(
+    getKey,
+    fetcher,
+    {
+      persistSize: true,
+      revalidateOnFocus: false,
+      revalidateFirstPage: false,
     }
-  }, []);
+  );
 
-  useEffect(() => {
-    fetchEvents(false, filters);
-  }, [filters]);
+  const events = data ? ([] as Event[]).concat(...data) : [];
+  const loading = isLoading;
+  const isReachingEnd = data && data[data.length - 1]?.length < (filters.limit || 15);
+  const hasMore = !isReachingEnd;
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
-      fetchEvents(true);
+      setSize(size + 1);
     }
-  }, [loading, hasMore, fetchEvents]);
+  }, [loading, hasMore, size, setSize]);
 
   const updateFilters = useCallback((newFilters: Partial<GetEventsFilters>) => {
-    // reset cursor when filters change
-    cursorRef.current = {};
     setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
-  const addEvent = useCallback(async (data: Partial<Event>) => {
+  const addEvent = useCallback(async (eventData: Partial<Event>) => {
     if (!user) {
       toast({ title: "Not logged in", description: "Please log in to create an event.", variant: "destructive" });
       return null;
     }
     try {
-      const newEvent = await createEvent({ ...data, postedBy: user.id });
+      const newEvent = await createEvent({ ...eventData, postedBy: user.id });
       if (newEvent) {
-        setEvents(prev => [newEvent, ...prev]);
+        // Optimistically prepend the new event
+        mutate((currentData) => {
+          if (!currentData) return [[newEvent]];
+          const newData = [...currentData];
+          newData[0] = [newEvent, ...newData[0]];
+          return newData;
+        }, false);
         toast({ title: "Event published successfully" });
         return newEvent;
       }
@@ -87,18 +88,18 @@ export function useEvents(initialFilters?: GetEventsFilters) {
       toast({ title: "Failed to publish event", description: err.message || 'Database error.', variant: "destructive" });
       return null;
     }
-  }, [user, toast]);
+  }, [user, toast, mutate]);
 
   return {
     events,
     loading,
-    error,
+    error: error?.message || null,
     hasMore,
     loadMore,
     filters,
     updateFilters,
     addEvent,
-    refreshEvents: () => fetchEvents(false, filters)
+    refreshEvents: () => mutate()
   };
 }
 
@@ -106,37 +107,22 @@ export function useEvents(initialFilters?: GetEventsFilters) {
  * Hook to fetch a single event by slug (useful for the detail page)
  */
 export function useEvent(slug: string | null) {
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetcher = async () => {
+    if (!slug) return null;
+    return getEventBySlug(slug);
+  };
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchEvent() {
-      if (!slug) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getEventBySlug(slug);
-        if (isMounted) setEvent(data);
-      } catch (err: any) {
-        if (isMounted) setError(err.message || 'Failed to fetch event details');
-      } finally {
-        if (isMounted) setLoading(false);
-      }
+  const { data: event, error, isLoading } = useSWR(
+    slug ? ['event', slug] : null,
+    fetcher,
+    {
+       revalidateOnFocus: false,
     }
+  );
 
-    fetchEvent();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [slug]);
-
-  return { event, loading, error };
+  return { 
+    event: event || null, 
+    loading: isLoading, 
+    error: error?.message || null 
+  };
 }

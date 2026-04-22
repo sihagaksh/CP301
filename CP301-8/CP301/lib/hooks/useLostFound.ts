@@ -3,7 +3,9 @@
 // Hook for fetching and managing Lost & Found items
 // ============================================================
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
 import { getLFItemsCursor, createLFItem, getLFItemById, updateLFItemStatus, type GetLFFilters } from '@/lib/db/lost-found';
 import type { LostFoundItem, LFStatus, LFCategory } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,64 +15,43 @@ export function useLostFound(initialFilters?: GetLFFilters) {
     const { user } = useAuth();
     const { toast } = useToast();
 
-    const [items, setItems] = useState<LostFoundItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(false);
-    const cursorRef = useRef<{ createdAt?: string | null; id?: string | null }>({});
-    const fetchingRef = useRef(false);
     const [filters, setFilters] = useState<GetLFFilters>(initialFilters || { limit: 15 });
 
+    const getKey = (pageIndex: number, previousPageData: LostFoundItem[]) => {
+        if (previousPageData && previousPageData.length < (filters.limit ?? 15)) return null;
+        if (pageIndex === 0) return ['lost_found', filters];
 
-    const fetchItems = useCallback(async (isLoadMore = false, currentFilters?: GetLFFilters) => {
-        if (fetchingRef.current) {
-            return;
+        const last = previousPageData[previousPageData.length - 1];
+        return ['lost_found', filters, last.createdAt, last.id];
+    };
+
+    const fetcher = async (args: any[]) => {
+        const [_, f, createdAt, id] = args;
+        if (createdAt && id) {
+            return getLFItemsCursor(f, f.limit ?? 15, createdAt, id);
         }
-        fetchingRef.current = true;
-        try {
-            setLoading(true);
-            setError(null);
+        return getLFItemsCursor(f, f.limit ?? 15);
+    };
 
-            const f = currentFilters || filters;
-            let data: any[] = [];
-            if (isLoadMore && cursorRef.current.createdAt && cursorRef.current.id) {
-                data = await getLFItemsCursor(f, f.limit ?? 15, cursorRef.current.createdAt, cursorRef.current.id);
-            } else {
-                data = await getLFItemsCursor(f, f.limit ?? 15);
-            }
+    const { data, error, isLoading, size, setSize, mutate } = useSWRInfinite<LostFoundItem[]>(getKey, fetcher, {
+        persistSize: true,
+        revalidateOnFocus: false,
+        revalidateFirstPage: false,
+    });
 
-            setItems(prev => isLoadMore ? [...prev, ...data] : data);
-            setHasMore(data.length === (f.limit ?? 15));
-            if (data.length > 0) {
-                const last = data[data.length - 1];
-                cursorRef.current = { createdAt: last.createdAt, id: last.id };
-            }
-        } catch (err: any) {
-            setError(err.message || 'Failed to load lost & found items');
-        } finally {
-            setLoading(false);
-            fetchingRef.current = false;
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchItems(false, filters);
-    }, [filters]);
+    const items = data ? ([] as LostFoundItem[]).concat(...data) : [];
+    const loading = isLoading;
+    const hasMore = data ? data[data.length - 1]?.length === (filters.limit ?? 15) : true;
 
     const loadMore = useCallback(() => {
-        if (!loading && hasMore) {
-            fetchItems(true, filters);
-        }
-    }, [loading, hasMore, fetchItems, filters]);
+        if (!loading && hasMore) setSize(size + 1);
+    }, [loading, hasMore, size, setSize]);
 
     const updateFilters = useCallback((newFilters: Partial<GetLFFilters>) => {
-        // Reset cursor state and items when filters change
-        cursorRef.current = {};
-        setItems([]);
         setFilters(prev => ({ ...prev, ...newFilters }));
     }, []);
 
-    const reportItem = useCallback(async (data: {
+    const reportItem = useCallback(async (dataObj: {
         itemName: string;
         category: LFCategory;
         status: 'lost' | 'found';
@@ -89,11 +70,16 @@ export function useLostFound(initialFilters?: GetLFFilters) {
             return null;
         }
         try {
-            const newItem = await createLFItem({ ...data, reporterId: user.id });
+            const newItem = await createLFItem({ ...dataObj, reporterId: user.id });
             if (newItem) {
-                setItems(prev => [newItem, ...prev]);
+                mutate((currentData) => {
+                    if (!currentData) return [[newItem]];
+                    const newData = [...currentData];
+                    newData[0] = [newItem, ...newData[0]];
+                    return newData;
+                }, false);
                 toast({
-                    title: `Reported as ${data.status === 'lost' ? 'Lost' : 'Found'}`,
+                    title: `Reported as ${dataObj.status === 'lost' ? 'Lost' : 'Found'}`,
                     description: "Your item has been posted successfully."
                 });
                 return newItem;
@@ -108,13 +94,16 @@ export function useLostFound(initialFilters?: GetLFFilters) {
             });
             return null;
         }
-    }, [user, toast]);
+    }, [user, toast, mutate]);
 
     const resolveItem = useCallback(async (id: string, newStatus: LFStatus) => {
         try {
             const updated = await updateLFItemStatus(id, newStatus, user?.id);
             if (updated) {
-                setItems(prev => prev.map(item => item.id === id ? updated : item));
+                mutate((currentData) => {
+                   if (!currentData) return currentData;
+                   return currentData.map(page => page.map(item => item.id === id ? updated : item));
+                }, false);
                 toast({
                     title: "Status updated successfully"
                 });
@@ -128,57 +117,27 @@ export function useLostFound(initialFilters?: GetLFFilters) {
             });
             return null;
         }
-    }, [user, toast]);
+    }, [user, toast, mutate]);
 
     return {
         items,
         loading,
-        error,
+        error: error?.message || null,
         hasMore,
         loadMore,
         filters,
         updateFilters,
         reportItem,
         resolveItem,
-        refreshItems: () => fetchItems(false, filters)
+        refreshItems: () => mutate()
     };
 }
 
-/**
- * Hook to fetch a single Lost Found Item by ID
- */
 export function useLostFoundItem(id: string | null) {
-    const [item, setItem] = useState<LostFoundItem | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        let isMounted = true;
-
-        async function fetchItem() {
-            if (!id) {
-                setLoading(false);
-                return;
-            }
-
-            try {
-                setLoading(true);
-                setError(null);
-                const data = await getLFItemById(id);
-                if (isMounted) setItem(data);
-            } catch (err: any) {
-                if (isMounted) setError(err.message || 'Failed to fetch item details');
-            } finally {
-                if (isMounted) setLoading(false);
-            }
-        }
-
-        fetchItem();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [id]);
-
-    return { item, loading, error };
+    const fetcher = async () => {
+        if (!id) return null;
+        return getLFItemById(id);
+    };
+    const { data: item, error, isLoading } = useSWR(id ? ['lost_found_item', id] : null, fetcher, { revalidateOnFocus: false });
+    return { item: item || null, loading: isLoading, error: error?.message || null };
 }

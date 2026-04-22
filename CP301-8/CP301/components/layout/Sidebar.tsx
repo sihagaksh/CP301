@@ -40,7 +40,7 @@ const MAIN_LINKS = [
   { href: '/mess-menu', icon: Coffee, label: 'Mess Menu' },
   { href: '/marketplace', icon: ShoppingBag, label: 'Marketplace' },
   { href: '/clubs', icon: Activity, label: 'Clubs' },
-  { href: '/communities', icon: Users, label: 'Communities' },
+  // { href: '/communities', icon: Users, label: 'Communities' },
   { href: '/map', icon: Search, label: 'Campus Map' },
   { href: '/lost-found', icon: FileText, label: 'Lost & Found' },
   { href: '/messages', icon: MessageCircle, label: 'Messages' },

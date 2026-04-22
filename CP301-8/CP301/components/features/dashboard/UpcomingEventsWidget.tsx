@@ -29,13 +29,18 @@ export function UpcomingEventsWidget({ events }: UpcomingEventsWidgetProps) {
                     <Link key={event.id} href={`/events/${event.slug}`} className="block group">
                         <div className="flex gap-4 p-3 -mx-3 rounded-lg hover:bg-amber-500/5 transition-colors border border-transparent hover:border-amber-500/20">
                             {/* Date Box */}
-                            <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-                                <span className="text-xs font-bold uppercase">
-                                    {event.startTime ? format(new Date(event.startTime), 'MMM') : 'TBD'}
+                            <div className="flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0 border border-amber-500/20">
+                                <span className="text-[10px] sm:text-xs font-bold uppercase bg-amber-500 text-white w-full text-center py-0.5 rounded-t-xl shrink-0">
+                                    {event.startTime ? format(new Date(event.startTime), 'EEE') : 'TBD'}
                                 </span>
-                                <span className="text-lg font-black leading-none">
-                                    {event.startTime ? format(new Date(event.startTime), 'dd') : '--'}
-                                </span>
+                                <div className="flex-1 w-full flex flex-col items-center justify-center leading-none">
+                                    <span className="text-base sm:text-xl font-black">
+                                        {event.startTime ? format(new Date(event.startTime), 'dd') : '--'}
+                                    </span>
+                                    <span className="text-[10px] sm:text-xs font-semibold">
+                                         {event.startTime ? format(new Date(event.startTime), 'MMM').toUpperCase() : ''}
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Event Info */}

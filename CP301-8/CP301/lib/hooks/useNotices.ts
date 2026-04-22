@@ -3,7 +3,8 @@
 // Hook for fetching and managing Notices
 // ============================================================
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import useSWRInfinite from 'swr/infinite';
 import { getNotices, createNotice, type GetNoticesFilters } from '@/lib/db/notices';
 import type { Notice } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,12 +14,6 @@ export function useNotices(initialFilters?: GetNoticesFilters) {
     const { user } = useAuth();
     const { toast } = useToast();
 
-    const [notices, setNotices] = useState<Notice[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(false);
-    const pageRef = useRef(1);
-    const fetchingRef = useRef(false);
     const [filters, setFilters] = useState<GetNoticesFilters>(initialFilters || { limit: 15 });
 
     // Sync external filters changes into the hook's state
@@ -32,57 +27,54 @@ export function useNotices(initialFilters?: GetNoticesFilters) {
         }
     }, [initialFilters]);
 
-    const fetchNotices = useCallback(async (isLoadMore = false, currentFilters?: GetNoticesFilters) => {
-        if (fetchingRef.current) {
-            return;
-        }
-        fetchingRef.current = true;
-        try {
-            setLoading(true);
-            setError(null);
+    const userContext = user ? {
+        role: user.role,
+        department: user.department,
+        batch: user.batch
+    } : undefined;
 
-            const f = currentFilters || filters;
-            const currentPage = isLoadMore ? pageRef.current + 1 : 1;
+    const getKey = (pageIndex: number, previousPageData: { data: Notice[], hasMore: boolean }) => {
+        if (previousPageData && !previousPageData.hasMore) return null;
+        if (pageIndex === 0) return ['notices', filters, userContext];
+        return ['notices', filters, userContext, pageIndex + 1];
+    };
 
-            const userContext = user ? {
-                role: user.role,
-                department: user.department,
-                batch: user.batch
-            } : undefined;
+    const fetcher = async (args: any[]) => {
+        const [_, f, ctx, page = 1] = args;
+        return getNotices({ ...f, page, userContext: ctx });
+    };
 
-            const response = await getNotices({ ...f, page: currentPage, userContext });
+    const { data, error, isLoading, size, setSize, mutate } = useSWRInfinite(getKey, fetcher, {
+        persistSize: true,
+        revalidateOnFocus: false,
+        revalidateFirstPage: false,
+    });
 
-            setNotices(prev => isLoadMore ? [...prev, ...response.data] : response.data);
-            setHasMore(response.hasMore);
-            pageRef.current = currentPage;
-        } catch (err: any) {
-            setError(err.message || 'Failed to load notices');
-        } finally {
-            setLoading(false);
-            fetchingRef.current = false;
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchNotices(false, filters);
-    }, [filters]);
+    const notices = data ? data.flatMap(pageData => pageData.data) : [];
+    const loading = isLoading;
+    const hasMore = data ? data[data.length - 1]?.hasMore : false;
 
     const loadMore = useCallback(() => {
         if (!loading && hasMore) {
-            fetchNotices(true);
+            setSize(size + 1);
         }
-    }, [loading, hasMore, fetchNotices]);
+    }, [loading, hasMore, size, setSize]);
 
     const updateFilters = useCallback((newFilters: Partial<GetNoticesFilters>) => {
         setFilters(prev => ({ ...prev, ...newFilters }));
     }, []);
 
-    const addNotice = useCallback(async (data: Partial<Notice>) => {
+    const addNotice = useCallback(async (noticeData: Partial<Notice>) => {
         if (!user) return null;
         try {
-            const newNotice = await createNotice({ ...data, postedBy: user.id });
+            const newNotice = await createNotice({ ...noticeData, postedBy: user.id });
             if (newNotice) {
-                setNotices(prev => [newNotice, ...prev]);
+                mutate((currentData) => {
+                    if (!currentData) return [{ data: [newNotice], hasMore: false, total: 1, page: 1, limit: 15 }] as any;
+                    const newData = [...currentData];
+                    newData[0] = { ...newData[0], data: [newNotice, ...newData[0].data] };
+                    return newData;
+                }, false);
                 toast({ title: "Notice published successfully" });
                 return newNotice;
             }
@@ -95,17 +87,17 @@ export function useNotices(initialFilters?: GetNoticesFilters) {
             });
             return null;
         }
-    }, [user, toast]);
+    }, [user, toast, mutate]);
 
     return {
         notices,
         loading,
-        error,
+        error: error?.message || null,
         hasMore,
         loadMore,
         filters,
         updateFilters,
         addNotice,
-        refreshNotices: () => fetchNotices(false, filters)
+        refreshNotices: () => mutate()
     };
 }

@@ -12,6 +12,7 @@ import type { UpdateProfileRequest } from '@/lib/types';
 import { useProfile } from '@/lib/hooks/useProfile';
 import { useIdentities } from '@/lib/hooks/useIdentities';
 import { PositionBadge } from './PositionBadge';
+import { AlumniRequestModal } from './AlumniRequestModal';
 
 interface ProfileFormProps {
     onCancel?: () => void;
@@ -115,11 +116,6 @@ export function ProfileForm({ onCancel }: ProfileFormProps) {
                                 )}
                             </div>
                         </div>
-                        {!isEditing && (
-                            <Button onClick={handleEditClick} variant="outline" size="sm" className="mt-4 md:mt-0">
-                                Edit Profile
-                            </Button>
-                        )}
                     </div>
 
                     {/* Main Role & Department Badge */}
@@ -133,6 +129,20 @@ export function ProfileForm({ onCancel }: ProfileFormProps) {
                             </span>
                         )}
                     </div>
+                </div>
+                
+                {/* Top Right Action / Status Area */}
+                <div className="md:ml-auto flex flex-col items-end gap-2 z-10 w-full md:w-auto mt-4 md:mt-0">
+                    {!isEditing && (
+                        <Button onClick={handleEditClick} variant="outline" size="sm" className="w-full md:w-auto">
+                            Edit Profile
+                        </Button>
+                    )}
+                    {user.role === 'student' && !isEditing && (
+                        <div className="mt-2 w-full md:w-auto flex justify-end">
+                            <AlumniRequestModal />
+                        </div>
+                    )}
                 </div>
             </GlassSurface>
 

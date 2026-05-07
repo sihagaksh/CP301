@@ -25,6 +25,7 @@ export type MembershipStatus = 'pending' | 'approved' | 'removed';
 export type PORType = 'secretary' | 'representative' | 'mentor' | 'coordinator' | 'custom';
 export type NotificationType = 'comment' | 'like' | 'event' | 'notice' | 'marketplace' | 'club' | 'governance' | 'general';
 export type LinkCategory = 'academic' | 'administrative' | 'library' | 'placement' | 'wellness' | 'hostel' | 'general';
+export type AlumniRequestStatus = 'pending' | 'approved' | 'rejected';
 
 // ========================
 // MAIN ENTITIES
@@ -55,6 +56,18 @@ export interface User {
   linkedOrgId?: string;     // which Organization this account controls
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AlumniRequest {
+  id: string;
+  userId: string;
+  personalEmail: string;
+  status: AlumniRequestStatus;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  user?: User;
 }
 
 export interface Organization {

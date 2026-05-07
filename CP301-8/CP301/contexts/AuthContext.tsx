@@ -274,10 +274,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           void syncCookie(session.access_token);
         }
       } else if (event === 'TOKEN_REFRESHED') {
-        // Token rotated (e.g. tab regained focus) — only sync the cookie.
-        // Do NOT re-fetch user from DB; user data hasn't changed.
+        // Token rotated (e.g. tab regained focus, or admin changed email/role).
+        // Sync the cookie AND quietly re-fetch user to pick up any server-side
+        // changes (e.g. admin transitioning student → alumni).
         if (session) {
           void syncCookie(session.access_token);
+          void (async () => {
+            try {
+              const freshUser = await getUserById(session.user.id);
+              if (freshUser && freshUser.role !== user?.role) {
+                // Role changed externally — do a full state update
+                setUser(freshUser);
+                if (freshUser.isOrgAccount && freshUser.linkedOrgId) {
+                  const org = await getOrganizationById(freshUser.linkedOrgId);
+                  setLinkedOrg(org);
+                  setActivePositions([]);
+                  const orgIdentity: PostingIdentity = {
+                    id: null,
+                    label: org?.name ?? 'Organization',
+                    org_name: org?.name,
+                    org_slug: org?.slug,
+                    org_id: org?.id,
+                  };
+                  setPostingIdentities([orgIdentity]);
+                  setActiveIdentity(orgIdentity);
+                } else {
+                  setLinkedOrg(null);
+                  const positions = await getUserPositions(session.user.id);
+                  setActivePositions(positions);
+                  buildPostingIdentities(freshUser, positions);
+                }
+              }
+            } catch {
+              // Silently ignore — not critical
+            }
+          })();
         }
       } else if (event === 'SIGNED_OUT') {
         document.cookie = 'sb-auth-token=; path=/; max-age=0';

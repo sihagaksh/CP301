@@ -2,7 +2,9 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import {
     getAllUsers,
     updateUserRole,
-    updateUserStatus
+    updateUserStatus,
+    fetchAlumniRequests,
+    bulkResolveAlumniRequests
 } from '../db/users';
 import {
     createOrganization,
@@ -20,9 +22,12 @@ import {
     getOrgMembers,
     getOrgPositions
 } from '../db/organizations';
-import type { User, Organization, UserPosition, OrgMember } from '../types';
+import type { User, Organization, UserPosition, OrgMember, AlumniRequest } from '../types';
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/db';
 
 export function useAdmin() {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const mountedRef = useRef(true);
@@ -273,6 +278,57 @@ export function useAdmin() {
         }
     }, []);
 
+    // ========================
+    // ALUMNI REQUESTS
+    // ========================
+    
+    const fetchAlumniRequests = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const { data: { session } } = await db.auth.getSession();
+            const res = await fetch('/api/admin/alumni-requests', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': session ? `Bearer ${session.access_token}` : ''
+                }
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch alumni requests');
+            return data.data as AlumniRequest[];
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch alumni requests');
+            return [];
+        } finally {
+            if (mountedRef.current) setLoading(false);
+        }
+    }, []);
+
+    const bulkResolveAlumniRequests = useCallback(async (requestIds: string[], status: 'approved' | 'rejected') => {
+        setLoading(true);
+        setError(null);
+        try {
+            const { data: { session } } = await db.auth.getSession();
+            const res = await fetch('/api/admin/alumni-requests', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': session ? `Bearer ${session.access_token}` : ''
+                },
+                body: JSON.stringify({ requestIds, status })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to resolve requests');
+            return true;
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to resolve alumni requests');
+            return false;
+        } finally {
+            if (mountedRef.current) setLoading(false);
+        }
+    }, []);
+
     return {
         loading,
         error,
@@ -292,6 +348,8 @@ export function useAdmin() {
         assignPOR,
         revokePOR,
         addMember,
-        removeMember
+        removeMember,
+        fetchAlumniRequests,
+        bulkResolveAlumniRequests
     };
 }

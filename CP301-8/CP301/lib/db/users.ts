@@ -4,7 +4,7 @@
 // ============================================================
 
 import { db } from './client';
-import type { User } from '@/lib/types';
+import type { User, AlumniRequest } from '@/lib/types';
 
 // Shared select columns — includes org-account fields added in migration 038
 const USER_SELECT = `
@@ -83,6 +83,41 @@ export async function updateUserProfile(userId: string, updates: Partial<User>):
 }
 
 // ========================
+// ALUMNI REQUESTS
+// ========================
+
+export async function submitAlumniRequest(userId: string, personalEmail: string): Promise<AlumniRequest> {
+  const { data, error } = await db
+    .from('alumni_requests')
+    .insert({
+      user_id: userId,
+      personal_email: personalEmail,
+      status: 'pending'
+    })
+    .select('*')
+    .single();
+
+  if (error) throw new Error(`[submitAlumniRequest] ${error.message}`);
+  return mapAlumniRequest(data);
+}
+
+export async function getAlumniRequestByUserId(userId: string): Promise<AlumniRequest | null> {
+  const { data, error } = await db
+    .from('alumni_requests')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw new Error(`[getAlumniRequestByUserId] ${error.message}`);
+  }
+  return data ? mapAlumniRequest(data) : null;
+}
+
+// ========================
 // ADMIN FUNCTIONS
 // ========================
 
@@ -136,6 +171,33 @@ export async function updateUserStatus(userId: string, status: string): Promise<
   return data ? mapUser(data) : null;
 }
 
+export async function getAlumniRequests(statusFilter?: string): Promise<AlumniRequest[]> {
+  let query = db
+    .from('alumni_requests')
+    .select('*, users:user_id(id, email, full_name, role, status)')
+    .order('created_at', { ascending: false });
+
+  if (statusFilter && statusFilter !== 'all') {
+    query = query.eq('status', statusFilter);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`[getAlumniRequests] ${error.message}`);
+  return data ? data.map(mapAlumniRequest) : [];
+}
+
+
+export async function bulkResolveAlumniRequests(requestIds: string[], status: 'approved' | 'rejected', adminId: string): Promise<boolean> {
+  const { error } = await db.rpc('bulk_resolve_alumni_requests', {
+    p_request_ids: requestIds,
+    p_new_status: status,
+    p_admin_id: adminId
+  });
+
+  if (error) throw new Error(`[bulkResolveAlumniRequests] ${error.message}`);
+  return true;
+}
+
 /**
  * Map database row to User type
  */
@@ -165,5 +227,19 @@ export function mapUser(row: any): User {
     linkedOrgId: row.linked_org_id ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+export function mapAlumniRequest(row: any): AlumniRequest {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    personalEmail: row.personal_email,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    resolvedAt: row.resolved_at,
+    resolvedBy: row.resolved_by,
+    user: row.users ? mapUser(row.users) : undefined
   };
 }
